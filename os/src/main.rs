@@ -28,11 +28,20 @@ fn clear_bss() {
 }
 
 #[no_mangle]
-fn os_main() {
-    clear_bss();
-    println!("Hello, world!");
-    mm::whereis_heap();
-    mm::init_heap();
-    mm::heap_test();
-    panic!("Shit");
+fn os_main(hartid: usize) {
+
+    if hartid == 0 {
+        clear_bss();
+        println!("Hello, world!");
+        mm::whereis_heap();
+        mm::init_heap();
+        mm::heap_test();
+
+        let mask: usize = 1;
+        sbi::send_ipi(&mask as *const _ as usize);
+    } else {
+        println!("cpu2");
+        // panic!("Shit");
+    }
+    panic!("Fuck");
 }

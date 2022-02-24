@@ -27,7 +27,8 @@ run: build
     	-machine virt \
     	-nographic \
     	-bios ../rustsbi-img/rustsbi-qemu.bin \
-		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000
+		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
+		-smp 2
 
 debug:
 	qemu-system-riscv64 \
@@ -36,7 +37,8 @@ debug:
     	-nographic \
     	-bios ../rustsbi-img/rustsbi-qemu.bin \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
-		-s -S
+		-s -S \
+		-smp 2
 
 disassem:
 	@$(OBJDUMP) -all $(KERNEL_ELF)
