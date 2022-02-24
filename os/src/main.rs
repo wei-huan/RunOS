@@ -8,7 +8,6 @@ mod sbi;
 mod lang_items;
 
 use core::arch::global_asm;
-use sbi::shutdown;
 
 
 global_asm!(include_str!("entry.asm"));
