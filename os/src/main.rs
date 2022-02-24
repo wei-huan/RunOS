@@ -1,11 +1,14 @@
 #![no_std]
 #![no_main]
 #![feature(panic_info_message)]
+#![feature(alloc_error_handler)]
 
 #[macro_use]
 mod console;
 mod sbi;
 mod lang_items;
+mod config;
+mod mm;
 
 use core::arch::global_asm;
 
@@ -28,5 +31,8 @@ fn clear_bss() {
 fn os_main() {
     clear_bss();
     println!("Hello, world!");
+    mm::whereis_heap();
+    mm::init_heap();
+    mm::heap_test();
     panic!("Shit");
 }

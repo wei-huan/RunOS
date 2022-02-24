@@ -23,6 +23,7 @@ build: $(KERNEL_BIN)
 
 run: build
 	qemu-system-riscv64 \
+		-m 8M \
     	-machine virt \
     	-nographic \
     	-bios ../rustsbi-img/rustsbi-qemu.bin \
@@ -30,6 +31,7 @@ run: build
 
 debug:
 	qemu-system-riscv64 \
+		-m 8M \
     	-machine virt \
     	-nographic \
     	-bios ../rustsbi-img/rustsbi-qemu.bin \
@@ -45,4 +47,3 @@ gdb:
     -ex 'file target/riscv64gc-unknown-none-elf/release/os' \
     -ex 'set arch riscv:rv64' \
     -ex 'target remote localhost:1234'
-
