@@ -23,19 +23,19 @@ build: $(KERNEL_BIN)
 
 run: build
 	qemu-system-riscv64 \
-		-m 256M \
+		-m 64M \
     	-machine virt \
     	-nographic \
     	-bios ../opensbi-img/fw_jump.bin \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
-		-smp 4
+		-smp 2
 
 debug:
 	qemu-system-riscv64 \
-		-m 8M \
+		-m 64M \
     	-machine virt \
     	-nographic \
-    	-bios ../rustsbi-img/rustsbi-qemu.bin \
+    	-bios ../opensbi-img/fw_jump.bin \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S \
 		-smp 2
