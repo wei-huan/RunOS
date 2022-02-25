@@ -13,7 +13,7 @@ OBJCOPY := rust-objcopy --binary-architecture=riscv64
 
 kernel:
 	cp src/linker-$(BOARD).ld src/linker.ld
-	cargo build --$(MODE)
+	cargo build --$(MODE) --features "board-qemu"
 	rm src/linker.ld
 
 $(KERNEL_BIN): kernel
@@ -23,12 +23,12 @@ build: $(KERNEL_BIN)
 
 run: build
 	qemu-system-riscv64 \
-		-m 8M \
+		-m 256M \
     	-machine virt \
     	-nographic \
-    	-bios ../rustsbi-img/rustsbi-qemu.bin \
+    	-bios ../opensbi-img/fw_jump.bin \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
-		-smp 2
+		-smp 4
 
 debug:
 	qemu-system-riscv64 \
