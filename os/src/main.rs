@@ -34,5 +34,7 @@ fn os_main() {
     mm::whereis_heap();
     mm::init_heap();
     mm::heap_test();
+    mm::addr_test();
+    mm::frame_test();
     panic!("Shit");
 }
