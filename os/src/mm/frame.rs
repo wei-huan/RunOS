@@ -48,6 +48,6 @@ struct FIFOFrameAllocator {
 // }
 
 pub fn frame_test() {
-    let a = Frame::new(PhysPageNum::from(0x80480000));
+    let a = Frame::new(PhysPageNum::from(0x80480));
     println!("frame test pass");
 }
