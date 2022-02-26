@@ -1,15 +1,14 @@
 extern crate alloc;
-
-use alloc::collections::VecDeque;
+use super::address::{PhysAddr, PhysPageNum};
 use crate::config::MEMORY_END;
-use super::address::{PhysPageNum, PhysAddr};
+use alloc::collections::VecDeque;
 
 extern "C" {
     fn ekernel();
 }
 
 pub struct Frame {
-    pub ppn: PhysPageNum
+    pub ppn: PhysPageNum,
 }
 
 impl Frame {
@@ -24,8 +23,7 @@ impl Frame {
 }
 
 impl Drop for Frame {
-    fn drop(&mut self) {
-    }
+    fn drop(&mut self) {}
 }
 
 trait FrameAllocator {
@@ -38,7 +36,7 @@ struct FIFOFrameAllocator {
     start: Frame,
     end: Frame,
     current: Frame,
-    recycled: VecDeque<Frame>
+    recycled: VecDeque<Frame>,
 }
 
 // impl FrameAllocator for FIFOFrameAllocator {
@@ -48,6 +46,11 @@ struct FIFOFrameAllocator {
 // }
 
 pub fn frame_test() {
+    unsafe { ((0x80480000) as *mut u8).write_volatile(255) };
+    let b: u8 = unsafe { ((0x80480000) as *mut u8).read_volatile() };
     let a = Frame::new(PhysPageNum::from(0x80480));
+    println!("b {}", b);
+    let c: u8 = unsafe { ((0x80480000) as *mut u8).read_volatile() };
+    println!("c {}", c);
     println!("frame test pass");
 }
