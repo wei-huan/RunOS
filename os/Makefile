@@ -7,13 +7,16 @@ KERNEL_BIN := $(KERNEL_ELF).bin
 # BOARD
 BOARD ?= qemu
 
+#SBI
+SBI ?= opensbi-img/fw_jump.bin
+
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
 
 kernel:
 	cp src/linker-$(BOARD).ld src/linker.ld
-	cargo build --$(MODE) --features "board-qemu"
+	cargo build --$(MODE)
 	rm src/linker.ld
 
 $(KERNEL_BIN): kernel
@@ -26,19 +29,19 @@ run: build
 		-m 64M \
     	-machine virt \
     	-nographic \
-    	-bios ../opensbi-img/fw_jump.bin \
+    	-bios ../$(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
-		-smp 2
+		-smp 4
 
 debug:
 	qemu-system-riscv64 \
 		-m 64M \
     	-machine virt \
     	-nographic \
-    	-bios ../opensbi-img/fw_jump.bin \
+    	-bios ../$(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S \
-		-smp 2
+		-smp 4
 
 disassem:
 	@$(OBJDUMP) -all $(KERNEL_ELF)
