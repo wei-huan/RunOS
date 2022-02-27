@@ -48,9 +48,9 @@ struct FIFOFrameAllocator {
 pub fn frame_test() {
     unsafe { ((0x80480000) as *mut u8).write_volatile(255) };
     let b: u8 = unsafe { ((0x80480000) as *mut u8).read_volatile() };
-    let a = Frame::new(PhysPageNum::from(0x80480));
-    println!("b {}", b);
+    Frame::new(PhysPageNum::from(0x80480));
+    assert_eq!(b, 255);
     let c: u8 = unsafe { ((0x80480000) as *mut u8).read_volatile() };
-    println!("c {}", c);
+    assert_eq!(c, 0);
     println!("frame test pass");
 }

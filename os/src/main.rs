@@ -5,6 +5,7 @@
 
 #[macro_use]
 mod console;
+mod sync;
 mod sbi;
 mod lang_items;
 mod config;
