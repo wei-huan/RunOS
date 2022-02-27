@@ -1,6 +1,8 @@
+mod intr;
 mod up;
-mod smp;
+mod mp;
 
-use up::UPSafeCell;
-use smp::Mutex;
+pub use intr::{IntrLock, intr_off, intr_on, intr_get};
+pub use up::UPSafeCell;
+pub use mp::Mutex;
 

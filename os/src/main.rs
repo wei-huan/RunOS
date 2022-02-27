@@ -3,15 +3,19 @@
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
 
+extern crate alloc;
+
 #[macro_use]
 mod console;
+mod cpus;
 mod sbi;
+mod boards;
 mod lang_items;
 mod config;
 mod mm;
+mod sync;
 
 use core::arch::global_asm;
-
 
 global_asm!(include_str!("entry.asm"));
 
