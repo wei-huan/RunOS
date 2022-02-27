@@ -1,9 +1,8 @@
-use crate::cpus::{Cpu, CPUS};
+use crate::cpus::{CPUS};
 use crate::sync::{intr_get, IntrLock};
 use core::cell::UnsafeCell;
-use core::ops::{Deref, DerefMut, Drop};
-use core::ptr;
-use core::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
+use core::ops::{Deref, Drop};
+use core::sync::atomic::{AtomicBool, Ordering};
 
 // pub struct AtomicBool { /* fields omitted */ }
 // pub fn compare_exchange(

@@ -30,8 +30,8 @@ run: build
     	-machine virt \
     	-nographic \
     	-bios ../$(SBI) \
+		-smp 2
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
-		-smp 4
 
 debug:
 	qemu-system-riscv64 \
@@ -41,7 +41,7 @@ debug:
     	-bios ../$(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S \
-		-smp 4
+		-smp 2
 
 disassem:
 	@$(OBJDUMP) -all $(KERNEL_ELF)
