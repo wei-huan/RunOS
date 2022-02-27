@@ -9,6 +9,8 @@ mod boards;
 mod config;
 mod lang_items;
 mod mm;
+mod cpus;
+mod sync;
 mod sbi;
 
 use core::arch::asm;
