@@ -9,18 +9,16 @@ extern crate alloc;
 mod console;
 mod boards;
 mod config;
-mod kernelvec;
-mod memlayout;
-mod start;
 mod cpus;
 mod lang_items;
 mod mm;
-mod sbi;
+mod opensbi;
 mod sync;
 
 use core::arch::asm;
 use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
+use crate::opensbi::{shutdown, send_ipi};
 // use boards::CPU_NUM;
 global_asm!(include_str!("entry.asm"));
 
@@ -37,24 +35,22 @@ static STARTED: AtomicBool = AtomicBool::new(false);
 
 #[no_mangle]
 fn os_main(hartid: usize) {
-    unsafe {
-        if hartid == 0 {
-            clear_bss();
-            // for i in 1..2 {
-            //     let mask: usize = 1 << i;
-            //     sbi::send_ipi(&mask as *const _ as usize);
-            // }
-            asm!("fence");
-            STARTED.store(true, Ordering::SeqCst);
-            println!("cpu{}", hartid);
-        } else {
-            while !STARTED.load(Ordering::SeqCst) {}
-            asm!("fence");
-            println!("cpu{}", hartid);
-            panic!("from hart{}", hartid);
-        }
-        loop {}
+    println!("cpu{}", hartid);
+
+    if hartid == 0 {
+        clear_bss();
+        let to: usize = 0b11;
+        let offset: usize = 0;
+        send_ipi(&to as *const _ as usize, &offset as *const _ as usize);
+        // asm!("fence");
+        STARTED.store(true, Ordering::SeqCst);
+    } else {
+        println!("cpu{}", hartid);
+        // while !STARTED.load(Ordering::SeqCst) {}
+        // asm!("fence");
     }
+    loop{};
+    shutdown();
 }
 
 // #[no_mangle]

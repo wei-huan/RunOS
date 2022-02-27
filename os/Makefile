@@ -30,8 +30,8 @@ run: build
     	-machine virt \
     	-nographic \
     	-bios ../$(SBI) \
-		-smp 2
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
+		-smp 2
 
 debug:
 	qemu-system-riscv64 \
