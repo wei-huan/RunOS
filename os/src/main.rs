@@ -5,7 +5,6 @@
 
 extern crate alloc;
 extern crate spin;
-
 #[macro_use]
 mod console;
 mod boards;
@@ -22,7 +21,6 @@ use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 use proc::PROCESS;
 use timer::get_time;
-// use spin::Mutex;
 
 global_asm!(include_str!("entry.asm"));
 
