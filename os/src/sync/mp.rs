@@ -1,21 +1,81 @@
-use crate::cpus::{CPUS};
+use crate::cpus::{Cpu, CPUS};
 use crate::sync::{intr_get, IntrLock};
 use core::cell::UnsafeCell;
-use core::ops::{Deref, Drop};
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::ops::{Deref, DerefMut, Drop};
+use core::{
+    ptr,
+    sync::atomic::{AtomicPtr, Ordering},
+};
 
-// pub struct AtomicBool { /* fields omitted */ }
-// pub fn compare_exchange(
-//     &self,
-//     current: bool,
-//     new: bool,
-//     success: Ordering,
-//     failure: Ordering
-// ) -> Result<bool, bool>
+#[derive(Debug)]
+pub struct Mutex<T> {
+    name: &'static str,     // Name of lock
+    locked: AtomicPtr<Cpu>, // Is the lock held?
+    data: UnsafeCell<T>,    // actual data
+}
 
 pub struct MutexGuard<'a, T: 'a> {
     mutex: &'a Mutex<T>,
     _intr_lock: IntrLock<'a>,
+}
+
+impl<T> Mutex<T> {
+    pub const fn new(value: T, name: &'static str) -> Mutex<T> {
+        Mutex {
+            locked: AtomicPtr::new(ptr::null_mut()),
+            data: UnsafeCell::new(value),
+            name,
+        }
+    }
+
+    pub fn lock(&self) -> MutexGuard<'_, T> {
+        let _intr_lock = CPUS.intr_lock(); // disable interrupts to avoid deadlock.
+
+        unsafe {
+            assert!(!self.holding(), "acquire {}", self.name);
+
+            loop {
+                if !self
+                    .locked
+                    .compare_exchange(
+                        ptr::null_mut(),
+                        CPUS.my_cpu(),
+                        Ordering::Acquire,
+                        Ordering::Relaxed,
+                    )
+                    .is_err()
+                {
+                    break MutexGuard {
+                        mutex: self,
+                        _intr_lock,
+                    };
+                }
+                core::hint::spin_loop()
+            }
+        }
+    }
+
+    // Check whether this cpu is holding the lock.
+    // Interrupts must be off.
+    pub unsafe fn holding(&self) -> bool {
+        self.locked.load(Ordering::Relaxed) == CPUS.my_cpu()
+    }
+
+    pub fn unlock(guard: MutexGuard<'_, T>) -> &'_ Mutex<T> {
+        guard.mutex()
+    }
+
+    pub unsafe fn get_mut(&self) -> &mut T {
+        &mut *self.data.get()
+    }
+
+    // It is only safe when used in functions such as fork_ret(),
+    // where passing guards is difficult.
+    pub unsafe fn force_unlock(&self) {
+        assert!(self.holding(), "force unlock {}", self.name);
+        self.locked.store(ptr::null_mut(), Ordering::Relaxed);
+        CPUS.intr_unlock();
+    }
 }
 
 unsafe impl<T> Sync for Mutex<T> {}
@@ -28,17 +88,17 @@ impl<'a, T: 'a> MutexGuard<'a, T> {
         self.mutex
     }
 
-    pub fn is_holding(&self) -> bool {
+    pub fn holding(&self) -> bool {
         assert!(!intr_get(), "interrupts enabled");
-        unsafe { self.mutex.is_holding() }
+        unsafe { self.mutex.holding() }
     }
 }
 
 impl<'a, T: 'a> Drop for MutexGuard<'a, T> {
     fn drop(&mut self) {
-        assert!(self.is_holding(), "release {}", self.mutex.name);
+        assert!(self.holding(), "release {}", self.mutex.name);
 
-        self.mutex.locked.store(false , Ordering::Release);
+        self.mutex.locked.store(ptr::null_mut(), Ordering::Release);
     }
 }
 
@@ -49,52 +109,8 @@ impl<'a, T: 'a> Deref for MutexGuard<'a, T> {
     }
 }
 
-
-#[derive(Debug)]
-pub struct Mutex<T> {
-    name: &'static str,  // Name of lock
-    locked: AtomicBool,  // Is the lock held?
-    data: UnsafeCell<T>, // actual data
-}
-
-impl<T> Mutex<T> {
-    pub const fn new(value: T, name: &'static str) -> Mutex<T> {
-        Mutex {
-            name: name,
-            locked: AtomicBool::new(false),
-            data: UnsafeCell::new(value),
-        }
-    }
-
-    pub fn lock(&self) -> MutexGuard<'_, T> {
-        let _intr_lock = CPUS.intr_lock(); // disable interrupts to avoid deadlock.
-
-        loop {
-            if !self
-                .locked
-                .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-                .is_err()
-            {
-                break MutexGuard {
-                    mutex: self,
-                    _intr_lock,
-                };
-            }
-            core::hint::spin_loop()
-        }
-    }
-
-    // Check whether this cpu is holding the lock.
-    // Interrupts must be off.
-    pub unsafe fn is_holding(&self) -> bool {
-        self.locked.load(Ordering::Relaxed) == CPUS.my_cpu().int_status
-    }
-
-    pub fn unlock(guard: MutexGuard<'_, T>) -> &'_ Mutex<T> {
-        guard.mutex()
-    }
-
-    pub unsafe fn get_mut(&self) -> &mut T {
-        &mut *self.data.get()
+impl<'a, T: 'a> DerefMut for MutexGuard<'a, T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        unsafe { &mut *self.mutex.data.get() }
     }
 }

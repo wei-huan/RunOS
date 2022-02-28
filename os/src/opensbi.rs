@@ -51,6 +51,10 @@ fn opensbi_call(
     (ret0, ret1)
 }
 
+pub fn set_timer(timer: usize) {
+    opensbi_call(SBI_SET_TIMER_EID, SBI_SET_TIMER_FID, timer, 0, 0, 0, 0, 0);
+}
+
 pub fn console_putchar(c: usize) {
     opensbi_call(SBI_CONSOLE_PUTCHAR_EID, SBI_CONSOLE_PUTCHAR_FID, c, 0, 0, 0, 0, 0);
 }
@@ -59,16 +63,28 @@ pub fn console_getchar() -> usize {
     opensbi_call(SBI_CONSOLE_GETCHAR_EID, SBI_CONSOLE_GETCHAR_FID, 0, 0, 0, 0, 0, 0).1
 }
 
-pub fn shutdown() -> ! {
-    println!("I am dead");
-    opensbi_call(SBI_SHUTDOWN_EID, SBI_SHUTDOWN_FID, 0, 0, 0, 0, 0, 0);
-    panic!("It should shutdown!");
-}
-
 pub fn clear_ipi() -> (usize, usize) {
     opensbi_call(SBI_CLEAR_IPI_EID, SBI_CLEAR_IPI_FID, 0, 0, 0, 0, 0, 0)
 }
 
-pub fn send_ipi(cpus_mask: usize) -> (usize, usize){
-    opensbi_call(SBI_SEND_IPI_EID, SBI_SEND_IPI_FID, cpus_mask, 0, 0, 0, 0, 0)
+pub fn send_ipi(cpu_id: usize) -> (usize, usize){
+    opensbi_call(SBI_SEND_IPI_EID, SBI_SEND_IPI_FID, cpu_id, 0, 0, 0, 0, 0)
+}
+
+pub fn remote_fence_i(cpu_id: usize) {
+    opensbi_call(SBI_REMOTE_FENCE_I_EID, SBI_REMOTE_FENCE_I_FID, cpu_id, 0, 0, 0, 0, 0);
+}
+
+pub fn remote_sfence_vma(cpu_id: usize, start: usize, size: usize) {
+    opensbi_call(SBI_REMOTE_SFENCE_VMA_EID, SBI_REMOTE_SFENCE_VMA_FID, cpu_id, start, size, 0, 0, 0);
+}
+
+pub fn remote_sfence_vma_asid(cpu_id: usize, start: usize, size: usize, asid: usize) {
+    opensbi_call(SBI_REMOTE_SFENCE_VMA_ASID_EID, SBI_REMOTE_SFENCE_VMA_ASID_FID, cpu_id, start, size, asid, 0, 0);
+}
+
+pub fn shutdown() -> ! {
+    println!("I am dead");
+    opensbi_call(SBI_SHUTDOWN_EID, SBI_SHUTDOWN_FID, 0, 0, 0, 0, 0, 0);
+    panic!("It should shutdown!");
 }
