@@ -26,7 +26,7 @@ build: $(KERNEL_BIN)
 
 run: build
 	qemu-system-riscv64 \
-		-m 64M \
+		-m 128M \
     	-machine virt \
     	-nographic \
     	-bios ../$(SBI) \
@@ -35,7 +35,7 @@ run: build
 
 debug:
 	qemu-system-riscv64 \
-		-m 64M \
+		-m 128M \
     	-machine virt \
     	-nographic \
     	-bios ../$(SBI) \

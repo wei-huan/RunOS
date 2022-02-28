@@ -1,4 +1,4 @@
-use crate::sbi::console_putchar;
+use crate::opensbi::console_putchar;
 use core::fmt::{self, Write};
 
 struct Stdout;
