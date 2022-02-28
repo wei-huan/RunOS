@@ -10,6 +10,9 @@ BOARD ?= qemu
 #SBI
 SBI ?= opensbi-img/fw_jump.bin
 
+# CPU_NUM
+CPU_NUM := 2;
+
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
@@ -31,7 +34,7 @@ run: build
     	-nographic \
     	-bios ../$(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
-		-smp 2
+		-smp $(CPU_NUM)
 
 debug:
 	qemu-system-riscv64 \
@@ -41,7 +44,7 @@ debug:
     	-bios ../$(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S \
-		-smp 2
+		-smp $(CPU_NUM)
 
 disassem:
 	@$(OBJDUMP) -all $(KERNEL_ELF)
