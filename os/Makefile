@@ -26,22 +26,22 @@ build: $(KERNEL_BIN)
 
 run: build
 	qemu-system-riscv64 \
-		-m 64M \
+		-m 128M \
     	-machine virt \
     	-nographic \
     	-bios ../$(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
-		-smp 2
+		-smp 4
 
 debug:
 	qemu-system-riscv64 \
-		-m 64M \
+		-m 128M \
     	-machine virt \
     	-nographic \
     	-bios ../$(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S \
-		-smp 2
+		-smp 4
 
 disassem:
 	@$(OBJDUMP) -all $(KERNEL_ELF)

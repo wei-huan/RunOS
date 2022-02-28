@@ -65,10 +65,10 @@ pub fn shutdown() -> ! {
     panic!("It should shutdown!");
 }
 
-pub fn clear_ipi() {
-    opensbi_call(SBI_CLEAR_IPI_EID, SBI_CLEAR_IPI_FID, 0, 0, 0, 0, 0, 0);
+pub fn clear_ipi() -> (usize, usize) {
+    opensbi_call(SBI_CLEAR_IPI_EID, SBI_CLEAR_IPI_FID, 0, 0, 0, 0, 0, 0)
 }
 
-pub fn send_ipi(cpus: usize, offset: usize) {
-    opensbi_call(SBI_SEND_IPI_EID, SBI_SEND_IPI_FID, cpus, offset, 0, 0, 0, 0);
+pub fn send_ipi(cpus_mask: usize) -> (usize, usize){
+    opensbi_call(SBI_SEND_IPI_EID, SBI_SEND_IPI_FID, cpus_mask, 0, 0, 0, 0, 0)
 }

@@ -29,5 +29,10 @@
 
 fence指令相当于gcc的__sync_synchronize
 
-2022.2.26
+2022.2.27
 草草草草草草草 sbi2.0的ecall换api了，草，麻了
+
+终于好了, 现在的opensbi的环境调用大改了，扩充了很多，send_ipi参数也变成cpu id了
+
+2022.2.28
+需要实现spinlock，不然多核并行没有原子性太恐怖了

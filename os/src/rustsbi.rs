@@ -46,6 +46,6 @@ pub fn clear_ipi() {
     sbi_call(SBI_CLEAR_IPI, 0, 0, 0);
 }
 
-pub fn send_ipi(cpus: usize) {
-    sbi_call(SBI_SEND_IPI, cpus, 0, 0);
+pub fn send_ipi(cpu_id: usize) {
+    sbi_call(SBI_SEND_IPI, cpu_id, 0, 0);
 }
