@@ -64,6 +64,20 @@ impl From<PhysPageNum> for PhysAddr {
     }
 }
 
+impl PhysAddr {
+    pub fn floor(&self) -> PhysPageNum {
+        PhysPageNum(self.0 / PAGE_SIZE)
+    }
+
+    pub fn ceil(&self) -> PhysPageNum {
+        PhysPageNum((self.0 - 1 + PAGE_SIZE) / PAGE_SIZE)
+    }
+}
+
+impl VirtAddr {
+
+}
+
 impl PhysPageNum {
     pub fn get_bytes_array(&self) -> &'static mut [u8] {
         let pa: PhysAddr = (*self).into();

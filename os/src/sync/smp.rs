@@ -1,4 +1,4 @@
-use core::cell::{Cell, UnsafeCell};
+use core::cell::{UnsafeCell};
 use core::sync::atomic::{AtomicBool, Ordering};
 
 #[repr(C, align(1))]
