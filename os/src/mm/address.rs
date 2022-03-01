@@ -6,15 +6,15 @@ const PPN_WIDTH_SV39: usize = PA_WIDTH_SV39 - PAGE_SIZE_BITS;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct PhysAddr(usize);
+pub struct PhysAddr(pub usize);
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct VirtAddr(usize);
+pub struct VirtAddr(pub usize);
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct PhysPageNum(usize);
+pub struct PhysPageNum(pub usize);
 
 impl From<usize> for PhysAddr {
     fn from(v: usize) -> Self {

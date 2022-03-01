@@ -1,12 +1,11 @@
 extern crate alloc;
-use super::address::{PhysPageNum};
+use super::address::{PhysAddr, PhysPageNum};
 use crate::config::MEMORY_END;
+use crate::sync::Mutex;
+use core::fmt::{self, Debug, Formatter};
 use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use lazy_static::*;
-
-extern "C" {
-    fn ekernel();
-}
 
 pub struct Frame {
     pub ppn: PhysPageNum,
@@ -23,8 +22,16 @@ impl Frame {
     }
 }
 
+impl Debug for Frame {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_fmt(format_args!("Frame:PPN={:#x}", self.ppn.0))
+    }
+}
+
 impl Drop for Frame {
-    fn drop(&mut self) {}
+    fn drop(&mut self) {
+        frame_dealloc(self.ppn);
+    }
 }
 
 trait FrameAllocator {
@@ -33,7 +40,7 @@ trait FrameAllocator {
     fn dealloc(&mut self, ppn: PhysPageNum);
 }
 
-struct FIFOFrameAllocator {
+pub struct FIFOFrameAllocator {
     start: usize,
     end: usize,
     current: usize,
@@ -58,7 +65,7 @@ impl FrameAllocator for FIFOFrameAllocator {
                 self.current += 1;
                 Some((self.current - 1).into())
             } else {
-                return None
+                return None;
             }
         }
     }
@@ -70,6 +77,13 @@ impl FrameAllocator for FIFOFrameAllocator {
         } else {
             self.recycled.push_back(ppn);
         }
+    }
+}
+
+impl FIFOFrameAllocator {
+    pub fn init(&mut self, start: PhysPageNum, end: PhysPageNum) {
+        self.start = start.0;
+        self.end = end.0;
     }
 }
 
@@ -85,10 +99,43 @@ pub fn frame_test() {
 
 type FrameAllocatorImpl = FIFOFrameAllocator;
 
-lazy_static !{
-    pub static ref FRAME_ALLOCATOR: Mutex<FrameAllocatorImpl> = Mutex::new(FrameAllocatorImpl);
+lazy_static! {
+    pub static ref FRAME_ALLOCATOR: Mutex<FrameAllocatorImpl> =
+        Mutex::new(FrameAllocatorImpl::new());
 }
 
-pub fn frame_alloc_test() {
+pub fn init_frame_allocator() {
+    extern "C" {
+        fn ekernel();
+    }
+    FRAME_ALLOCATOR.lock().init(
+        PhysAddr::from(ekernel as usize).ceil(),
+        PhysAddr::from(MEMORY_END).floor(),
+    );
+}
 
+pub fn frame_alloc() -> Option<Frame>{
+    FRAME_ALLOCATOR.lock().alloc().map(Frame::new)
+}
+
+pub fn frame_dealloc(ppn: PhysPageNum) {
+    FRAME_ALLOCATOR.lock().dealloc(ppn);
+}
+
+#[allow(unused)]
+pub fn frame_allocator_test() {
+    let mut v: Vec<Frame> = Vec::new();
+    for i in 0..10 {
+        let frame = frame_alloc().unwrap();
+        println!("{:?} i: {}", frame, i);
+        // v.push(frame);
+    }
+    v.clear();
+    for i in 0..5 {
+        let frame = frame_alloc().unwrap();
+        println!("{:?}", frame);
+        v.push(frame);
+    }
+    drop(v);
+    println!("frame_allocator_test passed!");
 }

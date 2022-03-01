@@ -33,9 +33,10 @@ fn os_main() {
     clear_bss();
     println!("Hello, world!");
     mm::whereis_heap();
-    mm::init_heap();
+    mm::init();
     mm::heap_test();
     mm::addr_test();
     mm::frame_test();
+    mm::frame_allocator_test();
     panic!("Shit");
 }
