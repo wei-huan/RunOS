@@ -43,52 +43,50 @@ trait FrameAllocator {
 }
 
 pub struct FIFOFrameAllocator {
-    start: usize,
     end: usize,
     current: usize,
-    recycled: VecDeque<PhysPageNum>,
+    recycled: VecDeque<usize>,
+}
+
+impl FIFOFrameAllocator {
+    pub fn init(&mut self, start: PhysPageNum, end: PhysPageNum) {
+        self.current = start.0;
+        self.end = end.0;
+    }
 }
 
 impl FrameAllocator for FIFOFrameAllocator {
     fn new() -> Self {
         Self {
-            start: 0,
             end: 0,
             current: 0,
-            recycled: VecDeque::<PhysPageNum>::new(),
+            recycled: VecDeque::new(),
         }
     }
 
     fn alloc(&mut self) -> Option<PhysPageNum> {
         if let Some(ppn) = self.recycled.pop_front() {
             Some(ppn.into())
+        } else if self.current == self.end {
+            None
         } else {
-            if self.current < self.end {
-                self.current += 1;
-                Some((self.current - 1).into())
-            } else {
-                return None;
-            }
+            self.current += 1;
+            Some((self.current - 1).into())
         }
     }
 
     fn dealloc(&mut self, ppn: PhysPageNum) {
-        let a: usize = ppn.into();
-        if a < self.start {
-            panic!("ppn smaller than start");
-        } else {
-            self.recycled.push_back(ppn);
+        let ppn = ppn.0;
+        // validity check
+        if ppn >= self.current || self.recycled.iter().any(|&v| v == ppn) {
+            panic!("Frame ppn={:#x} has not been allocated!", ppn);
         }
+        // recycle
+        self.recycled.push_back(ppn);
     }
 }
 
-impl FIFOFrameAllocator {
-    pub fn init(&mut self, start: PhysPageNum, end: PhysPageNum) {
-        self.start = start.0;
-        self.end = end.0;
-    }
-}
-
+#[allow(unused)]
 pub fn frame_test() {
     unsafe { ((0x80480000) as *mut u8).write_volatile(255) };
     let b: u8 = unsafe { ((0x80480000) as *mut u8).read_volatile() };
@@ -129,8 +127,8 @@ pub fn frame_allocator_test() {
     let mut v: Vec<Frame> = Vec::new();
     for i in 0..10 {
         let frame = frame_alloc().unwrap();
-        println!("{:?} i: {}", frame, i);
-        // v.push(frame);
+        println!("{:?}", frame);
+        v.push(frame);
     }
     v.clear();
     for i in 0..5 {
