@@ -13,7 +13,6 @@ mod mm;
 
 use core::arch::global_asm;
 
-
 global_asm!(include_str!("entry.asm"));
 
 fn clear_bss() {
@@ -36,7 +35,7 @@ fn os_main() {
     mm::init();
     mm::heap_test();
     mm::addr_test();
-    mm::frame_test();
+    // mm::frame_test();
     mm::frame_allocator_test();
     panic!("Shit");
 }

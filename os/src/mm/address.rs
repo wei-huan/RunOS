@@ -96,5 +96,5 @@ pub fn addr_test() {
     let ppn = PhysPageNum::from(pa);
     // println!("ppn: 0x{:X}", ppn.0);
     assert!((va.0 & usize::MAX << PPN_WIDTH_SV39) == 0 );
-    println!("addr_test past!");
+    println!("addr_test pass");
 }

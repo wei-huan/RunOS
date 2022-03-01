@@ -1,11 +1,13 @@
 extern crate alloc;
+extern crate spin;
 use super::address::{PhysAddr, PhysPageNum};
 use crate::config::MEMORY_END;
-use crate::sync::Mutex;
+// use crate::sync::Mutex;
 use core::fmt::{self, Debug, Formatter};
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use lazy_static::*;
+use spin::Mutex;
 
 pub struct Frame {
     pub ppn: PhysPageNum,
