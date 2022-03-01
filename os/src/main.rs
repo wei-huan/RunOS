@@ -48,12 +48,12 @@ fn os_main(hartid: usize) {
         boot_all_harts(hartid);
         STARTED.store(true, Ordering::SeqCst);
     }
+    while !STARTED.load(Ordering::SeqCst) {}
     loop {
         println!("cpu{} get process {}", hartid, PROCESS.lock().get_pid());
         let start = get_time();
         while get_time() - start <= 0x1000000 {}
     }
-    shutdown();
 }
 
 // static STARTED: Mutex<i32> = Mutex::new(0);
