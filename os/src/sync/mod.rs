@@ -1,6 +1,5 @@
-mod up;
-mod smp;
+mod interrupt;
+mod spin;
+mod mutex;
 
-use up::UPSafeCell;
-use smp::Mutex;
-
+pub use mutex::Mutex;
