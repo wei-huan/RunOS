@@ -1,5 +1,4 @@
 #![allow(unused)]
-
 use core::arch::asm;
 
 const SBI_SET_TIMER_EID: usize = 0;

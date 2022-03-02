@@ -21,11 +21,13 @@ fn print_node(node: FdtNode<'_, '_>, n_spaces: usize) {
 }
 
 #[allow(unused)]
+// 打印设备树
 pub fn fdt_print(fdt: *mut u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt).unwrap() };
     print_node(fdt.find_node("/").unwrap(), 0);
 }
 
+// 从设备树获取 cpu 时钟频率
 fn fdt_get_timerfreq(hart_id: usize, fdt_ptr: *mut u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
@@ -34,6 +36,7 @@ fn fdt_get_timerfreq(hart_id: usize, fdt_ptr: *mut u8) {
     TIMER_FREQ.store(timebase_frequency, Ordering::Relaxed);
 }
 
+// 从设备树获取 cpu 核数量
 fn fdt_get_ncpu(fdt_ptr: *mut u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let n_cpus = fdt.cpus().count();
