@@ -1,5 +1,6 @@
 use lazy_static::*;
-use crate::sync::Mutex;
+use spin::Mutex;
+use alloc::sync::Arc;
 
 lazy_static!{
     pub static ref PROCESS: Mutex<Process> = Mutex::new(Process::new());

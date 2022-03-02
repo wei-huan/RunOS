@@ -9,4 +9,5 @@ pub use frame::{frame_allocator_test, frame_test};
 pub fn init() {
     heap::init_heap();
     frame::init_frame_allocator();
+    // println!("memory init finish");
 }

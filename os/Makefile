@@ -8,10 +8,10 @@ KERNEL_BIN := $(KERNEL_ELF).bin
 BOARD ?= qemu
 
 #SBI
-SBI ?= opensbi-img/fw_jump.bin
+SBI ?= ../opensbi-img/fw_jump.bin
 
 # CPU_NUM
-CPU_NUM := 2;
+CPU_NUM := 4;
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
@@ -32,16 +32,16 @@ run: build
 		-m 128M \
     	-machine virt \
     	-nographic \
-    	-bios ../$(SBI) \
+    	-bios $(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-smp $(CPU_NUM)
 
-debug:
+debug: build
 	qemu-system-riscv64 \
 		-m 128M \
     	-machine virt \
     	-nographic \
-    	-bios ../$(SBI) \
+    	-bios $(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S \
 		-smp $(CPU_NUM)

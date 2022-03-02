@@ -13,15 +13,18 @@ mod config;
 mod lang_items;
 mod mm;
 mod opensbi;
+mod rustsbi;
 mod proc;
 mod sync;
 mod timer;
+mod trap;
+mod logging;
+mod dt;
 
 use crate::opensbi::{send_ipi, shutdown};
 use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
-use proc::PROCESS;
-use timer::get_time;
+use sync::intr_off;
 
 global_asm!(include_str!("entry.asm"));
 
@@ -43,16 +46,75 @@ fn boot_all_harts(hartid: usize) {
 
 static STARTED: AtomicBool = AtomicBool::new(false);
 #[no_mangle]
-fn os_main(hartid: usize) {
-    println!("cpu{} in main", hartid);
-    if STARTED.load(Ordering::SeqCst) == false {
+fn os_main(hartid: usize, fdt: *mut u8) {
+    if hartid == 0 {
+        intr_off();
+        clear_bss();
+        mm::init();
+        dt::init(hartid, fdt);
+        trap::init();
         boot_all_harts(hartid);
-        STARTED.store(true, Ordering::SeqCst);
+        STARTED.store(true, Ordering::Release);
+        // println!("cpu0");
+        // while STARTED.compare_exchange(false, true, Ordering::SeqCst, Ordering::Acquire) != Ok(false) {};
+    } else {
+        intr_off();
+        trap::init();
+        // println!("cpu1");
+        while !STARTED.load(Ordering::Acquire) {};
     }
-    while !STARTED.load(Ordering::SeqCst) {}
-    loop {
-        println!("cpu{} get process {}", hartid, PROCESS.lock().get_pid());
-        let start = get_time();
-        while get_time() - start <= 0x1000000 {}
-    }
+    shutdown();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// fn boot_all_harts() {
+//     send_ipi((1 << 1) as *const usize as usize);
+// }
+
+// static STARTED: AtomicBool = AtomicBool::new(false);
+// #[no_mangle]
+// fn os_main(hartid: usize) {
+//     if hartid == 0 {
+//         clear_bss();
+//         mm::init();
+//         trap::init();
+//         boot_all_harts();
+//         // while STARTED.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false) {};
+//     } else {
+//         trap::init();
+//     }
+//     // while !STARTED.load(Ordering::Relaxed) {}
+//     loop {
+//         println!("cpu{} get process {}", hartid, PROCESS.lock().get_pid());
+//         let start = get_time();
+//         while get_time() - start <= 0x1000000 {}
+//     }
+//     shutdown();
+// }
