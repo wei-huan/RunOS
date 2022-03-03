@@ -7,10 +7,10 @@ extern crate alloc;
 
 #[macro_use]
 mod console;
-mod sync;
-mod rustsbi;
 mod lang_items;
+mod rustsbi;
 mod config;
+mod sync;
 mod mm;
 
 use core::arch::global_asm;
@@ -33,8 +33,6 @@ fn clear_bss() {
 fn os_main() {
     clear_bss();
     println!("Hello, world!");
-    mm::whereis_heap();
-    mm::addr_test();
     mm::init();
     mm::heap_test();
     mm::frame_allocator_test();

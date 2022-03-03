@@ -1,5 +1,5 @@
 use super::{
-    address::{PhysPageNum, VirtPageNum},
+    address::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum},
     frame::{frame_alloc, Frame},
 };
 use alloc::vec;
@@ -27,6 +27,7 @@ bitflags! {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct PageTableEntry(pub usize);
 
 impl PageTableEntry {
@@ -84,16 +85,14 @@ impl PageTable {
             pte_frames: vec![root_pagetable_frame],
         }
     }
-
     pub fn get_root_ppn(&self) -> PhysPageNum {
         self.root_ppn
     }
-
     pub fn find_pte(&self, vpn: VirtPageNum) -> Option<&mut PageTableEntry> {
         let idxs = vpn.indexes();
         let mut ppn = self.root_ppn;
         let mut result: Option<&mut PageTableEntry> = None;
-        for (i ,idx) in idxs.iter().enumerate() {
+        for (i, idx) in idxs.iter().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
             if !pte.is_valid() {
                 return None;
@@ -106,12 +105,11 @@ impl PageTable {
         }
         result
     }
-
     pub fn find_pte_create(&mut self, vpn: VirtPageNum) -> Option<&mut PageTableEntry> {
         let idxs = vpn.indexes();
         let mut ppn = self.root_ppn;
         let mut result: Option<&mut PageTableEntry> = None;
-        for (i ,idx) in idxs.iter().enumerate() {
+        for (i, idx) in idxs.iter().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
             if !pte.is_valid() {
                 let frame = frame_alloc().unwrap();
@@ -126,18 +124,27 @@ impl PageTable {
         }
         result
     }
-
     #[allow(unused)]
     pub fn map(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: PTEFlags) {
         let mut pte = self.find_pte_create(vpn).unwrap();
         assert!(!pte.is_valid(), "vpn {:?} is mapped before mapping", vpn);
         *pte = PageTableEntry::new(ppn, RSWField::empty(), flags | PTEFlags::V);
     }
-
     #[allow(unused)]
     pub fn unmap(&mut self, vpn: VirtPageNum) {
         let mut pte = self.find_pte(vpn).unwrap();
         assert!(pte.is_valid(), "vpn {:?} is already unmapped", vpn);
         *pte = PageTableEntry::empty();
+    }
+    pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
+        self.find_pte(vpn).map(|pte| *pte)
+    }
+    pub fn translate_va(&self, va: VirtAddr) -> Option<PhysAddr> {
+        self.find_pte(va.clone().floor()).map(|pte| {
+            let aligned_pa: PhysAddr = pte.ppn().into();
+            let offset = va.page_offset();
+            let aligned_pa_usize: usize = aligned_pa.into();
+            (aligned_pa_usize + offset).into()
+        })
     }
 }
