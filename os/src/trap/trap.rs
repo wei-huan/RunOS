@@ -18,7 +18,6 @@ pub fn kernel_trap_handler() -> ! {
     panic!("a trap {:?} from kernel!", scause::read().cause());
 }
 
-
 fn set_user_trap_entry() {
     unsafe {
         stvec::write(TRAMPOLINE as usize, TrapMode::Direct);
