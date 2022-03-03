@@ -1,11 +1,10 @@
 use super::{
-    address::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum},
+    address::{PhysAddr, VirtAddr, VirtPageNum},
     page_table::{PTEFlags, PageTable},
     section::{MapType, Permission, Section},
 };
 use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
-use crate::sync::Mutex;
-use alloc::sync::Arc;
+use spin::Mutex;
 use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::lazy_static;
@@ -18,15 +17,15 @@ extern "C" {
     fn erodata();
     fn sdata();
     fn edata();
-    fn sbss_with_stack();
+    fn sbss();
     fn ebss();
     fn ekernel();
     fn strampoline();
 }
 
 lazy_static! {
-    pub static ref KERNEL_SPACE: Arc<Mutex<AddrSpace>> =
-        Arc::new(Mutex::new(AddrSpace::create_kernel_space()));
+    pub static ref KERNEL_SPACE: Mutex<AddrSpace> =
+    Mutex::new(AddrSpace::create_kernel_space());
 }
 
 pub struct AddrSpace {
@@ -66,10 +65,7 @@ impl AddrSpace {
         println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
         println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
         println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(
-            ".bss [{:#x}, {:#x})",
-            sbss_with_stack as usize, ebss as usize
-        );
+        println!(".bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
         println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
@@ -103,8 +99,8 @@ impl AddrSpace {
         println!("mapping .bss section");
         kernel_space.push_section(
             Section::new(
-                (srodata as usize).into(),
-                (erodata as usize).into(),
+                (sbss as usize).into(),
+                (ebss as usize).into(),
                 MapType::Identical,
                 Permission::R | Permission::W,
             ),
@@ -120,6 +116,7 @@ impl AddrSpace {
             ),
             None,
         );
+        // println!("mapping kernel finish");
         kernel_space
     }
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {

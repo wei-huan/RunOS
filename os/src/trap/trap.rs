@@ -1,9 +1,5 @@
-use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use riscv::register::{
-    mtvec::TrapMode,
-    scause::{self, Exception, Interrupt, Trap},
-    stval, stvec,
-};
+use crate::config::TRAMPOLINE;
+use riscv::register::{mtvec::TrapMode, scause, sepc, stval, stvec};
 
 pub fn set_kernel_trap_entry() {
     unsafe {
@@ -13,7 +9,6 @@ pub fn set_kernel_trap_entry() {
 
 #[no_mangle]
 pub fn kernel_trap_handler() -> ! {
-    use riscv::register::sepc;
     println!("stval = {:#?}, sepc = 0x{:X}", stval::read(), sepc::read());
     panic!("a trap {:?} from kernel!", scause::read().cause());
 }

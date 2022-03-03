@@ -1,5 +1,6 @@
 use core::cell::UnsafeCell;
-use core::sync::atomic::{AtomicBool, AtomicU64, Ordering, spin_loop_hint};
+use core::sync::atomic::{AtomicBool, Ordering};
+use core::hint::spin_loop;
 use core::ops::{Deref, DerefMut};
 
 pub struct Mutex<T> {
@@ -37,7 +38,7 @@ impl<T> Mutex<T> {
     }
     pub fn lock(&self) -> MutexGuard<T> {
         while self.lock.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false) {
-            spin_loop_hint();
+            spin_loop();
         }
         MutexGuard {
             lock: &self.lock,

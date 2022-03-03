@@ -28,6 +28,7 @@ extern "C" {
     fn edata();
 }
 
+#[allow(unused)]
 pub fn whereis_heap() {
     println!("data: 0x{:X} - 0x{:X}", sdata as usize, edata as usize);
     println!("bss: 0x{:X} - 0x{:X}", sbss as usize, ebss as usize);
@@ -39,6 +40,7 @@ pub fn whereis_heap() {
     }
 }
 
+#[allow(unused)]
 pub fn heap_test() {
     use alloc::vec::Vec;
     let bss_range = sbss as usize..ebss as usize;

@@ -4,6 +4,7 @@
 #![feature(alloc_error_handler)]
 
 extern crate alloc;
+extern crate spin;
 
 #[macro_use]
 mod console;
@@ -12,6 +13,7 @@ mod rustsbi;
 mod config;
 mod sync;
 mod mm;
+mod trap;
 
 use core::arch::global_asm;
 
@@ -32,9 +34,10 @@ fn clear_bss() {
 #[no_mangle]
 fn os_main() {
     clear_bss();
-    println!("Hello, world!");
     mm::init();
-    mm::heap_test();
-    mm::frame_allocator_test();
+    trap::init();
+    println!("Hello, world!");
+    // mm::heap_test();
+    // mm::frame_allocator_test();
     panic!("Shit");
 }

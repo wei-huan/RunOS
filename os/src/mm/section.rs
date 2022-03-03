@@ -4,7 +4,7 @@ use super::{
     frame::{frame_alloc, Frame},
     page_table::{PTEFlags, PageTable},
 };
-use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT};
+use crate::config::PAGE_SIZE;
 use alloc::collections::BTreeMap;
 use bitflags::bitflags;
 
@@ -62,7 +62,7 @@ impl Section {
     }
     pub fn map(&mut self, page_table: &mut PageTable) {
         for vpn in self.vpn_range {
-            self.unmap_one_page(page_table, vpn);
+            self.map_one_page(page_table, vpn);
         }
     }
     pub fn unmap(&mut self, page_table: &mut PageTable) {

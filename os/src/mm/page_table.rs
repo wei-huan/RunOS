@@ -94,12 +94,12 @@ impl PageTable {
         let mut result: Option<&mut PageTableEntry> = None;
         for (i, idx) in idxs.iter().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
-            if !pte.is_valid() {
-                return None;
-            }
             if i == 2 {
                 result = Some(pte);
                 break;
+            }
+            if !pte.is_valid() {
+                return None;
             }
             ppn = pte.ppn();
         }
@@ -111,14 +111,14 @@ impl PageTable {
         let mut result: Option<&mut PageTableEntry> = None;
         for (i, idx) in idxs.iter().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
+            if i == 2 {
+                result = Some(pte);
+                break;
+            }
             if !pte.is_valid() {
                 let frame = frame_alloc().unwrap();
                 *pte = PageTableEntry::new(frame.ppn, RSWField::empty(), PTEFlags::V);
                 self.pte_frames.push(frame);
-            }
-            if i == 2 {
-                result = Some(pte);
-                break;
             }
             ppn = pte.ppn();
         }
