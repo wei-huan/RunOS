@@ -1,8 +1,8 @@
 mod trap;
 
-use trap::entry_init;
+use trap::set_kernel_trap_entry;
 
 pub fn init() {
-    entry_init();
+    set_kernel_trap_entry();
     // println!("trap init finish");
 }
