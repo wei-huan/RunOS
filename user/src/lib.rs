@@ -16,7 +16,8 @@ use alloc::vec::Vec;
 use buddy_system_allocator::LockedHeap;
 use syscall::*;
 
-const USER_HEAP_SIZE: usize = 32768;
+/// 用户堆空间设置为 32 KB 即 8 个页面
+const USER_HEAP_SIZE: usize = 4096 * 8;
 
 static mut HEAP_SPACE: [u8; USER_HEAP_SIZE] = [0; USER_HEAP_SIZE];
 
@@ -58,6 +59,23 @@ pub extern "C" fn _start(argc: usize, argv: usize) -> ! {
     exit(main(argc, v.as_slice()));
 }
 
+pub fn write(fd: usize, buf: &[u8]) -> isize {
+    sys_write(fd, buf)
+}
 pub fn exit(exit_code: i32) -> ! {
     sys_exit(exit_code);
+}
+
+bitflags! {
+    pub struct SignalFlags: i32 {
+        const SIGINT    = 1 << 2;
+        const SIGILL    = 1 << 4;
+        const SIGABRT   = 1 << 6;
+        const SIGFPE    = 1 << 8;
+        const SIGSEGV   = 1 << 11;
+    }
+}
+
+pub fn kill(pid: usize, signal: i32) -> isize {
+    sys_kill(pid, signal)
 }

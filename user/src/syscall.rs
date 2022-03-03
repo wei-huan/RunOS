@@ -5,12 +5,12 @@ use core::arch::asm;
 // const SYSCALL_CLOSE: usize = 57;
 // const SYSCALL_PIPE: usize = 59;
 // const SYSCALL_READ: usize = 63;
-// const SYSCALL_WRITE: usize = 64;
+const SYSCALL_WRITE: usize = 64;
 const SYSCALL_EXIT: usize = 93;
 // const SYSCALL_YIELD: usize = 124;
-// const SYSCALL_KILL: usize = 129;
+const SYSCALL_KILL: usize = 129;
 // const SYSCALL_GET_TIME: usize = 169;
-// const SYSCALL_GETPID: usize = 172;
+const SYSCALL_GETPID: usize = 172;
 // const SYSCALL_FORK: usize = 220;
 // const SYSCALL_EXEC: usize = 221;
 // const SYSCALL_WAITPID: usize = 260;
@@ -52,9 +52,9 @@ fn syscall(id: usize, args: [usize; 3]) -> isize {
 //     )
 // }
 
-// pub fn sys_write(fd: usize, buffer: &[u8]) -> isize {
-//     syscall(SYSCALL_WRITE, [fd, buffer.as_ptr() as usize, buffer.len()])
-// }
+pub fn sys_write(fd: usize, buffer: &[u8]) -> isize {
+    syscall(SYSCALL_WRITE, [fd, buffer.as_ptr() as usize, buffer.len()])
+}
 
 pub fn sys_exit(exit_code: i32) -> ! {
     syscall(SYSCALL_EXIT, [exit_code as usize, 0, 0]);
@@ -65,17 +65,17 @@ pub fn sys_exit(exit_code: i32) -> ! {
 //     syscall(SYSCALL_YIELD, [0, 0, 0])
 // }
 
-// pub fn sys_kill(pid: usize, signal: i32) -> isize {
-//     syscall(SYSCALL_KILL, [pid, signal as usize, 0])
-// }
+pub fn sys_kill(pid: usize, signal: i32) -> isize {
+    syscall(SYSCALL_KILL, [pid, signal as usize, 0])
+}
 
 // pub fn sys_get_time() -> isize {
 //     syscall(SYSCALL_GET_TIME, [0, 0, 0])
 // }
 
-// pub fn sys_getpid() -> isize {
-//     syscall(SYSCALL_GETPID, [0, 0, 0])
-// }
+pub fn sys_getpid() -> isize {
+    syscall(SYSCALL_GETPID, [0, 0, 0])
+}
 
 // pub fn sys_fork() -> isize {
 //     syscall(SYSCALL_FORK, [0, 0, 0])

@@ -8,7 +8,7 @@ extern crate alloc;
 #[macro_use]
 mod console;
 mod sync;
-mod sbi;
+mod rustsbi;
 mod lang_items;
 mod config;
 mod mm;

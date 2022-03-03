@@ -1,4 +1,4 @@
-use crate::sbi::shutdown;
+use super::{getpid, kill, SignalFlags};
 use core::panic::PanicInfo;
 
 #[panic_handler]
@@ -13,5 +13,5 @@ fn panic(info: &PanicInfo) -> ! {
     } else {
         println!("Panicked: {}", info.message().unwrap());
     }
-    shutdown()
+    kill(getpid() as usize, SignalFlags::SIGABRT.bits());
 }
