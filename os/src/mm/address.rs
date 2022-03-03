@@ -1,59 +1,68 @@
 use crate::config::{PAGE_SIZE, PAGE_SIZE_BITS};
+use super::PageTableEntry;
 
 const PA_WIDTH_SV39: usize = 56;
 const VA_WIDTH_SV39: usize = 39;
 const PPN_WIDTH_SV39: usize = PA_WIDTH_SV39 - PAGE_SIZE_BITS;
+const VPN_WIDTH_SV39: usize = VA_WIDTH_SV39 - PAGE_SIZE_BITS;
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct PhysAddr(pub usize);
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct VirtAddr(pub usize);
 
 #[repr(C)]
-#[derive(Copy, Clone)]
+#[derive(Debug)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 pub struct PhysPageNum(pub usize);
+
+#[repr(C)]
+#[derive(Debug)]
+#[derive(Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+pub struct VirtPageNum(pub usize);
 
 impl From<usize> for PhysAddr {
     fn from(v: usize) -> Self {
         Self(v & ((1 << PA_WIDTH_SV39) - 1))
     }
 }
-
-impl From<usize> for VirtAddr {
-    fn from(v: usize) -> Self {
-        Self(v & ((1 << VA_WIDTH_SV39) - 1))
-    }
-}
-
 impl From<usize> for PhysPageNum {
     fn from(v: usize) -> Self {
         Self(v & ((1 << PPN_WIDTH_SV39) - 1))
     }
 }
-
-impl From<PhysAddr> for PhysPageNum {
-    fn from(v: PhysAddr) -> Self {
-        Self(v.0 >> PAGE_SIZE_BITS)
+impl From<usize> for VirtAddr {
+    fn from(v: usize) -> Self {
+        Self(v & ((1 << VA_WIDTH_SV39) - 1))
     }
 }
-
+impl From<usize> for VirtPageNum {
+    fn from(v: usize) -> Self {
+        Self(v & ((1 << VPN_WIDTH_SV39) - 1))
+    }
+}
 impl From<PhysAddr> for usize {
     fn from(v: PhysAddr) -> Self {
         v.0
     }
 }
-
+impl From<PhysPageNum> for usize {
+    fn from(v: PhysPageNum) -> Self {
+        v.0
+    }
+}
 impl From<VirtAddr> for usize {
     fn from(v: VirtAddr) -> Self {
         v.0
     }
 }
-
-impl From<PhysPageNum> for usize {
-    fn from(v: PhysPageNum) -> Self {
+impl From<VirtPageNum> for usize {
+    fn from(v: VirtPageNum) -> Self {
         v.0
     }
 }
@@ -63,19 +72,51 @@ impl From<PhysPageNum> for PhysAddr {
         Self(v.0 << PAGE_SIZE_BITS)
     }
 }
+impl From<PhysAddr> for PhysPageNum {
+    fn from(v: PhysAddr) -> Self {
+        Self(v.0 >> PAGE_SIZE_BITS)
+    }
+}
+impl From<VirtAddr> for VirtPageNum {
+    fn from(v: VirtAddr) -> Self {
+        assert_eq!(v.page_offset(), 0);
+        v.floor()
+    }
+}
+impl From<VirtPageNum> for VirtAddr {
+    fn from(v: VirtPageNum) -> Self {
+        Self(v.0 << PAGE_SIZE_BITS)
+    }
+}
 
 impl PhysAddr {
     pub fn floor(&self) -> PhysPageNum {
         PhysPageNum(self.0 / PAGE_SIZE)
     }
-
     pub fn ceil(&self) -> PhysPageNum {
         PhysPageNum((self.0 - 1 + PAGE_SIZE) / PAGE_SIZE)
+    }
+    pub fn page_offset(&self) -> usize {
+        self.0 & (PAGE_SIZE - 1)
+    }
+    pub fn aligned(&self) -> bool {
+        self.page_offset() == 0
     }
 }
 
 impl VirtAddr {
-
+    pub fn floor(&self) -> VirtPageNum {
+        VirtPageNum(self.0 / PAGE_SIZE)
+    }
+    pub fn ceil(&self) -> VirtPageNum {
+        VirtPageNum((self.0 - 1 + PAGE_SIZE) / PAGE_SIZE)
+    }
+    pub fn page_offset(&self) -> usize {
+        self.0 & (PAGE_SIZE - 1)
+    }
+    pub fn aligned(&self) -> bool {
+        self.page_offset() == 0
+    }
 }
 
 impl PhysPageNum {
@@ -83,18 +124,35 @@ impl PhysPageNum {
         let pa: PhysAddr = (*self).into();
         unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut u8, PAGE_SIZE) }
     }
+
+    pub fn get_pte_array(&self) -> &'static mut [PageTableEntry] {
+        let pa: PhysAddr = (*self).into();
+        unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut PageTableEntry, 512) }
+    }
+}
+
+impl VirtPageNum {
+    pub fn indexes(&self) -> [usize; 3] {
+        let mut vpn = self.0;
+        let mut idx = [0usize; 3];
+        for i in (0..3).rev() {
+            idx[i] = vpn & 511;
+            vpn >>= 9;
+        }
+        idx
+    }
 }
 
 pub fn addr_test() {
     let addr: usize = 0x123456789abcdef;
     let pa = PhysAddr::from(addr);
     // println!("pa: 0x{:X}", pa.0);
-    assert!((pa.0 & usize::MAX << PA_WIDTH_SV39) == 0 );
+    assert!((pa.0 & usize::MAX << PA_WIDTH_SV39) == 0);
     let va = VirtAddr::from(addr);
     // println!("va: 0x{:X}", va.0);
-    assert!((va.0 & usize::MAX << VA_WIDTH_SV39) == 0 );
-    let ppn = PhysPageNum::from(pa);
+    assert!((va.0 & usize::MAX << VA_WIDTH_SV39) == 0);
+    let _ppn = PhysPageNum::from(pa);
     // println!("ppn: 0x{:X}", ppn.0);
-    assert!((va.0 & usize::MAX << PPN_WIDTH_SV39) == 0 );
+    assert!((va.0 & usize::MAX << PPN_WIDTH_SV39) == 0);
     println!("addr_test pass");
 }
