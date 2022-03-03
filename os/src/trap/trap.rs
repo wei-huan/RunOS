@@ -1,6 +1,6 @@
 use riscv::register::{mtvec::TrapMode, scause, stval, stvec};
 
-pub fn entry_init() {
+pub fn ecall_entry_init() {
     set_kernel_entry();
 }
 
