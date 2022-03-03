@@ -1,15 +1,15 @@
 use super::{
-    address::{PhysAddr, VirtAddr, PhysPageNum, VirtPageNum},
+    address::{PhysAddr, PhysPageNum, VirtAddr, VirtPageNum},
     page_table::{PTEFlags, PageTable},
     section::{MapType, Permission, Section},
 };
-use crate::config::{MEMORY_END, TRAMPOLINE};
-use lazy_static::lazy_static;
-use riscv::register::satp;
+use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
 use crate::sync::Mutex;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::arch::asm;
+use lazy_static::lazy_static;
+use riscv::register::satp;
 
 extern "C" {
     fn stext();
@@ -122,7 +122,7 @@ impl AddrSpace {
         );
         kernel_space
     }
-    pub fn create_user_space(elf_data: &[u8]) -> Self {
+    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
         let mut user_space = Self::new_empty();
         user_space.map_trampoline();
         // map program headers of elf, with U flag
@@ -156,7 +156,36 @@ impl AddrSpace {
                 );
             }
         }
-        user_space
+        // map user stack with U flags
+        let max_end_va: VirtAddr = max_end_vpn.into();
+        let mut user_stack_low: usize = max_end_va.into();
+        // guard page
+        user_stack_low += PAGE_SIZE;
+        let user_stack_high = user_stack_low + USER_STACK_SIZE;
+        user_space.push_section(
+            Section::new(
+                user_stack_low.into(),
+                user_stack_high.into(),
+                MapType::Framed,
+                Permission::R | Permission::W | Permission::U,
+            ),
+            None,
+        );
+        // map TrapContext
+        user_space.push_section(
+            Section::new(
+                TRAP_CONTEXT.into(),
+                TRAMPOLINE.into(),
+                MapType::Framed,
+                Permission::R | Permission::W,
+            ),
+            None,
+        );
+        (
+            user_space,
+            user_stack_high,
+            elf.header.pt2.entry_point() as usize,
+        )
     }
     pub fn activate(&mut self) {
         let root_ppn = self.page_table.get_root_ppn();

@@ -13,3 +13,4 @@ pub const PAGE_SIZE_BITS: usize = 12;
 
 pub const TRAMPOLINE: usize = usize::MAX - PAGE_SIZE + 1;
 pub const TRAP_CONTEXT: usize = TRAMPOLINE - PAGE_SIZE;
+pub const USER_STACK_SIZE: usize = 4096 * 2;

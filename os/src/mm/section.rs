@@ -26,7 +26,7 @@ pub enum MapType {
 pub struct Section {
     perm: Permission,
     map_type: MapType,
-    vpn_range: VPNRange,
+    pub vpn_range: VPNRange,
     data_frames: BTreeMap<VirtPageNum, Frame>,
 }
 
