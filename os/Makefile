@@ -7,6 +7,9 @@ KERNEL_BIN := $(KERNEL_ELF).bin
 # BOARD
 BOARD ?= qemu
 
+# BOARD
+SBI ?= ../bootloader/rustsbi-img/rustsbi-qemu.bin
+
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
@@ -26,7 +29,7 @@ run: build
 		-m 8M \
     	-machine virt \
     	-nographic \
-    	-bios ../rustsbi-img/rustsbi-qemu.bin \
+    	-bios $(SBI)\
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000
 
 debug:
@@ -34,7 +37,7 @@ debug:
 		-m 8M \
     	-machine virt \
     	-nographic \
-    	-bios ../rustsbi-img/rustsbi-qemu.bin \
+    	-bios $(SBI)\
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S
 
