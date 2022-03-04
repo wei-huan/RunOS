@@ -34,8 +34,8 @@ fn clear_bss() {
 #[no_mangle]
 fn os_main() {
     clear_bss();
-    mm::init();
     trap::init();
+    mm::init();
     println!("Hello, world!");
     // mm::heap_test();
     // mm::frame_allocator_test();

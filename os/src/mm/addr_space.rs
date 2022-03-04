@@ -59,8 +59,6 @@ impl AddrSpace {
         let mut kernel_space = Self::new_empty();
         // map trampoline
         kernel_space.map_trampoline();
-        // map trampoline
-        // kernel_space.map_trampoline();
         // map kernel sections
         println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
         println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);

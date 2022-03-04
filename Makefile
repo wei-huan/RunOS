@@ -8,3 +8,6 @@ all:
 
 debug:
 	make debug -C $(OS_DIR)
+
+gdb:
+	make gdb -C $(OS_DIR)
