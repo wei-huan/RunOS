@@ -29,15 +29,15 @@ SECTIONS
     erodata = .;
     sdata = .;
     .data : {
+        *(.data.stack)
         *(.data .data.*)
         *(.sdata .sdata.*)
     }
 
     . = ALIGN(4K);
     edata = .;
+    sbss = .;
     .bss : {
-        *(.bss.stack)
-        sbss = .;
         *(.bss .bss.*)
         *(.sbss .sbss.*)
     }

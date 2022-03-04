@@ -1,26 +1,26 @@
 use super::{
-    address::{VirtAddr, VPNRange, StepByOne},
     address::{PhysPageNum, VirtPageNum},
+    address::{StepByOne, VPNRange, VirtAddr},
     frame::{frame_alloc, Frame},
     page_table::{PTEFlags, PageTable},
 };
+use bitflags::bitflags;
 use crate::config::PAGE_SIZE;
 use alloc::collections::BTreeMap;
-use bitflags::bitflags;
 
 bitflags! {
     pub struct Permission: u8 {
-        const R = 1 << 0;
-        const W = 1 << 1;
-        const X = 1 << 2;
-        const U = 1 << 3;
+        const R = 1 << 1;
+        const W = 1 << 2;
+        const X = 1 << 3;
+        const U = 1 << 4;
     }
 }
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub enum MapType {
-    Identical,
     Framed,
+    Identical,
 }
 
 pub struct Section {
@@ -33,10 +33,10 @@ pub struct Section {
 impl Section {
     pub fn new(start_va: VirtAddr, end_va: VirtAddr, map_type: MapType, perm: Permission) -> Self {
         Self {
-            perm: perm,
-            data_frames: BTreeMap::new(),
+            perm,
             map_type,
-            vpn_range: VPNRange::new(start_va.ceil(), end_va.floor())
+            data_frames: BTreeMap::new(),
+            vpn_range: VPNRange::new(start_va.floor(), end_va.ceil()),
         }
     }
     pub fn map_one_page(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
@@ -72,10 +72,10 @@ impl Section {
     }
     pub fn map_from_existed(another: &Section) -> Self {
         Self {
-            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
-            data_frames: BTreeMap::new(),
             perm: another.perm,
-            map_type: another.map_type
+            map_type: another.map_type,
+            data_frames: BTreeMap::new(),
+            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
         }
     }
     /// data: start-aligned but maybe with shorter length

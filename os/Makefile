@@ -26,15 +26,15 @@ build: $(KERNEL_BIN)
 
 run: build
 	qemu-system-riscv64 \
-		-m 8M \
+		-m 32M \
     	-machine virt \
     	-nographic \
     	-bios $(SBI)\
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000
 
-debug:
+debug: build
 	qemu-system-riscv64 \
-		-m 8M \
+		-m 32M \
     	-machine virt \
     	-nographic \
     	-bios $(SBI)\
@@ -50,3 +50,4 @@ gdb:
     -ex 'file target/riscv64gc-unknown-none-elf/release/os' \
     -ex 'set arch riscv:rv64' \
     -ex 'target remote localhost:1234'
+

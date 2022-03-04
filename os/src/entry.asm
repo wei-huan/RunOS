@@ -6,7 +6,7 @@ _start:
 
     .section .data.stack
 boot_stack:
-    .space 4096 * 16 * 4
+    .space 4096 * 16
 boot_stack_top:
 
 

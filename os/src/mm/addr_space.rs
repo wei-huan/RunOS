@@ -4,11 +4,11 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
-use spin::Mutex;
 use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::lazy_static;
 use riscv::register::satp;
+use spin::Mutex;
 
 extern "C" {
     fn stext();
@@ -24,8 +24,7 @@ extern "C" {
 }
 
 lazy_static! {
-    pub static ref KERNEL_SPACE: Mutex<AddrSpace> =
-    Mutex::new(AddrSpace::create_kernel_space());
+    pub static ref KERNEL_SPACE: Mutex<AddrSpace> = Mutex::new(AddrSpace::create_kernel_space());
 }
 
 pub struct AddrSpace {
