@@ -21,7 +21,6 @@ pub fn init_heap() {
     }
 }
 
-#[allow(unused)]
 extern "C" {
     fn sbss();
     fn ebss();
