@@ -1,5 +1,5 @@
 use clap::{App, Arg};
-use myfs::{BlockDevice, EasyFileSystem};
+use myfs::{BlockDevice, MyFileSystem};
 use std::fs::{read_dir, File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::sync::Arc;
@@ -29,17 +29,17 @@ fn main() {
 }
 
 fn easy_fs_pack() -> std::io::Result<()> {
-    let matches = App::new("EasyFileSystem packer")
+    let matches = App::new("MyFileSystem packer")
         .arg(
             Arg::with_name("source")
-                .short("s")
+                .short('s')
                 .long("source")
                 .takes_value(true)
                 .help("Executable source dir(with backslash)"),
         )
         .arg(
             Arg::with_name("target")
-                .short("t")
+                .short('t')
                 .long("target")
                 .takes_value(true)
                 .help("Executable target dir(with backslash)"),
@@ -58,8 +58,8 @@ fn easy_fs_pack() -> std::io::Result<()> {
         f
     })));
     // 16MiB, at most 4095 files
-    let efs = EasyFileSystem::create(block_file, 16 * 2048, 1);
-    let root_inode = Arc::new(EasyFileSystem::root_inode(&efs));
+    let myfs = MyFileSystem::create(block_file, 16 * 2048, 1);
+    let root_inode = Arc::new(MyFileSystem::root_inode(&myfs));
     let apps: Vec<_> = read_dir(src_path)
         .unwrap()
         .into_iter()
@@ -97,9 +97,9 @@ fn efs_test() -> std::io::Result<()> {
         f.set_len(8192 * 512).unwrap();
         f
     })));
-    EasyFileSystem::create(block_file.clone(), 4096, 1);
-    let efs = EasyFileSystem::open(block_file.clone());
-    let root_inode = EasyFileSystem::root_inode(&efs);
+    MyFileSystem::create(block_file.clone(), 4096, 1);
+    let myfs = MyFileSystem::open(block_file.clone());
+    let root_inode = MyFileSystem::root_inode(&myfs);
     root_inode.create("filea");
     root_inode.create("fileb");
     for name in root_inode.ls() {

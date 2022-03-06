@@ -1,7 +1,7 @@
 /// 索引节点层
 use super::{
     block_cache_sync_all, get_block_cache, BlockDevice, DirEntry, DiskInode, DiskInodeType,
-    EasyFileSystem, DIRENT_SZ,
+    MyFileSystem, DIRENT_SZ,
 };
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -12,7 +12,7 @@ use spin::{Mutex, MutexGuard};
 pub struct Inode {
     block_id: usize,
     block_offset: usize,
-    fs: Arc<Mutex<EasyFileSystem>>,
+    fs: Arc<Mutex<MyFileSystem>>,
     block_device: Arc<dyn BlockDevice>,
 }
 
@@ -21,7 +21,7 @@ impl Inode {
     pub fn new(
         block_id: u32,
         block_offset: usize,
-        fs: Arc<Mutex<EasyFileSystem>>,
+        fs: Arc<Mutex<MyFileSystem>>,
         block_device: Arc<dyn BlockDevice>,
     ) -> Self {
         Self {
@@ -92,7 +92,7 @@ impl Inode {
         &self,
         new_size: u32,
         disk_inode: &mut DiskInode,
-        fs: &mut MutexGuard<EasyFileSystem>,
+        fs: &mut MutexGuard<MyFileSystem>,
     ) {
         if new_size < disk_inode.size {
             return;

@@ -7,7 +7,7 @@ use crate::BLOCK_SZ;
 use alloc::sync::Arc;
 use spin::Mutex;
 
-pub struct EasyFileSystem {
+pub struct MyFileSystem {
     pub block_device: Arc<dyn BlockDevice>,
     pub inode_bitmap: Bitmap,
     pub data_bitmap: Bitmap,
@@ -17,7 +17,7 @@ pub struct EasyFileSystem {
 
 type DataBlock = [u8; BLOCK_SZ];
 
-impl EasyFileSystem {
+impl MyFileSystem {
     pub fn create(
         block_device: Arc<dyn BlockDevice>,
         total_blocks: u32,
