@@ -5,15 +5,23 @@
 
 extern crate alloc;
 
+#[cfg(feature = "board_k210")]
+#[path = "boards/k210.rs"]
+mod boards;
+#[cfg(not(any(feature = "board_k210")))]
+#[path = "boards/qemu.rs"]
+mod boards;
+
 #[macro_use]
 mod console;
-mod boards;
 mod config;
 mod cpus;
 mod lang_items;
 mod mm;
 mod opensbi;
 mod sync;
+mod drivers;
+mod fs;
 
 use crate::opensbi::{send_ipi, shutdown};
 use core::arch::global_asm;
