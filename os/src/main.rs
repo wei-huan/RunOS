@@ -26,7 +26,7 @@ mod fs;
 use crate::opensbi::{send_ipi, shutdown};
 use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
-use sync::Mutex;
+// use sync::Mutex;
 // use boards::CPU_NUM;
 
 global_asm!(include_str!("entry.asm"));

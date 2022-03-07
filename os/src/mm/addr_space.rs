@@ -8,6 +8,7 @@ use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::lazy_static;
 use riscv::register::satp;
+use crate::boards::MMIO;
 use spin::Mutex;
 
 extern "C" {
@@ -25,6 +26,10 @@ extern "C" {
 
 lazy_static! {
     pub static ref KERNEL_SPACE: Mutex<AddrSpace> = Mutex::new(AddrSpace::create_kernel_space());
+}
+
+pub fn kernel_token() -> usize {
+    KERNEL_SPACE.lock().token()
 }
 
 pub struct AddrSpace {
@@ -113,6 +118,18 @@ impl AddrSpace {
             ),
             None,
         );
+        println!("mapping memory-mapped registers");
+        for pair in MMIO {
+            kernel_space.push_section(
+                Section::new(
+                    (*pair).0.into(),
+                    ((*pair).0 + (*pair).1).into(),
+                    MapType::Identical,
+                    Permission::R | Permission::W,
+                ),
+                None,
+            );
+        }
         // println!("mapping kernel finish");
         kernel_space
     }
