@@ -5,9 +5,9 @@ pub use virtio_blk::VirtIOBlock;
 pub use sdcard::SDCardWrapper;
 
 use alloc::sync::Arc;
-use easy_fs::BlockDevice;
+use myfs::BlockDevice;
 use lazy_static::*;
-use crate::board::BlockDeviceImpl;
+use crate::boards::BlockDeviceImpl;
 
 lazy_static! {
     pub static ref BLOCK_DEVICE: Arc<dyn BlockDevice> = Arc::new(BlockDeviceImpl::new());

@@ -1,11 +1,11 @@
 use super::BlockDevice;
 use crate::mm::{
-    frame_alloc, frame_dealloc, kernel_token, FrameTracker, PageTable, PhysAddr, PhysPageNum,
-    StepByOne, VirtAddr,
+    frame_alloc, frame_dealloc, kernel_token, Frame, PageTable, PhysAddr, PhysPageNum, StepByOne,
+    VirtAddr,
 };
-use spin::Mutex;
 use alloc::vec::Vec;
 use lazy_static::*;
+use spin::Mutex;
 use virtio_drivers::{VirtIOBlk, VirtIOHeader};
 
 #[allow(unused)]
@@ -14,7 +14,7 @@ const VIRTIO0: usize = 0x10001000;
 pub struct VirtIOBlock(Mutex<VirtIOBlk<'static>>);
 
 lazy_static! {
-    static ref QUEUE_FRAMES: Mutex<Vec<FrameTracker>> = unsafe { Mutex::new(Vec::new()) };
+    static ref QUEUE_FRAMES: Mutex<Vec<Frame>> = unsafe { Mutex::new(Vec::new()) };
 }
 
 impl VirtIOBlock {
@@ -43,7 +43,6 @@ impl BlockDevice for VirtIOBlock {
     }
 }
 
-
 #[no_mangle]
 pub extern "C" fn virtio_dma_alloc(pages: usize) -> PhysAddr {
     let mut ppn_base = PhysPageNum(0);
@@ -53,7 +52,7 @@ pub extern "C" fn virtio_dma_alloc(pages: usize) -> PhysAddr {
             ppn_base = frame.ppn;
         }
         assert_eq!(frame.ppn.0, ppn_base.0 + i);
-        QUEUE_FRAMES.exclusive_access().push(frame);
+        QUEUE_FRAMES.lock().push(frame);
     }
     ppn_base.into()
 }
@@ -75,7 +74,7 @@ pub extern "C" fn virtio_phys_to_virt(paddr: PhysAddr) -> VirtAddr {
 
 #[no_mangle]
 pub extern "C" fn virtio_virt_to_phys(vaddr: VirtAddr) -> PhysAddr {
-    PageTable::from_token(kernel_token())
+    PageTable::check_from_token(kernel_token())
         .translate_va(vaddr)
         .unwrap()
 }

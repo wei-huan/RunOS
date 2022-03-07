@@ -28,6 +28,11 @@ lazy_static! {
     pub static ref KERNEL_SPACE: Mutex<AddrSpace> = Mutex::new(AddrSpace::create_kernel_space());
 }
 
+pub fn kernel_token() -> usize {
+    KERNEL_SPACE.lock().get_root_ppn()
+}
+
+
 pub struct AddrSpace {
     page_table: PageTable,
     sections: Vec<Section>,
@@ -39,6 +44,9 @@ impl AddrSpace {
             page_table: PageTable::new(),
             sections: Vec::new(),
         }
+    }
+    pub fn get_root_ppn(&self) -> usize {
+        self.page_table.get_root_ppn().into()
     }
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         section.map(&mut self.page_table);
@@ -195,8 +203,8 @@ impl AddrSpace {
         )
     }
     pub fn activate(&mut self) {
-        let root_ppn = self.page_table.get_root_ppn();
-        let satp = 8usize << 60 | root_ppn.0;
+        let root_ppn = self.get_root_ppn();
+        let satp = 8usize << 60 | root_ppn;
         unsafe {
             satp::write(satp);
             asm!("sfence.vma");

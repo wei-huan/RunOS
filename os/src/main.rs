@@ -8,13 +8,14 @@ extern crate spin;
 
 #[cfg(feature = "board_k210")]
 #[path = "boards/k210.rs"]
-mod board;
+mod boards;
 #[cfg(not(any(feature = "board_k210")))]
 #[path = "boards/qemu.rs"]
-mod board;
+mod boards;
 
 #[macro_use]
 mod console;
+mod drivers;
 mod lang_items;
 mod rustsbi;
 mod config;
