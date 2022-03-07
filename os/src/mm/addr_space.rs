@@ -4,6 +4,7 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
+use crate::boards::MMIO;
 use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::lazy_static;
@@ -113,6 +114,18 @@ impl AddrSpace {
             ),
             None,
         );
+        println!("mapping memory-mapped registers");
+        for pair in MMIO {
+            kernel_space.push_section(
+                Section::new(
+                    (*pair).0.into(),
+                    ((*pair).0 + (*pair).1).into(),
+                    MapType::Identical,
+                    Permission::R | Permission::W,
+                ),
+                None,
+            );
+        }
         // println!("mapping kernel finish");
         kernel_space
     }
