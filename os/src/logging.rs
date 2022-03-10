@@ -1,3 +1,4 @@
+use crate::{timer::get_time, utils::{micros, time_parts}, dt::TIMER_FREQ};
 use core::fmt;
 use log::Level;
 // use core::sync::atomic::AtomicUsize;
@@ -34,14 +35,14 @@ impl log::Log for MyLogger {
         } else {
             mod_path.trim_start_matches("MyOS::")
         };
-        // let freq = crate::TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
-        // let curr_time = crate::csr::time::read();
-        // let (secs, ms, _) = crate::utils::time_parts(crate::utils::micros(curr_time, freq));
+        let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
+        let curr_time = get_time();
+        let (secs, ms, _) = crate::utils::time_parts(crate::utils::micros(curr_time, freq));
         print_in_color(
             format_args!(
                 "[{:>5}.{:<03}][{:>5}][HART {}][{}] {}\n",
-                0,
-                0,
+                secs,
+                ms,
                 record.level(),
                 0,
                 mod_path,
@@ -69,7 +70,6 @@ fn print_in_color(args: fmt::Arguments, color_code: u8) {
     use crate::console::print;
     print(with_color!(args, color_code));
 }
-
 
 fn level_to_color_code(level: Level) -> u8 {
     match level {
