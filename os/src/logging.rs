@@ -1,4 +1,9 @@
-use crate::{timer::get_time, utils::{micros, time_parts}, dt::TIMER_FREQ};
+use crate::{
+    cpus::Cpus,
+    dt::TIMER_FREQ,
+    timer::get_time,
+    utils::{micros, time_parts},
+};
 use core::fmt;
 use log::Level;
 // use core::sync::atomic::AtomicUsize;
@@ -35,6 +40,7 @@ impl log::Log for MyLogger {
         } else {
             mod_path.trim_start_matches("MyOS::")
         };
+        let cpu_id = Cpus::cpu_id();
         let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
         let curr_time = get_time();
         let (secs, ms, _) = crate::utils::time_parts(crate::utils::micros(curr_time, freq));
@@ -44,7 +50,7 @@ impl log::Log for MyLogger {
                 secs,
                 ms,
                 record.level(),
-                0,
+                cpu_id,
                 mod_path,
                 record.args()
             ),

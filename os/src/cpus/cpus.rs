@@ -1,6 +1,6 @@
 use super::cpu::Cpu;
 // use crate::boards::CPU_NUM;
-use crate::sync::{IntrLock, intr_off, intr_get};
+use crate::sync::{intr_get, intr_off, IntrLock};
 use array_macro::array;
 use core::arch::asm;
 use core::cell::UnsafeCell;
@@ -21,9 +21,9 @@ impl Cpus {
     // to prevent race with process being moved
     // to a different CPU.
     #[inline]
-    pub unsafe fn cpu_id() -> usize {
+    pub fn cpu_id() -> usize {
         let id;
-        asm!("mv {0}, tp", out(reg) id);
+        unsafe { asm!("mv {0}, tp", out(reg) id) };
         id
     }
 

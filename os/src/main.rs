@@ -20,6 +20,7 @@ mod logging;
 mod lang_items;
 mod mm;
 mod opensbi;
+mod trap;
 mod sync;
 mod drivers;
 mod fs;
@@ -29,7 +30,8 @@ mod utils;
 
 use log::*;
 use core::arch::global_asm;
-use crate::opensbi::{send_ipi, shutdown};
+use crate::opensbi::{hart_start, shutdown};
+use dt::CPU_NUMS;
 use core::sync::atomic::{AtomicBool, Ordering};
 // use sync::Mutex;
 // use boards::CPU_NUM;
@@ -45,9 +47,10 @@ fn clear_bss() {
 }
 
 fn boot_all_harts(hartid: usize) {
-    for i in 0..2 {
+    let ncpu = CPU_NUMS.load(Ordering::Acquire);
+    for i in 0..ncpu {
         if i != hartid {
-            send_ipi(i);
+            hart_start(i, 0x80200000, 1);
         }
     }
 }
@@ -69,6 +72,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         boot_all_harts(hartid);
     } else {
         info!("cpu{}", hartid);
-        panic!("Shit");
+        loop{}
+        // panic!("Shit");
     }
 }
