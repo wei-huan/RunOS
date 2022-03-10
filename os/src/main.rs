@@ -23,6 +23,7 @@ mod opensbi;
 mod sync;
 mod drivers;
 mod fs;
+mod dt;
 
 use log::*;
 use core::arch::global_asm;
@@ -55,6 +56,8 @@ static START: AtomicBool = AtomicBool::new(false);
 fn os_main(hartid: usize, fdt: *mut u8) {
     if !START.load(Ordering::Acquire) {
         clear_bss();
+        dt::init(hartid, fdt);
+        dt::fdt_print(fdt);
         logging::init();
         info!("start cpu{}", hartid);
         while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false) {
