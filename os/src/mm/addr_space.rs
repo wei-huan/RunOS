@@ -29,7 +29,7 @@ lazy_static! {
 }
 
 pub fn kernel_token() -> usize {
-    KERNEL_SPACE.lock().token()
+    KERNEL_SPACE.lock().get_root_ppn()
 }
 
 pub struct AddrSpace {
@@ -43,6 +43,9 @@ impl AddrSpace {
             page_table: PageTable::new(),
             sections: Vec::new(),
         }
+    }
+    pub fn get_root_ppn(&self) -> usize {
+        self.page_table.get_root_ppn().into()
     }
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         section.map(&mut self.page_table);
