@@ -16,25 +16,23 @@ mod boards;
 mod console;
 mod config;
 mod cpus;
-mod logging;
+mod drivers;
+mod dt;
+mod fs;
 mod lang_items;
+mod logging;
 mod mm;
 mod opensbi;
-mod trap;
 mod sync;
-mod drivers;
-mod fs;
-mod dt;
 mod timer;
+mod trap;
 mod utils;
 
-use log::*;
+use crate::opensbi::hart_start;
 use core::arch::global_asm;
-use crate::opensbi::{hart_start};
-use dt::CPU_NUMS;
 use core::sync::atomic::{AtomicBool, Ordering};
-// use sync::Mutex;
-// use boards::CPU_NUM;
+use dt::CPU_NUMS;
+use log::*;
 
 global_asm!(include_str!("entry.asm"));
 
@@ -47,10 +45,14 @@ fn clear_bss() {
 }
 
 fn boot_all_harts(hartid: usize) {
+    extern "C" {
+        fn _start();
+    }
     let ncpu = CPU_NUMS.load(Ordering::Acquire);
     for i in 0..ncpu {
         if i != hartid {
-            hart_start(i, 0x80200000, 1);
+            // priv: 1 for supervisor; 0 for user;
+            hart_start(i, _start as usize, 1);
         }
     }
 }
@@ -64,13 +66,13 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         dt::init(fdt);
         logging::init();
         info!("start cpu{}", hartid);
-        while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false) {
-            info!("loop");
+        while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
+        {
             core::hint::spin_loop();
         }
         boot_all_harts(hartid);
     } else {
         info!("cpu{}", hartid);
-        loop{}
+        loop {}
     }
 }
