@@ -5,10 +5,11 @@
 #[macro_use]
 mod console;
 mod sbi;
+mod logging;
 mod lang_items;
 
 use core::arch::global_asm;
-
+use log::*;
 
 global_asm!(include_str!("entry.asm"));
 
@@ -27,6 +28,11 @@ fn clear_bss() {
 #[no_mangle]
 fn os_main() {
     clear_bss();
-    println!("Hello, world!");
+    logging::init();
+    info!("Hello, world!");
+    warn!("Shit");
+    error!("Fuck");
+    debug!("Messy");
+    trace!("Messy");
     panic!("Shit");
 }
