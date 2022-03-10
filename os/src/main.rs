@@ -24,12 +24,12 @@ mod sync;
 mod drivers;
 mod fs;
 
-use crate::opensbi::{send_ipi, shutdown};
+use log::*;
 use core::arch::global_asm;
+use crate::opensbi::{send_ipi, shutdown};
 use core::sync::atomic::{AtomicBool, Ordering};
 // use sync::Mutex;
 // use boards::CPU_NUM;
-use log::*;
 
 global_asm!(include_str!("entry.asm"));
 
