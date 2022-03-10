@@ -43,7 +43,7 @@ impl log::Log for MyLogger {
         let cpu_id = Cpus::cpu_id();
         let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
         let curr_time = get_time();
-        let (secs, ms, _) = crate::utils::time_parts(crate::utils::micros(curr_time, freq));
+        let (secs, ms, _) = time_parts(micros(curr_time, freq));
         print_in_color(
             format_args!(
                 "[{:>5}.{:<03}][{:>5}][HART {}][{}] {}\n",

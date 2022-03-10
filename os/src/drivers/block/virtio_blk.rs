@@ -14,7 +14,7 @@ const VIRTIO0: usize = 0x10001000;
 pub struct VirtIOBlock(Mutex<VirtIOBlk<'static>>);
 
 lazy_static! {
-    static ref QUEUE_FRAMES: Mutex<Vec<Frame>> = unsafe { Mutex::new(Vec::new()) };
+    static ref QUEUE_FRAMES: Mutex<Vec<Frame>> = Mutex::new(Vec::new());
 }
 
 impl VirtIOBlock {

@@ -30,7 +30,7 @@ mod utils;
 
 use log::*;
 use core::arch::global_asm;
-use crate::opensbi::{hart_start, shutdown};
+use crate::opensbi::{hart_start};
 use dt::CPU_NUMS;
 use core::sync::atomic::{AtomicBool, Ordering};
 // use sync::Mutex;
@@ -55,14 +55,13 @@ fn boot_all_harts(hartid: usize) {
     }
 }
 
-// static m: Mutex<bool> = Mutex::new(false, "boot_harts");
 static START: AtomicBool = AtomicBool::new(false);
 #[no_mangle]
 fn os_main(hartid: usize, fdt: *mut u8) {
     if !START.load(Ordering::Acquire) {
         clear_bss();
         trap::init();
-        dt::init(hartid, fdt);
+        dt::init(fdt);
         logging::init();
         info!("start cpu{}", hartid);
         while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false) {
@@ -73,6 +72,5 @@ fn os_main(hartid: usize, fdt: *mut u8) {
     } else {
         info!("cpu{}", hartid);
         loop{}
-        // panic!("Shit");
     }
 }

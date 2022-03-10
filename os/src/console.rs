@@ -19,7 +19,7 @@ pub fn print(args: fmt::Arguments) {
 #[macro_export]
 macro_rules! print {
     ($fmt: literal $(, $($arg: tt)+)?) => {
-        $crate::console::print(format_args!($fmt $(, $($arg)+)?));
+        $crate::console::print(format_args!($fmt $(, $($arg)+)?))
     };
 }
 
