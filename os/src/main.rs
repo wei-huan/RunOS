@@ -52,13 +52,12 @@ fn boot_all_harts(hartid: usize) {
 // static m: Mutex<bool> = Mutex::new(false, "boot_harts");
 static LOCKED: AtomicBool = AtomicBool::new(false);
 #[no_mangle]
-fn os_main(hartid: usize) {
+fn os_main(hartid: usize, fdt: *mut u8) {
     while LOCKED.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false) {
         core::hint::spin_loop();
     }
     println!("cpu{}", hartid);
     boot_all_harts(hartid);
     LOCKED.store(false, Ordering::Release);
-    loop{}
-    shutdown();
+    panic!("Shit");
 }
