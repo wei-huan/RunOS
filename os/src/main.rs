@@ -16,6 +16,7 @@ mod boards;
 mod console;
 mod config;
 mod cpus;
+mod logging;
 mod lang_items;
 mod mm;
 mod opensbi;
@@ -28,6 +29,7 @@ use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
 // use sync::Mutex;
 // use boards::CPU_NUM;
+use log::*;
 
 global_asm!(include_str!("entry.asm"));
 
