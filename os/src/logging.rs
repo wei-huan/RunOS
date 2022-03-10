@@ -39,7 +39,7 @@ impl log::Log for MyLogger {
         // let (secs, ms, _) = crate::utils::time_parts(crate::utils::micros(curr_time, freq));
         print_in_color(
             format_args!(
-                "[{:>5}.{:<03}] [{:>5} ] [HART {}] [{}] {}\n",
+                "[{:>5}.{:<03}][{:>5}][HART {}][{}] {}\n",
                 0,
                 0,
                 record.level(),
