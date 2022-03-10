@@ -5,10 +5,25 @@ use crate::{
     utils::{micros, time_parts},
 };
 use core::fmt;
+use core::sync::atomic::{AtomicBool, Ordering};
 use log::Level;
-// use core::sync::atomic::AtomicUsize;
+
+pub struct ColorEscape(pub &'static str);
+
+impl core::fmt::Display for ColorEscape {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+pub const CLEAR: ColorEscape = ColorEscape("\x1B[0m");
+pub const RED: ColorEscape = ColorEscape("\x1B[31m");
+pub const GREEN: ColorEscape = ColorEscape("\x1B[32m");
+pub const YELLOW: ColorEscape = ColorEscape("\x1B[33m");
+pub const BLUE: ColorEscape = ColorEscape("\x1B[34m");
+pub const WHITE: ColorEscape = ColorEscape("\x1B[37m");
 
 // static HART_FILTER: AtomicUsize = AtomicUsize::new(usize::MAX);
+static USING: AtomicBool = AtomicBool::new(false);
 
 struct MyLogger;
 
@@ -44,18 +59,32 @@ impl log::Log for MyLogger {
         let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
         let curr_time = get_time();
         let (secs, ms, _) = time_parts(micros(curr_time, freq));
-        print_in_color(
-            format_args!(
-                "[{:>5}.{:<03}][{:>5}][HART {}][{}] {}\n",
-                secs,
-                ms,
-                record.level(),
-                cpu_id,
-                mod_path,
-                record.args()
-            ),
-            level_to_color_code(record.level()),
+        let color = match record.level() {
+            log::Level::Trace => WHITE,
+            log::Level::Debug => GREEN,
+            log::Level::Info => BLUE,
+            log::Level::Warn => YELLOW,
+            log::Level::Error => RED,
+        };
+        let clear = CLEAR;
+        while USING.load(Ordering::SeqCst) {
+            core::hint::spin_loop();
+        }
+        USING.store(true, Ordering::SeqCst);
+        println!(
+            "[{:>5}.{:<03}][{}{:>5}{} ][HART {}][{}] {}",
+            secs,
+            ms,
+            color,
+            record.level(),
+            clear,
+            cpu_id,
+            mod_path,
+            record.args(),
         );
+        while USING.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst) == Ok(true) {
+            core::hint::spin_loop();
+        }
     }
     fn flush(&self) {}
 }

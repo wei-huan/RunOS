@@ -14,19 +14,19 @@ mod boards;
 
 #[macro_use]
 mod console;
-mod config;
-mod cpus;
 mod drivers;
 mod dt;
 mod fs;
-mod lang_items;
-mod logging;
 mod mm;
-mod opensbi;
+mod cpus;
 mod sync;
-mod timer;
 mod trap;
 mod utils;
+mod timer;
+mod config;
+mod logging;
+mod opensbi;
+mod lang_items;
 
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
@@ -64,15 +64,16 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         clear_bss();
         trap::init();
         dt::init(fdt);
+        // mm::init();
         logging::init();
-        info!("start cpu{}", hartid);
+        info!("0");
         while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
         {
             core::hint::spin_loop();
         }
         boot_all_harts(hartid);
     } else {
-        info!("cpu{}", hartid);
+        info!("A");
         loop {}
     }
 }

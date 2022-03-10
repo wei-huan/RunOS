@@ -12,5 +12,5 @@ _start:
     .section .data.stack
 boot_stack:
     # 8K 启动栈大小 * CPU_NUMS
-    .space 4096 * 2 * 4
+    .space 4096 * 2 * 8
 boot_stack_top:
