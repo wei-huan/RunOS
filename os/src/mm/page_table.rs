@@ -85,6 +85,13 @@ impl PageTable {
             pte_frames: vec![root_pagetable_frame],
         }
     }
+    /// Temporarily used to get arguments from user space.
+    pub fn check_from_token(satp: usize) -> Self {
+        Self {
+            root_ppn: PhysPageNum::from(satp & ((1usize << 44) - 1)),
+            pte_frames: Vec::new(),
+        }
+    }
     pub fn get_root_ppn(&self) -> PhysPageNum {
         self.root_ppn
     }
