@@ -1,7 +1,6 @@
 // DEVICE TREE mod
 
 use fdt::Fdt;
-use log::*;
 use core::ptr;
 use fdt::node::FdtNode;
 use core::sync::atomic::{AtomicPtr, Ordering, AtomicUsize};

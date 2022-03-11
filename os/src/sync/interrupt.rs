@@ -2,20 +2,20 @@ use crate::cpus::Cpu;
 use riscv::register::sstatus;
 
 // enable device interrupts
-pub fn intr_on() {
+pub fn interrupt_on() {
     unsafe {
         sstatus::set_sie();
     }
 }
 // disable device interrupts
-pub fn intr_off() {
+pub fn interrupt_off() {
     unsafe {
         sstatus::clear_sie();
     }
 }
 
 // are device interrupts enabled?
-pub fn intr_get() -> bool {
+pub fn interrupt_get() -> bool {
     sstatus::read().sie()
 }
 

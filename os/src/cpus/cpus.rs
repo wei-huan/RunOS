@@ -1,11 +1,8 @@
 use super::cpu::Cpu;
-// use crate::boards::CPU_NUM;
-use crate::sync::{intr_get, intr_off, IntrLock};
+use crate::sync::{interrupt_get, interrupt_off, IntrLock};
 use array_macro::array;
 use core::arch::asm;
 use core::cell::UnsafeCell;
-
-pub static CPUS: Cpus = Cpus::new();
 
 const CPU_NUM: usize = 4;
 
@@ -38,8 +35,8 @@ impl Cpus {
     // if all `intr_lock`'s are dropped, interrupts may recover
     // to previous state.
     pub fn intr_lock(&self) -> IntrLock {
-        let old = intr_get();
-        intr_off();
+        let old = interrupt_get();
+        interrupt_off();
         unsafe { self.my_cpu().lock(old) }
     }
 

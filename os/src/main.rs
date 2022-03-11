@@ -74,11 +74,13 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Timer Clock: {}Hz", timebase_frequency);
         info!("=== SBI Implementation ===");
         info!("=== MyOS Info ===");
+        timer::boot_init();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
     } else {
         trap::init();
         mm::init();
+        timer::init();
         info!("A");
     }
     loop {}

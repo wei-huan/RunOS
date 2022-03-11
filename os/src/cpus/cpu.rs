@@ -1,4 +1,4 @@
-use crate::sync::{intr_get, intr_on, IntrLock};
+use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use alloc::sync::Arc;
 use core::cell::UnsafeCell;
 
@@ -29,12 +29,12 @@ impl Cpu {
 
     // interrupts must be disabled.
     pub unsafe fn unlock(&self) {
-        assert!(!intr_get(), "unlock - interruptible");
+        assert!(!interrupt_get(), "unlock - interruptible");
         let int_depth = self.int_depth.get();
         assert!(*int_depth >= 1, "unlock");
         *int_depth -= 1;
         if *int_depth == 0 && self.int_status {
-            intr_on()
+            interrupt_on()
         }
     }
 }

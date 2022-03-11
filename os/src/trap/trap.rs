@@ -1,9 +1,10 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
+use crate::timer::set_next_trigger;
 use log::*;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
-    stval, stvec,
+    stval, stvec, sepc
 };
 
 pub fn set_kernel_trap_entry() {
@@ -13,10 +14,18 @@ pub fn set_kernel_trap_entry() {
 }
 
 #[no_mangle]
-pub fn kernel_trap_handler() -> ! {
-    use riscv::register::sepc;
-    error!("stval = {:#?}, sepc = 0x{:X}", stval::read(), sepc::read());
-    panic!("a trap {:?} from kernel!", scause::read().cause());
+pub fn kernel_trap_handler() {
+    let scause = scause::read();
+    match scause.cause() {
+        Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            set_next_trigger();
+            info!("Yeah");
+        }
+        _ => {
+            error!("stval = {:#?}, sepc = 0x{:X}", stval::read(), sepc::read());
+            panic!("a trap {:?} from kernel!", scause.cause());
+        }
+    }
 }
 
 fn set_user_trap_entry() {
