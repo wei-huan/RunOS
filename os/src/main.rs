@@ -14,19 +14,19 @@ mod boards;
 
 #[macro_use]
 mod console;
+mod config;
+mod cpus;
+mod drivers;
 mod dt;
 mod fs;
+mod lang_items;
+mod logging;
 mod mm;
-mod cpus;
+mod opensbi;
 mod sync;
+mod timer;
 mod trap;
 mod utils;
-mod timer;
-mod config;
-mod logging;
-mod opensbi;
-mod drivers;
-mod lang_items;
 
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
@@ -63,9 +63,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
     logging::init();
     mm::boot_init();
     mm::remap_test();
-    // println!("[kernel] Hello, world!");
     trap::init();
-    // println!("fdt: 0x{:X}", fdt as usize);
     dt::init(fdt);
     println!("[kernel] Hello, world!");
     timer::boot_init();
@@ -77,5 +75,9 @@ fn os_main(hartid: usize, fdt: *mut u8) {
     // info!(" Timer Clock: {}Hz", timebase_frequency);
     // info!("=== SBI Implementation ===");
     info!("=== MyOS Info ===");
-    loop{}
+    // use riscv::register::sscratch;
+    // info!("sscratch: {}", sscratch::read());
+    loop {
+        print!(".");
+    }
 }
