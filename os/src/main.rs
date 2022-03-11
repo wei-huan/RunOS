@@ -4,7 +4,7 @@
 #![feature(alloc_error_handler)]
 
 extern crate alloc;
-
+extern crate fdt;
 #[cfg(feature = "board_k210")]
 #[path = "boards/k210.rs"]
 mod boards;
@@ -31,7 +31,7 @@ mod lang_items;
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
-use dt::CPU_NUMS;
+use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
 
 global_asm!(include_str!("entry.asm"));
@@ -63,21 +63,29 @@ fn os_main(hartid: usize, fdt: *mut u8) {
     if !START.load(Ordering::Acquire) {
         clear_bss();
         trap::init();
+        logging::init();
         dt::init(fdt);
         mm::init();
-        logging::init();
-        error!("0");
-        warn!("0");
-        info!("0");
-        debug!("0");
-        trace!("0");
-        while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
-        {
-            core::hint::spin_loop();
-        }
+        let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
+        let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+        info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+        info!("=== Machine Info ===");
+        info!(" Total CPUs: {}", n_cpus);
+        info!(" Timer Clock: {}Hz", timebase_frequency);
+        info!("=== SBI Implementation ===");
+        info!("=== MyOS Info ===");
+        START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
     } else {
+        trap::init();
         info!("A");
     }
     loop {}
 }
+
+
+
+// while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
+// {
+//     core::hint::spin_loop();
+// }

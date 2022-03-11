@@ -77,7 +77,7 @@ impl log::Log for MyLogger {
         }
         USING.store(true, Ordering::SeqCst);
         println!(
-            "[{:>5}.{:<03}][{}{:>5}{} ][HART {}][{}] {}",
+            "[{:>5}.{:<03}][ {}{:>5}{} ][HART {}][{}] {}",
             secs,
             ms,
             color,
@@ -95,9 +95,9 @@ impl log::Log for MyLogger {
 }
 
 pub fn init() {
-    set_hart_filter(1);
+    set_hart_filter(20);
     log::set_logger(&MyLogger).expect("failed to init logging");
-    log::set_max_level(LevelFilter::Info);
+    log::set_max_level(LevelFilter::Trace);
 }
 
 fn set_hart_filter(hart_id: usize) {
