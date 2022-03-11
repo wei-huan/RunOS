@@ -15,12 +15,12 @@ impl core::fmt::Display for ColorEscape {
         write!(f, "{}", self.0)
     }
 }
-pub const CLEAR: ColorEscape = ColorEscape("\x1B[0m");
 pub const RED: ColorEscape = ColorEscape("\x1B[31m");
+pub const BLUE: ColorEscape = ColorEscape("\x1B[34m");
 pub const GREEN: ColorEscape = ColorEscape("\x1B[32m");
 pub const YELLOW: ColorEscape = ColorEscape("\x1B[33m");
-pub const BLUE: ColorEscape = ColorEscape("\x1B[34m");
 pub const WHITE: ColorEscape = ColorEscape("\x1B[37m");
+pub const CLEAR: ColorEscape = ColorEscape("\x1B[0m");
 
 // static HART_FILTER: AtomicUsize = AtomicUsize::new(usize::MAX);
 static USING: AtomicBool = AtomicBool::new(false);
