@@ -60,10 +60,15 @@ fn boot_all_harts(hartid: usize) {
 #[no_mangle]
 fn os_main(hartid: usize, fdt: *mut u8) {
     clear_bss();
-    trap::init();
     logging::init();
-    dt::init(fdt);
     mm::boot_init();
+    mm::remap_test();
+    // println!("[kernel] Hello, world!");
+    trap::init();
+    // println!("fdt: 0x{:X}", fdt as usize);
+    dt::init(fdt);
+    println!("[kernel] Hello, world!");
+    timer::boot_init();
     // let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
     // let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
     // info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
@@ -72,6 +77,5 @@ fn os_main(hartid: usize, fdt: *mut u8) {
     // info!(" Timer Clock: {}Hz", timebase_frequency);
     // info!("=== SBI Implementation ===");
     info!("=== MyOS Info ===");
-    timer::boot_init();
     loop{}
 }

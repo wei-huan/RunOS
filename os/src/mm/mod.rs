@@ -1,15 +1,15 @@
-mod heap;
+mod addr_space;
 mod address;
 mod frame;
+mod heap;
 mod page_table;
 mod section;
-mod addr_space;
 
-pub use frame::{frame_allocator_test, frame_test, frame_alloc, frame_dealloc, Frame};
-pub use heap::{whereis_heap, init_heap, heap_test};
-pub use address::{PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum, addr_test};
-pub use page_table::{PageTableEntry, PageTable, UserBuffer};
-pub use addr_space::{kernel_token, AddrSpace, KERNEL_SPACE};
+pub use addr_space::{kernel_token, remap_test, AddrSpace, KERNEL_SPACE};
+pub use address::{addr_test, PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum};
+pub use frame::{frame_alloc, frame_allocator_test, frame_dealloc, frame_test, Frame};
+pub use heap::{heap_test, init_heap, whereis_heap};
+pub use page_table::{PageTable, PageTableEntry, UserBuffer};
 
 pub fn boot_init() {
     heap::init_heap();

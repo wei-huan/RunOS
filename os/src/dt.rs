@@ -25,23 +25,23 @@ pub fn fdt_print(fdt: *mut u8) {
 }
 
 fn fdt_get_timerfreq(fdt_ptr: *mut u8) {
-    let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
-    let hart_id = Cpus::cpu_id();
-    let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
-    let timebase_frequency = current_cpu.timebase_frequency();
-    TIMER_FREQ.store(timebase_frequency, Ordering::Relaxed);
+    // let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
+    // let hart_id = Cpus::cpu_id();
+    // let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
+    // let timebase_frequency = current_cpu.timebase_frequency();
+    TIMER_FREQ.store(10000000, Ordering::Relaxed);
     // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
 
 fn fdt_get_ncpu(fdt_ptr: *mut u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let n_cpus = fdt.cpus().count();
-    // println!("n_cpus: {}", n_cpus as u64);
+    println!("n_cpus: {}", n_cpus as u64);
     CPU_NUMS.store(n_cpus, Ordering::Release);
 }
 
 pub fn init(fdt_ptr: *mut u8) {
-    FDT.store(fdt_ptr, Ordering::Release);
+    // FDT.store(fdt_ptr, Ordering::Release);
     fdt_get_timerfreq(fdt_ptr);
-    fdt_get_ncpu(fdt_ptr);
+    // fdt_get_ncpu(fdt_ptr);
 }

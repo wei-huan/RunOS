@@ -16,16 +16,16 @@ pub fn set_kernel_trap_entry() {
 #[no_mangle]
 pub fn kernel_trap_handler() {
     let scause = scause::read();
-    match scause.cause() {
-        Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            set_next_trigger();
-            info!("Yeah");
-        }
-        _ => {
-            error!("stval = {:#?}, sepc = 0x{:X}", stval::read(), sepc::read());
+    // match scause.cause() {
+    //     Trap::Interrupt(Interrupt::SupervisorTimer) => {
+    //         set_next_trigger();
+    //         info!("Yeah");
+    //     }
+    //     _ => {
+            println!("stval = {:#?}, sepc = 0x{:X}", stval::read(), sepc::read());
             panic!("a trap {:?} from kernel!", scause.cause());
-        }
-    }
+    //     }
+    // }
 }
 
 fn set_user_trap_entry() {
