@@ -11,8 +11,12 @@ pub use address::{PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum, addr_
 pub use page_table::{PageTableEntry, PageTable, UserBuffer};
 pub use addr_space::{kernel_token, AddrSpace, KERNEL_SPACE};
 
-pub fn init() {
+pub fn boot_init() {
     heap::init_heap();
     frame::init_frame_allocator();
+    KERNEL_SPACE.lock().activate();
+}
+
+pub fn init() {
     KERNEL_SPACE.lock().activate();
 }

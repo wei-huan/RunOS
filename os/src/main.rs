@@ -65,7 +65,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         trap::init();
         logging::init();
         dt::init(fdt);
-        mm::init();
+        mm::boot_init();
         let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
         let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
         info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
@@ -78,6 +78,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         boot_all_harts(hartid);
     } else {
         trap::init();
+        mm::init();
         info!("A");
     }
     loop {}
