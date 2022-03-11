@@ -14,7 +14,6 @@ mod boards;
 
 #[macro_use]
 mod console;
-mod drivers;
 mod dt;
 mod fs;
 mod mm;
@@ -26,11 +25,12 @@ mod timer;
 mod config;
 mod logging;
 mod opensbi;
+mod drivers;
 mod lang_items;
 
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::Ordering;
 use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
 
@@ -57,36 +57,21 @@ fn boot_all_harts(hartid: usize) {
     }
 }
 
-static START: AtomicBool = AtomicBool::new(false);
 #[no_mangle]
 fn os_main(hartid: usize, fdt: *mut u8) {
-    if !START.load(Ordering::Acquire) {
-        clear_bss();
-        trap::init();
-        logging::init();
-        dt::init(fdt);
-        mm::boot_init();
-        let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
-        let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
-        info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
-        info!("=== Machine Info ===");
-        info!(" Total CPUs: {}", n_cpus);
-        info!(" Timer Clock: {}Hz", timebase_frequency);
-        info!("=== SBI Implementation ===");
-        info!("=== MyOS Info ===");
-        timer::boot_init();
-        START.store(true, Ordering::Relaxed);
-        boot_all_harts(hartid);
-    } else {
-        // trap::init();
-        // mm::init();
-        // timer::init();
-        info!("A");
-    }
-    loop {}
+    clear_bss();
+    trap::init();
+    logging::init();
+    dt::init(fdt);
+    mm::boot_init();
+    // let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
+    // let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+    // info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+    // info!("=== Machine Info ===");
+    // info!(" Total CPUs: {}", n_cpus);
+    // info!(" Timer Clock: {}Hz", timebase_frequency);
+    // info!("=== SBI Implementation ===");
+    info!("=== MyOS Info ===");
+    timer::boot_init();
+    loop{}
 }
-
-// while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
-// {
-//     core::hint::spin_loop();
-// }
