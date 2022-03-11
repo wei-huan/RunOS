@@ -64,7 +64,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         clear_bss();
         trap::init();
         dt::init(fdt);
-        // mm::init();
+        mm::init();
         logging::init();
         info!("0");
         while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
@@ -74,6 +74,6 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         boot_all_harts(hartid);
     } else {
         info!("A");
-        loop {}
     }
+    loop {}
 }

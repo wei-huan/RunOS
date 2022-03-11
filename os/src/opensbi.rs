@@ -143,12 +143,12 @@ pub fn shutdown() -> ! {
     panic!("It should shutdown!");
 }
 
-pub fn hart_start(hartid: usize, start_addr: usize, privilege: usize) -> SBIRet {
+pub fn hart_start(hartid: usize, jump_addr: usize, privilege: usize) -> SBIRet {
     opensbi_call(
         SBI_HART_START_EID,
         SBI_HART_START_FID,
         hartid,
-        start_addr,
+        jump_addr,
         privilege,
         0,
         0,
