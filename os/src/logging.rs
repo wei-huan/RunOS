@@ -95,7 +95,7 @@ impl log::Log for MyLogger {
 }
 
 pub fn init() {
-    set_hart_filter(20);
+    set_hart_filter(8);
     log::set_logger(&MyLogger).expect("failed to init logging");
     log::set_max_level(LevelFilter::Trace);
 }
