@@ -78,15 +78,13 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
     } else {
-        trap::init();
-        mm::init();
-        timer::init();
+        // trap::init();
+        // mm::init();
+        // timer::init();
         info!("A");
     }
     loop {}
 }
-
-
 
 // while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
 // {
