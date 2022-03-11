@@ -66,7 +66,11 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         dt::init(fdt);
         mm::init();
         logging::init();
+        error!("0");
+        warn!("0");
         info!("0");
+        debug!("0");
+        trace!("0");
         while START.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed) == Ok(false)
         {
             core::hint::spin_loop();
