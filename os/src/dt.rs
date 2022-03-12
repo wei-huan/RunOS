@@ -1,14 +1,15 @@
 // DEVICE TREE mod
 
-use fdt::Fdt;
-use core::ptr;
-use fdt::node::FdtNode;
-use core::sync::atomic::{AtomicPtr, Ordering, AtomicUsize};
 use crate::cpus::Cpus;
+use core::ptr;
+use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
+use fdt::node::FdtNode;
+use fdt::Fdt;
 
 pub static CPU_NUMS: AtomicUsize = AtomicUsize::new(1);
 pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(0);
 pub static FDT: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
+pub static MODEL: AtomicPtr<&str> = AtomicPtr::new(ptr::null_mut());
 
 fn print_node(node: FdtNode<'_, '_>, n_spaces: usize) {
     (0..n_spaces).for_each(|_| print!(" "));
@@ -36,12 +37,24 @@ fn fdt_get_timerfreq(fdt_ptr: *mut u8) {
 fn fdt_get_ncpu(fdt_ptr: *mut u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let n_cpus = fdt.cpus().count();
-    println!("n_cpus: {}", n_cpus as u64);
     CPU_NUMS.store(n_cpus, Ordering::Release);
+    // println!("n_cpus: {}", n_cpus as u64);
+}
+
+pub fn fdt_get_model(fdt_ptr: *mut u8) {
+    let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
+    let model = fdt
+        .root()
+        .property("model")
+        .and_then(|p| p.as_str())
+        .unwrap();
+    // println!("device_model: {}", model);
+    // MODEL.store(model as *const _ as *mut &'static str, Ordering::Release);
 }
 
 pub fn init(fdt_ptr: *mut u8) {
     FDT.store(fdt_ptr, Ordering::Release);
     fdt_get_timerfreq(fdt_ptr);
     fdt_get_ncpu(fdt_ptr);
+    // fdt_get_model(fdt_ptr);
 }

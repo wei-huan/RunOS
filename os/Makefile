@@ -4,8 +4,8 @@ MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 KERNEL_BIN := $(KERNEL_ELF).bin
 
-# BOARD
-BOARD ?= qemu
+# PLATFORM
+PLATFORM ?= qemu
 
 #SBI
 SBI := opensbi-img/fw_jump.bin
@@ -18,7 +18,7 @@ OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
 
 kernel:
-	cp src/linker-$(BOARD).ld src/linker.ld
+	cp src/linker-$(PLATFORM).ld src/linker.ld
 	cargo build --$(MODE)
 	rm src/linker.ld
 

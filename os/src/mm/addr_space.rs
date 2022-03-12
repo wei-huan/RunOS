@@ -8,7 +8,7 @@ use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::lazy_static;
 use riscv::register::satp;
-use crate::boards::MMIO;
+use crate::platform::MMIO;
 use spin::Mutex;
 
 extern "C" {

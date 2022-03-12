@@ -7,7 +7,7 @@ pub use sdcard::SDCardWrapper;
 use alloc::sync::Arc;
 use myfs::BlockDevice;
 use lazy_static::*;
-use crate::boards::BlockDeviceImpl;
+use crate::platform::BlockDeviceImpl;
 
 lazy_static! {
     pub static ref BLOCK_DEVICE: Arc<dyn BlockDevice> = Arc::new(BlockDeviceImpl::new());

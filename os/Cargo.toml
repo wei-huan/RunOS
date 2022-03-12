@@ -23,5 +23,5 @@ log = "0.4.14"
 fdt = "0.1.3"
 
 [features]
-board-k210 = []
-board-qemu = []
+platform-k210 = []
+platform-qemu = []
