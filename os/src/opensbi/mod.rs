@@ -1,3 +1,4 @@
+/// API文档详情参考: https://github.com/riscv-non-isa/riscv-sbi-doc/blob/master/riscv-sbi.adoc#legacy-sbi-extension-extension-ids-0x00-through-0x0f
 mod base;
 mod hsm;
 mod ipi;
@@ -5,7 +6,7 @@ mod legacy;
 mod rfence;
 mod timer;
 
-pub use base::{spec_version, impl_id, impl_version};
+pub use base::{impl_id, impl_version, spec_version};
 use core::arch::asm;
 pub use hsm::{hart_start, hart_status, hart_stop};
 pub use legacy::{console_getchar, console_putchar, set_timer, shutdown};
@@ -40,7 +41,7 @@ impl SbiError {
     }
 }
 
-pub struct SBIRet(SbiError, usize);
+pub type SBIResult<T> = Result<T, SbiError>;
 
 #[inline(always)]
 pub fn opensbi_call(
@@ -52,7 +53,7 @@ pub fn opensbi_call(
     arg3: usize,
     arg4: usize,
     arg5: usize,
-) -> SBIRet {
+) -> SBIResult<usize> {
     let mut error: isize;
     let mut value: usize;
     unsafe {
@@ -68,5 +69,8 @@ pub fn opensbi_call(
             in("x17") eid,
         );
     }
-    SBIRet(SbiError::new(error), value)
+    match error {
+        0 => SBIResult::Ok(value),
+        e => SBIResult::Err(SbiError::new(e)),
+    }
 }

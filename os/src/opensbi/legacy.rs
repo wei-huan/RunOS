@@ -1,6 +1,6 @@
 /// Legacy Extension
 use crate::opensbi::opensbi_call;
-use crate::opensbi::SBIRet;
+use crate::opensbi::SBIResult;
 
 const SBI_SET_TIMER_EID: usize = 0;
 const SBI_CONSOLE_PUTCHAR_EID: usize = 1;
@@ -49,22 +49,21 @@ pub fn console_getchar() -> usize {
         0,
         0,
         0,
-    )
-    .1
+    ).unwrap()
 }
 
 #[allow(unused)]
-pub fn clear_ipi() -> SBIRet {
+pub fn clear_ipi() -> SBIResult<usize> {
     opensbi_call(SBI_CLEAR_IPI_EID, SBI_CLEAR_IPI_FID, 0, 0, 0, 0, 0, 0)
 }
 
 #[allow(unused)]
-pub fn send_ipi(cpu_id: usize) -> SBIRet {
+pub fn send_ipi(cpu_id: usize) -> SBIResult<usize> {
     opensbi_call(SBI_SEND_IPI_EID, SBI_SEND_IPI_FID, cpu_id, 0, 0, 0, 0, 0)
 }
 
 #[allow(unused)]
-pub fn remote_fence_i(cpu_id: usize) -> SBIRet {
+pub fn remote_fence_i(cpu_id: usize) -> SBIResult<usize> {
     opensbi_call(
         SBI_REMOTE_FENCE_I_EID,
         SBI_REMOTE_FENCE_I_FID,
@@ -78,7 +77,7 @@ pub fn remote_fence_i(cpu_id: usize) -> SBIRet {
 }
 
 #[allow(unused)]
-pub fn remote_sfence_vma(hartid: usize, start: usize, size: usize) -> SBIRet {
+pub fn remote_sfence_vma(hartid: usize, start: usize, size: usize) -> SBIResult<usize> {
     opensbi_call(
         SBI_REMOTE_SFENCE_VMA_EID,
         SBI_REMOTE_SFENCE_VMA_FID,
@@ -92,7 +91,12 @@ pub fn remote_sfence_vma(hartid: usize, start: usize, size: usize) -> SBIRet {
 }
 
 #[allow(unused)]
-pub fn remote_sfence_vma_asid(hartid: usize, start: usize, size: usize, asid: usize) -> SBIRet {
+pub fn remote_sfence_vma_asid(
+    hartid: usize,
+    start: usize,
+    size: usize,
+    asid: usize,
+) -> SBIResult<usize> {
     opensbi_call(
         SBI_REMOTE_SFENCE_VMA_ASID_EID,
         SBI_REMOTE_SFENCE_VMA_ASID_FID,
