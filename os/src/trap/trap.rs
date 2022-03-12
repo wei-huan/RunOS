@@ -13,10 +13,10 @@ global_asm!(include_str!("trap.S"));
 
 pub fn set_kernel_trap_entry() {
     extern "C" {
-        fn __super_alltraps();
+        fn __kernelvec();
     }
     unsafe {
-        stvec::write(__super_alltraps as usize, TrapMode::Direct);
+        stvec::write(__kernelvec as usize, TrapMode::Direct);
     }
 }
 
@@ -25,10 +25,8 @@ pub fn kernel_trap_handler() {
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // interrupt_on();
-            // set_next_trigger();
-            info!("trap sscratch: {}", sscratch::read());
-            strap_return()
+            set_next_trigger();
+            info!("timer_trigger");
         }
         _ => {
             println!("stval = {:#?}, sepc = 0x{:X}", stval::read(), sepc::read());

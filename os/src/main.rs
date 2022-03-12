@@ -65,7 +65,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
     mm::remap_test();
     trap::init();
     dt::init(fdt);
-    println!("[kernel] Hello, world!");
+    // println!("[kernel] Hello, world!");
     timer::boot_init();
     // let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
     // let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
@@ -74,10 +74,10 @@ fn os_main(hartid: usize, fdt: *mut u8) {
     // info!(" Total CPUs: {}", n_cpus);
     // info!(" Timer Clock: {}Hz", timebase_frequency);
     // info!("=== SBI Implementation ===");
-    info!("=== MyOS Info ===");
+    // info!("=== MyOS Info ===");
     // use riscv::register::sscratch;
     // info!("sscratch: {}", sscratch::read());
     loop {
-        print!(".");
+        // print!(".");
     }
 }

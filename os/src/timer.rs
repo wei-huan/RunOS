@@ -4,7 +4,7 @@ use riscv::register::{time, sie};
 use core::sync::atomic::{Ordering};
 
 const MSEC_PER_SEC: usize = 1000;
-const TICKS_PER_SEC: usize = 100;
+const TICKS_PER_SEC: usize = 1;
 
 pub fn get_time() -> usize {
     time::read()
