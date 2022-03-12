@@ -53,7 +53,7 @@ pub fn fdt_get_model(fdt_ptr: *mut u8) {
 }
 
 pub fn init(fdt_ptr: *mut u8) {
-    FDT.store(fdt_ptr, Ordering::Release);
+    // FDT.store(fdt_ptr, Ordering::Release);
     fdt_get_timerfreq(fdt_ptr);
     fdt_get_ncpu(fdt_ptr);
     // fdt_get_model(fdt_ptr);
