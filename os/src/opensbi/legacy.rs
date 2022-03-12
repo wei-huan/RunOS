@@ -22,10 +22,12 @@ const SBI_REMOTE_SFENCE_VMA_FID: usize = 0;
 const SBI_REMOTE_SFENCE_VMA_ASID_FID: usize = 0;
 const SBI_SHUTDOWN_FID: usize = 0;
 
+#[allow(unused)]
 pub fn set_timer(timer: usize) {
     opensbi_call(SBI_SET_TIMER_EID, SBI_SET_TIMER_FID, timer, 0, 0, 0, 0, 0);
 }
 
+#[allow(unused)]
 pub fn console_putchar(c: usize) {
     opensbi_call(
         SBI_CONSOLE_PUTCHAR_EID,
@@ -109,6 +111,7 @@ pub fn remote_sfence_vma_asid(
     )
 }
 
+#[allow(unused)]
 pub fn shutdown() -> ! {
     println!("I am dead");
     opensbi_call(SBI_SHUTDOWN_EID, SBI_SHUTDOWN_FID, 0, 0, 0, 0, 0, 0);
