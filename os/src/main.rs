@@ -59,22 +59,47 @@ fn boot_all_harts(hartid: usize) {
 
 #[no_mangle]
 fn os_main(hartid: usize, fdt: *mut u8) {
-    clear_bss();
-    logging::init();
-    mm::boot_init();
-    mm::remap_test();
-    trap::init();
-    dt::init(fdt);
-    timer::boot_init();
-    let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
-    let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
-    info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
-    info!("=== Machine Info ===");
-    info!(" Total CPUs: {}", n_cpus);
-    info!(" Timer Clock: {}Hz", timebase_frequency);
-    info!("=== SBI Implementation ===");
-    info!("=== MyOS Info ===");
-    loop {
-        // print!(".");
+    if !START.load(Ordering::Acquire) {
+        clear_bss();
+        trap::init();
+        logging::init();
+        dt::init(fdt);
+        mm::boot_init();
+        let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
+        let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+        info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+        info!("=== Machine Info ===");
+        info!(" Total CPUs: {}", n_cpus);
+        info!(" Timer Clock: {}Hz", timebase_frequency);
+        info!("=== SBI Implementation ===");
+        info!("=== MyOS Info ===");
+        timer::boot_init();
+        START.store(true, Ordering::Relaxed);
+        boot_all_harts(hartid);
+    } else {
+        // trap::init();
+        // mm::init();
+        // timer::init();
+        info!("A");
     }
+    loop {}
 }
+
+// clear_bss();
+// logging::init();
+// mm::boot_init();
+// mm::remap_test();
+// trap::init();
+// dt::init(fdt);
+// timer::boot_init();
+// let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
+// let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+// info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+// info!("=== Machine Info ===");
+// info!(" Total CPUs: {}", n_cpus);
+// info!(" Timer Clock: {}Hz", timebase_frequency);
+// info!("=== SBI Implementation ===");
+// info!("=== MyOS Info ===");
+// loop {
+//     // print!(".");
+// }
