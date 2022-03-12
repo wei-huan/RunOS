@@ -30,7 +30,7 @@ mod utils;
 
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
-use core::sync::atomic::Ordering;
+use core::sync::atomic::{AtomicBool, Ordering};
 use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
 
@@ -57,14 +57,16 @@ fn boot_all_harts(hartid: usize) {
     }
 }
 
+static START: AtomicBool = AtomicBool::new(false);
 #[no_mangle]
 fn os_main(hartid: usize, fdt: *mut u8) {
     if !START.load(Ordering::Acquire) {
         clear_bss();
         trap::init();
-        logging::init();
         dt::init(fdt);
+        logging::init();
         mm::boot_init();
+        timer::init();
         let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
         let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
         info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
@@ -73,33 +75,13 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Timer Clock: {}Hz", timebase_frequency);
         info!("=== SBI Implementation ===");
         info!("=== MyOS Info ===");
-        timer::boot_init();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
     } else {
-        // trap::init();
-        // mm::init();
-        // timer::init();
+        trap::init();
+        mm::init();
+        timer::init();
         info!("A");
     }
     loop {}
 }
-
-// clear_bss();
-// logging::init();
-// mm::boot_init();
-// mm::remap_test();
-// trap::init();
-// dt::init(fdt);
-// timer::boot_init();
-// let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
-// let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
-// info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
-// info!("=== Machine Info ===");
-// info!(" Total CPUs: {}", n_cpus);
-// info!(" Timer Clock: {}Hz", timebase_frequency);
-// info!("=== SBI Implementation ===");
-// info!("=== MyOS Info ===");
-// loop {
-//     // print!(".");
-// }

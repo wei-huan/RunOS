@@ -31,11 +31,7 @@ fn enable_timer_interrupt() {
     }
 }
 
-pub fn boot_init() {
-    enable_timer_interrupt();
-    set_next_trigger();
-}
-
 pub fn init() {
     enable_timer_interrupt();
+    set_next_trigger();
 }

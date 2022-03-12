@@ -60,7 +60,7 @@ impl log::Log for MyLogger {
         } else {
             mod_path.trim_start_matches("MyOS::")
         };
-        // let cpu_id = Cpus::cpu_id();
+        let cpu_id = Cpus::cpu_id();
         let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
         let curr_time = get_time();
         let (secs, ms, _) = time_parts(micros(curr_time, freq));
@@ -72,10 +72,10 @@ impl log::Log for MyLogger {
             Level::Error => RED,
         };
         let clear = CLEAR;
-        // while USING.load(Ordering::SeqCst) {
-        //     core::hint::spin_loop();
-        // }
-        // USING.store(true, Ordering::SeqCst);
+        while USING.load(Ordering::SeqCst) {
+            core::hint::spin_loop();
+        }
+        USING.store(true, Ordering::SeqCst);
         println!(
             "[{:>5}.{:<03}][ {}{:>5}{} ][HART {}][{}] {}",
             secs,
@@ -83,13 +83,13 @@ impl log::Log for MyLogger {
             color,
             record.level(),
             clear,
-            0,
+            cpu_id,
             mod_path,
             record.args(),
         );
-        // while USING.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst) == Ok(true) {
-        //     core::hint::spin_loop();
-        // }
+        while USING.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst) == Ok(true) {
+            core::hint::spin_loop();
+        }
     }
     fn flush(&self) {}
 }
