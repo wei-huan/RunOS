@@ -1,12 +1,11 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::sync::interrupt_on;
 use crate::timer::set_next_trigger;
 use core::arch::global_asm;
 use log::*;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
-    sepc, sscratch, stval, stvec,
+    sepc, stval, stvec,
 };
 
 global_asm!(include_str!("trap.S"));

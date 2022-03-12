@@ -53,7 +53,7 @@ fn boot_all_harts(hartid: usize) {
     for i in 0..ncpu {
         if i != hartid {
             // priv: 1 for supervisor; 0 for user;
-            hart_start(i, _start as usize, 1);
+            hart_start(i, _start as usize, 1).unwrap();
         }
     }
 }
