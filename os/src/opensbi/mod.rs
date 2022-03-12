@@ -1,13 +1,14 @@
 mod base;
-mod legacy;
-mod timer;
-mod ipi;
-mod rfence;
 mod hsm;
+mod ipi;
+mod legacy;
+mod rfence;
+mod timer;
 
+pub use base::{spec_version, impl_id, impl_version};
 use core::arch::asm;
 pub use hsm::{hart_start, hart_status, hart_stop};
-pub use legacy::{console_getchar, console_putchar, shutdown, set_timer};
+pub use legacy::{console_getchar, console_putchar, set_timer, shutdown};
 #[derive(Debug, Clone, Copy)]
 pub enum SbiError {
     /// The SBI call failed
@@ -43,7 +44,7 @@ pub struct SBIRet(SbiError, usize);
 
 #[inline(always)]
 pub fn opensbi_call(
-    ext: usize,
+    eid: usize,
     fid: usize,
     arg0: usize,
     arg1: usize,
@@ -52,20 +53,20 @@ pub fn opensbi_call(
     arg4: usize,
     arg5: usize,
 ) -> SBIRet {
-    let mut ret0: isize;
-    let mut ret1: usize;
+    let mut error: isize;
+    let mut value: usize;
     unsafe {
         asm!(
             "ecall",
-            inlateout("x10") arg0 => ret0,
-            inlateout("x11") arg1 => ret1,
+            inlateout("x10") arg0 => error,
+            inlateout("x11") arg1 => value,
             in("x12") arg2,
             in("x13") arg3,
             in("x14") arg4,
             in("x15") arg5,
             in("x16") fid,
-            in("x17") ext,
+            in("x17") eid,
         );
     }
-    SBIRet(SbiError::new(ret0), ret1)
+    SBIRet(SbiError::new(error), value)
 }

@@ -22,6 +22,7 @@ pub fn hart_start(hartid: usize, jump_addr: usize, privilege: usize) -> SBIRet {
     )
 }
 
+#[allow(unused)]
 pub fn hart_stop(hartid: usize, start_addr: usize, privilege: usize) -> SBIRet {
     opensbi_call(
         SBI_HSM_EID,
@@ -35,6 +36,7 @@ pub fn hart_stop(hartid: usize, start_addr: usize, privilege: usize) -> SBIRet {
     )
 }
 
+#[allow(unused)]
 pub fn hart_status(hartid: usize) -> SBIRet {
     opensbi_call(
         SBI_HSM_EID,

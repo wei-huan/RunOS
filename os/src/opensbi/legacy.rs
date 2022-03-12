@@ -1,5 +1,4 @@
 /// Legacy Extension
-
 use crate::opensbi::opensbi_call;
 use crate::opensbi::SBIRet;
 

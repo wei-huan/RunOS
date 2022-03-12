@@ -29,6 +29,7 @@ mod trap;
 mod utils;
 
 use log::*;
+use opensbi::{impl_id, impl_version, spec_version};
 use core::arch::global_asm;
 use dt::{CPU_NUMS, TIMER_FREQ};
 use crate::opensbi::hart_start;
@@ -69,11 +70,23 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         timer::init();
         let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
         let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+        let (impl_major, impl_minor) = {
+            let version = impl_version();
+            // This is how OpenSBI encodes their version, hopefully will be the same
+            // between others
+            (version >> 16, version & 0xFFFF)
+        };
+        let (spec_major, spec_minor) = {
+            let version = spec_version();
+            (version.major, version.minor)
+        };
         info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
         info!("=== Machine Info ===");
         info!(" Total CPUs: {}", n_cpus);
         info!(" Timer Clock: {}Hz", timebase_frequency);
         info!("=== SBI Implementation ===");
+        info!(" Implementor: {:?} (version: {}.{})", impl_id(), impl_major, impl_minor);
+        info!(" Spec Version: {}.{}", spec_major, spec_minor);
         info!("=== MyOS Info ===");
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);

@@ -65,7 +65,7 @@ pub struct SbiSpecVersion {
 }
 
 #[allow(unused)]
-pub fn get_spec_version() -> SbiSpecVersion {
+pub fn spec_version() -> SbiSpecVersion {
     let value = opensbi_call(SBI_Base_EID, SBI_GET_SPEC_VERSION_FID, 0, 0, 0, 0, 0, 0).1;
     SbiSpecVersion {
         major: (value >> 24) & 0x7f,
