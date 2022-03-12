@@ -28,11 +28,11 @@ mod timer;
 mod trap;
 mod utils;
 
-use crate::opensbi::hart_start;
-use core::arch::global_asm;
-use core::sync::atomic::{AtomicBool, Ordering};
-use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
+use core::arch::global_asm;
+use dt::{CPU_NUMS, TIMER_FREQ};
+use crate::opensbi::hart_start;
+use core::sync::atomic::{AtomicBool, Ordering};
 
 global_asm!(include_str!("entry.asm"));
 
