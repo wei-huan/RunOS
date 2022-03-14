@@ -32,8 +32,7 @@ mod process;
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
-use dt::{CPU_NUMS, TIMER_FREQ, MODEL};
-use fdt::Fdt;
+use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
 use opensbi::{impl_id, impl_version, spec_version};
 
