@@ -1,4 +1,4 @@
-use clap::{App, Arg};
+use clap::{Command, Arg};
 use myfs::{BlockDevice, MyFileSystem};
 use std::fs::{read_dir, File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
@@ -29,16 +29,16 @@ fn main() {
 }
 
 fn easy_fs_pack() -> std::io::Result<()> {
-    let matches = App::new("MyFileSystem packer")
+    let matches = Command::new("MyFileSystem packer")
         .arg(
-            Arg::with_name("source")
+            Arg::new("source")
                 .short('s')
                 .long("source")
                 .takes_value(true)
                 .help("Executable source dir(with backslash)"),
         )
         .arg(
-            Arg::with_name("target")
+            Arg::new("target")
                 .short('t')
                 .long("target")
                 .takes_value(true)
