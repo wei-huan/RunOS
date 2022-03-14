@@ -5,18 +5,6 @@
 .macro LOAD_GP n
     ld x\n, \n*8(sp)
 .endm
-    # .section .text.trampoline
-    # .globl __user_alltraps
-    # .globl __user_restore
-    # .align 2
-# __user_alltraps:
-# __user_restore:
-
-    # .extern kernel_trap_handler
-    # .section .text
-    # .globl __super_alltraps
-    # .globl __super_restore
-    # .align 4
 
     .extern kernel_trap_handler
     .section .text
@@ -59,7 +47,7 @@ __kernelvec:
         sd t5, 232(sp)
         sd t6, 240(sp)
 
-	    // call the C trap handler in trap.c
+	    // call the Rust trap handler in trap.sr
         call kernel_trap_handler
 
         // restore registers.
@@ -99,3 +87,10 @@ __kernelvec:
 
         // return to whatever we were doing in the kernel.
         sret
+
+    .extern user_trap_handler
+    .section .text.trampoline
+    .align 4
+    .globl __uservec
+__uservec:
+

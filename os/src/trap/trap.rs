@@ -1,4 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
+use crate::syscall::syscall;
 use crate::timer::set_next_trigger;
 use core::arch::global_asm;
 use log::*;
@@ -34,15 +35,6 @@ pub fn kernel_trap_handler() {
     }
 }
 
-#[no_mangle]
-fn strap_return() -> ! {
-    extern "C" {
-        fn __super_restore();
-    }
-    unsafe { __super_restore() }
-    unreachable!();
-}
-
 fn set_user_trap_entry() {
     unsafe {
         stvec::write(TRAMPOLINE as usize, TrapMode::Direct);
@@ -50,8 +42,62 @@ fn set_user_trap_entry() {
 }
 
 #[no_mangle]
-pub fn app_trap_handler() -> ! {
-    user_trap_return();
+pub fn user_trap_handler() {
+    set_kernel_trap_entry();
+    let scause = scause::read();
+    let stval = stval::read();
+    match scause.cause() {
+        Trap::Exception(Exception::UserEnvCall) => {
+            // // jump to next instruction anyway
+            // let mut cx = current_trap_cx();
+            // cx.sepc += 4;
+            // // get system call return value
+            // let result = syscall(cx.x[17], [cx.x[10], cx.x[11], cx.x[12]]);
+            // // cx is changed during sys_exec, so we have to call it again
+            // cx = current_trap_cx();
+            // cx.x[10] = result as usize;
+            info!("SYSCALL");
+        }
+        Trap::Exception(Exception::StoreFault)
+        | Trap::Exception(Exception::StorePageFault)
+        | Trap::Exception(Exception::InstructionFault)
+        | Trap::Exception(Exception::InstructionPageFault)
+        | Trap::Exception(Exception::LoadFault)
+        | Trap::Exception(Exception::LoadPageFault) => {
+            /*
+            println!(
+                "[kernel] {:?} in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
+                scause.cause(),
+                stval,
+                current_trap_cx().sepc,
+            );
+            */
+            // current_add_signal(SignalFlags::SIGSEGV);
+            info!("SIGSEGV");
+        }
+        Trap::Exception(Exception::IllegalInstruction) => {
+            info!("SIGILL");
+            // current_add_signal(SignalFlags::SIGILL);
+        }
+        Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            set_next_trigger();
+            info!("user timer_trigger");
+            // check_timer();
+            // suspend_current_and_run_next();
+        }
+        _ => {
+            panic!(
+                "Unsupported trap {:?}, stval = {:#x}!",
+                scause.cause(),
+                stval
+            );
+        }
+    }
+    // check signals
+    // if let Some((errno, msg)) = check_signals_of_current() {
+    //     println!("[kernel] {}", msg);
+    //     exit_current_and_run_next(errno);
+    // }
 }
 
 #[no_mangle]

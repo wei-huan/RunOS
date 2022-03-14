@@ -28,6 +28,7 @@ mod timer;
 mod trap;
 mod utils;
 mod process;
+mod syscall;
 
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
