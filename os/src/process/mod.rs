@@ -1,5 +1,7 @@
 mod pid;
-mod kstack;
+mod signal;
+mod context;
 mod process;
+mod kernelstack;
 
 pub use pid::{pid_alloc, PidHandle};
