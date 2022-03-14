@@ -1,6 +1,6 @@
 use super::{
     address::{PhysAddr, VirtAddr, VirtPageNum},
-    page_table::{PTEFlags, PageTable},
+    page_table::{PTEFlags, PageTable, PageTableEntry},
     section::{MapType, Permission, Section},
 };
 use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
@@ -269,6 +269,9 @@ impl AddrSpace {
             user_stack_base,
             elf.header.pt2.entry_point() as usize,
         )
+    }
+    pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
+        self.page_table.translate(vpn)
     }
     pub fn activate(&mut self) {
         let satp = self.page_table.get_token();

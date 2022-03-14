@@ -1,9 +1,9 @@
-mod recyclealloc;
-mod pid;
-mod signal;
 mod context;
-mod process;
 mod kernelstack;
+mod pid;
+mod process;
+mod recyclealloc;
+mod signal;
 
 pub use pid::{pid_alloc, PidHandle};
-pub use process::{ProcessControlBlock};
+pub use process::ProcessControlBlock;
