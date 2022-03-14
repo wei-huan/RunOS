@@ -1,7 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::syscall::syscall;
 use crate::timer::set_next_trigger;
-use core::arch::global_asm;
+use core::arch::{asm, global_asm};
 use log::*;
 use riscv::register::{
     mtvec::TrapMode,
@@ -42,7 +42,7 @@ fn set_user_trap_entry() {
 }
 
 #[no_mangle]
-pub fn user_trap_handler() {
+pub fn user_trap_handler() -> ! {
     set_kernel_trap_entry();
     let scause = scause::read();
     let stval = stval::read();
@@ -98,9 +98,27 @@ pub fn user_trap_handler() {
     //     println!("[kernel] {}", msg);
     //     exit_current_and_run_next(errno);
     // }
+    user_trap_return();
 }
 
 #[no_mangle]
 pub fn user_trap_return() -> ! {
-    unreachable!();
+    set_user_trap_entry();
+    // let trap_cx_user_va = current_trap_cx_user_va();
+    // let user_satp = current_user_token();
+    extern "C" {
+        fn __uservec();
+        fn __restore();
+    }
+    let restore_va = __restore as usize - __uservec as usize + TRAMPOLINE;
+    unsafe {
+        asm!(
+            "fence.i",
+            "jr {restore_va}",
+            restore_va = in(reg) restore_va,
+            // in("a0") trap_cx_user_va,
+            // in("a1") user_satp,
+            options(noreturn)
+        );
+    }
 }

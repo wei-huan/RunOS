@@ -1,3 +1,5 @@
+use crate::trap::user_trap_return;
+
 #[repr(C)]
 pub struct ProcessContext {
     ra: usize,
@@ -15,7 +17,7 @@ impl ProcessContext {
     }
     pub fn goto_trap_return(kstack_ptr: usize) -> Self {
         Self {
-            ra: trap_return as usize,
+            ra: user_trap_return as usize,
             sp: kstack_ptr,
             s: [0; 12],
         }

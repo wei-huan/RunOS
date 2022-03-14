@@ -1,3 +1,4 @@
+mod recyclealloc;
 mod pid;
 mod signal;
 mod context;

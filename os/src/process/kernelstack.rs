@@ -1,4 +1,4 @@
-use super::pid::RecycleAllocator;
+use super::recyclealloc::RecycleAllocator;
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
 use crate::mm::{Permission, VirtAddr, KERNEL_SPACE};
 use lazy_static::*;
