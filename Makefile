@@ -1,9 +1,16 @@
 DIR := $(shell pwd)
+PACK_IMG_DIR := $(DIR)/myfs-pack
 USER_DIR := $(DIR)/user
+IMG_DIR := $(USER_DIR)/target/riscv64gc-unknown-none-elf/release/
 OS_DIR := $(DIR)/os
 
-all:
+user:
 	make build -C $(USER_DIR)
+
+fs-img: user
+	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)
+
+os: fs-img
 	make run -C $(OS_DIR)
 
 debug:
@@ -12,7 +19,4 @@ debug:
 gdb:
 	make gdb -C $(OS_DIR)
 
-
-disassem:
-	make disassem -C $(OS_DIR) >> disassembly.txt
-
+.PHONY: user fs-img os debug gdb
