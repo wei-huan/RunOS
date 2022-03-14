@@ -8,7 +8,7 @@ KERNEL_BIN := $(KERNEL_ELF).bin
 PLATFORM ?= qemu
 
 #SBI
-SBI := opensbi-img/fw_jump.bin
+SBI := ../bootloader/opensbi-img/fw_jump.bin
 
 # CPU_NUM
 CPU_NUM := 2
@@ -32,7 +32,7 @@ run: build
 		-m 128M \
     	-machine virt \
     	-nographic \
-    	-bios ../$(SBI) \
+    	-bios $(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-smp $(CPU_NUM)
 
@@ -41,7 +41,7 @@ debug:
 		-m 128M \
     	-machine virt \
     	-nographic \
-    	-bios ../$(SBI) \
+    	-bios $(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
 		-s -S \
 		-smp $(CPU_NUM)
