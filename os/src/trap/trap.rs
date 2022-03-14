@@ -1,5 +1,5 @@
-use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::syscall::syscall;
+use crate::config::TRAMPOLINE;
+// use crate::syscall::syscall;
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use log::*;
