@@ -1,5 +1,5 @@
-use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE, USER_STACK_SIZE};
-use crate::mm::{Permission, PhysPageNum, VirtAddr, KERNEL_SPACE};
+use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
+use crate::mm::{Permission, VirtAddr, KERNEL_SPACE};
 use lazy_static::*;
 use spin::Mutex;
 use super::pid::RecycleAllocator;

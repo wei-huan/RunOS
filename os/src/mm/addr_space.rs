@@ -47,6 +47,29 @@ impl AddrSpace {
     pub fn get_root_ppn(&self) -> usize {
         self.page_table.get_root_ppn().into()
     }
+    /// Assume that no conflicts.
+    pub fn insert_framed_area(
+        &mut self,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+        permission: Permission,
+    ) {
+        self.push_section(
+            Section::new(start_va, end_va, MapType::Framed, permission),
+            None,
+        );
+    }
+    pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
+        if let Some((idx, area)) = self
+            .sections
+            .iter_mut()
+            .enumerate()
+            .find(|(_, area)| area.vpn_range.get_start() == start_vpn)
+        {
+            area.unmap(&mut self.page_table);
+            self.sections.remove(idx);
+        }
+    }
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         section.map(&mut self.page_table);
         if let Some(data) = data {
