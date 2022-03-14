@@ -7,6 +7,9 @@ KERNEL_BIN := $(KERNEL_ELF).bin
 # PLATFORM
 PLATFORM ?= qemu
 
+# FS
+FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
+
 #SBI
 SBI := ../bootloader/opensbi-img/fw_jump.bin
 
