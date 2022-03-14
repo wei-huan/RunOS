@@ -9,7 +9,7 @@ use fdt::Fdt;
 pub static CPU_NUMS: AtomicUsize = AtomicUsize::new(1);
 pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(0);
 pub static FDT: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
-pub static MODEL: AtomicPtr<&str> = AtomicPtr::new(ptr::null_mut());
+// pub static MODEL: AtomicPtr<&str> = AtomicPtr::new(ptr::null_mut());
 
 fn print_node(node: FdtNode<'_, '_>, n_spaces: usize) {
     (0..n_spaces).for_each(|_| print!(" "));
@@ -41,6 +41,7 @@ fn fdt_get_ncpu(fdt_ptr: *mut u8) {
     // println!("n_cpus: {}", n_cpus as u64);
 }
 
+#[allow(unused)]
 pub fn fdt_get_model(fdt_ptr: *mut u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let model = fdt
@@ -53,7 +54,7 @@ pub fn fdt_get_model(fdt_ptr: *mut u8) {
 }
 
 pub fn init(fdt_ptr: *mut u8) {
-    // FDT.store(fdt_ptr, Ordering::Release);
+    FDT.store(fdt_ptr, Ordering::Release);
     fdt_get_timerfreq(fdt_ptr);
     fdt_get_ncpu(fdt_ptr);
     // fdt_get_model(fdt_ptr);

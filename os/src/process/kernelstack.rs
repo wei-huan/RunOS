@@ -1,12 +1,11 @@
+use super::pid::RecycleAllocator;
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
 use crate::mm::{Permission, VirtAddr, KERNEL_SPACE};
 use lazy_static::*;
 use spin::Mutex;
-use super::pid::RecycleAllocator;
 
 lazy_static! {
-    static ref KSTACK_ALLOCATOR: Mutex<RecycleAllocator> =
-        unsafe { Mutex::new(RecycleAllocator::new()) };
+    static ref KSTACK_ALLOCATOR: Mutex<RecycleAllocator> = Mutex::new(RecycleAllocator::new());
 }
 
 /// Return (bottom, top) of a kernel stack in kernel space.

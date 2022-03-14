@@ -1,39 +1,39 @@
-use crate::sync::{interrupt_get, interrupt_on, IntrLock};
+use crate::process::ProcessControlBlock;
+use crate::sync::{interrupt_get, interrupt_on, IntrLock, UPSafeCell};
 use alloc::sync::Arc;
-use core::cell::UnsafeCell;
 
 // Per-CPU state
 pub struct Cpu {
-    pub proc: Option<Arc<i32>>, // The process running on this cpu, or None.
-    pub int_depth: UnsafeCell<isize>, // 中断嵌套深度
-    pub int_status: bool,       // 本层中断状态
+    pub process: Option<Arc<ProcessControlBlock>>, // The process running on this cpu, or None.
+    pub intr_depth: UPSafeCell<isize>,             // 中断嵌套深度
+    pub intr_status: bool,                         // 本层中断状态
 }
 
 impl Cpu {
     pub const fn new() -> Self {
         Self {
-            proc: None,
-            int_depth: UnsafeCell::new(0),
-            int_status: false,
+            process: None,
+            intr_depth: UPSafeCell::new(0),
+            intr_status: false,
         }
     }
 
     // interrupts must be disabled.
     pub unsafe fn lock(&mut self, old: bool) -> IntrLock {
-        if *self.int_depth.get() == 0 {
-            self.int_status = old;
+        if *self.intr_depth.exclusive_access() == 0 {
+            self.intr_status = old;
         }
-        *self.int_depth.get() += 1;
+        *self.intr_depth.exclusive_access() += 1;
         IntrLock { cpu: self }
     }
 
     // interrupts must be disabled.
     pub unsafe fn unlock(&self) {
         assert!(!interrupt_get(), "unlock - interruptible");
-        let int_depth = self.int_depth.get();
+        let int_depth = self.intr_depth.exclusive_access();
         assert!(*int_depth >= 1, "unlock");
         *int_depth -= 1;
-        if *int_depth == 0 && self.int_status {
+        if *int_depth == 0 && self.intr_status {
             interrupt_on()
         }
     }

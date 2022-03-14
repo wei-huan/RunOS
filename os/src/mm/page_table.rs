@@ -92,8 +92,8 @@ impl PageTable {
             pte_frames: Vec::new(),
         }
     }
-    pub fn get_root_ppn(&self) -> PhysPageNum {
-        self.root_ppn
+    pub fn get_token(&self) -> usize {
+        8usize << 60 | self.root_ppn.0
     }
     pub fn find_pte(&self, vpn: VirtPageNum) -> Option<&mut PageTableEntry> {
         let idxs = vpn.indexes();

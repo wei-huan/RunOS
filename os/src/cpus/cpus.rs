@@ -3,6 +3,8 @@ use crate::sync::{interrupt_get, interrupt_off, IntrLock};
 use array_macro::array;
 use core::arch::asm;
 use core::cell::UnsafeCell;
+// use lazy_static::*;
+// use spin::Mutex;
 
 const CPU_NUM: usize = 4;
 
