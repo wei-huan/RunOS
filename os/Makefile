@@ -48,6 +48,8 @@ debug:
     	-nographic \
     	-bios $(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
+		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-s -S \
 		-smp $(CPU_NUM)
 

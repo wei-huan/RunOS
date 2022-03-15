@@ -10,7 +10,7 @@ pub enum ExitStatus {
     Fail(u16),
 }
 
-pub fn exit(exit_status: ExitStatus) -> ! {
+pub fn exit(_exit_status: ExitStatus) -> ! {
     // let virt_test: *mut u32 = match satp::read().mode {
     //     satp::SatpMode::Bare => 0x10_0000 as *mut u32,
     //     _ => (PHYSICAL_OFFSET.load(Ordering::Acquire) + 0x10_0000) as *mut u32,

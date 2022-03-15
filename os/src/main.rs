@@ -13,7 +13,6 @@ extern crate fdt;
 
 #[macro_use]
 mod console;
-mod platform;
 mod config;
 mod cpus;
 mod drivers;
@@ -23,15 +22,16 @@ mod lang_items;
 mod logging;
 mod mm;
 mod opensbi;
+mod platform;
+mod process;
 mod sync;
+mod syscall;
 mod timer;
 mod trap;
 mod utils;
-mod process;
-mod syscall;
 
 use crate::opensbi::hart_start;
-use core::arch::global_asm;
+use core::arch::{asm, global_asm};
 use core::sync::atomic::{AtomicBool, Ordering};
 use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
@@ -101,7 +101,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!("=== MyOS Info ===");
         // info!(" Heap region: {:#p}-{:#p}", heap_start, heap_end);
         // info!(" Paging scheme: {:?}", csr::satp::read().mode);
-
+        // fs::list_apps();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
     } else {
@@ -110,5 +110,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         timer::init();
         info!("A");
     }
-    loop {}
+    loop {
+        unsafe {asm!("wfi")};
+    }
 }

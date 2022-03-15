@@ -1,7 +1,7 @@
 use core::fmt::{self, Write};
 use crate::write;
 
-const STDIN: usize = 0;
+// const STDIN: usize = 0;
 const STDOUT: usize = 1;
 
 struct Stdout;

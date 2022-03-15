@@ -38,11 +38,11 @@ impl log::Log for MyLogger {
         if max_level < level {
             return false;
         }
-        let mut mod_path = metadata.target();
-        mod_path = if mod_path == "MyOS" {
+        let mut _mod_path = metadata.target();
+        _mod_path = if _mod_path == "MyOS" {
             "kernel"
         } else {
-            mod_path.trim_start_matches("MyOS::")
+            _mod_path.trim_start_matches("MyOS::")
         };
         true
     }
