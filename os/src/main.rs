@@ -101,7 +101,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!("=== MyOS Info ===");
         process::add_apps();
         START.store(true, Ordering::Relaxed);
-        // boot_all_harts(hartid);
+        boot_all_harts(hartid);
         cpus::run_processes();
     } else {
         trap::init();

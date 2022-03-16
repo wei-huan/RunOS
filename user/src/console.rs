@@ -1,5 +1,5 @@
 use core::fmt::{self, Write};
-use crate::write;
+use super::write;
 
 // const STDIN: usize = 0;
 const STDOUT: usize = 1;

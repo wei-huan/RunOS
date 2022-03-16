@@ -12,19 +12,16 @@ pub fn run_processes() {
     loop {
         let mut cpu = CPUS[cpu_id()].exclusive_access();
         if let Some(process) = fetch_process() {
-            info!("1");
             let mut process_inner = process.inner_exclusive_access();
-            info!("2");
             let next_proc_cx_ptr = &process_inner.proc_cx as *const ProcessContext;
-            info!("3");
             process_inner.proc_status = ProcessStatus::Running;
-            info!("4");
             drop(process_inner);
-            info!("5");
             // release coming task TCB manually
+            info!("4");
             cpu.set_current(Some(process));
+            info!("5");
             // release processor manually
-            // drop(cpu);
+            drop(cpu);
             info!("6");
             unsafe {
                 __first_switch(next_proc_cx_ptr);
