@@ -1,5 +1,5 @@
 use crate::{
-    cpus::Cpus,
+    cpus::cpu_id,
     dt::TIMER_FREQ,
     timer::get_time,
     utils::{micros, time_parts},
@@ -28,7 +28,7 @@ struct MyLogger;
 
 impl log::Log for MyLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        let hart_id = Cpus::cpu_id();
+        let hart_id = cpu_id();
         let max_hart = HART_FILTER.load(Ordering::Relaxed);
         if max_hart < hart_id {
             return false;
@@ -60,7 +60,7 @@ impl log::Log for MyLogger {
         } else {
             mod_path.trim_start_matches("MyOS::")
         };
-        let cpu_id = Cpus::cpu_id();
+        let cpu_id = cpu_id();
         let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
         let curr_time = get_time();
         let (secs, ms, _) = time_parts(micros(curr_time, freq));

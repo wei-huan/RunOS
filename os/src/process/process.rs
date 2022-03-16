@@ -5,16 +5,15 @@ use super::kernelstack::KernelStack;
 use super::{pid_alloc, PidHandle};
 use crate::config::TRAP_CONTEXT;
 use crate::fs::{File, Stdin, Stdout};
-use crate::trap::{TrapContext};
+use crate::trap::TrapContext;
 use crate::{
-    mm::{AddrSpace, PhysPageNum, VirtAddr, kernel_token},
+    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr},
     sync::UPSafeCell,
 };
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
 use core::cell::RefMut;
-// use spin::{Condvar, Mutex, Semaphore};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum ProcessStatus {
@@ -32,10 +31,10 @@ pub struct ProcessControlBlock {
 }
 
 pub struct ProcessControlBlockInner {
+    pub trap_cx_ppn: PhysPageNum,
     pub base_size: usize,
     // pub signals: SignalFlags,
     pub proc_cx: ProcessContext,
-    pub proc_cx_ppn: PhysPageNum,
     pub proc_status: ProcessStatus,
     pub addrspace: AddrSpace,
     pub children: Vec<Arc<ProcessControlBlock>>,
@@ -46,7 +45,7 @@ pub struct ProcessControlBlockInner {
 
 impl ProcessControlBlockInner {
     pub fn get_trap_cx(&self) -> &'static mut TrapContext {
-        self.proc_cx_ppn.get_mut()
+        self.trap_cx_ppn.get_mut()
     }
     pub fn get_user_token(&self) -> usize {
         self.addrspace.get_token()
@@ -71,11 +70,10 @@ impl ProcessControlBlock {
     pub fn inner_exclusive_access(&self) -> RefMut<'_, ProcessControlBlockInner> {
         self.inner.exclusive_access()
     }
-
-    pub fn new(elf_data: &[u8]) -> Arc<Self> {
+    pub fn new(elf_data: &[u8]) -> Self {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, ustack_base, entry_point) = AddrSpace::from_elf(elf_data);
-        let proc_cx_ppn = addrspace
+        let (addrspace, ustack_base, entry_point) = AddrSpace::create_user_space(elf_data);
+        let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
             .ppn();
@@ -83,11 +81,11 @@ impl ProcessControlBlock {
         let pid_handle = pid_alloc();
         let kernel_stack = kstack_alloc();
         let kernel_stack_top = kernel_stack.get_top();
-        let process = Arc::new(Self {
+        let process = Self {
             pid: pid_handle,
             kernel_stack,
             inner: UPSafeCell::new(ProcessControlBlockInner {
-                proc_cx_ppn,
+                trap_cx_ppn,
                 base_size: ustack_base,
                 proc_cx: ProcessContext::goto_trap_return(kernel_stack_top),
                 proc_status: ProcessStatus::Ready,
@@ -104,7 +102,7 @@ impl ProcessControlBlock {
                     Some(Arc::new(Stdout)),
                 ],
             }),
-        });
+        };
         // prepare TrapContext in user space
         let trap_cx = process.inner_exclusive_access().get_trap_cx();
         *trap_cx = TrapContext::app_init_context(

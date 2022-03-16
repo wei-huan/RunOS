@@ -33,7 +33,7 @@ pub fn kernel_token() -> usize {
 }
 
 pub struct AddrSpace {
-    page_table: PageTable,
+    pub page_table: PageTable,
     sections: Vec<Section>,
 }
 
@@ -159,8 +159,11 @@ impl AddrSpace {
         // println!("mapping kernel finish");
         kernel_space
     }
+    /// Include sections in elf and trampoline and TrapContext and user stack,
+    /// also returns user_sp and entry point.
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
         let mut user_space = Self::new_empty();
+        // map trampoline
         user_space.map_trampoline();
         // map program headers of elf, with U flag
         let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
@@ -195,13 +198,13 @@ impl AddrSpace {
         }
         // map user stack with U flags
         let max_end_va: VirtAddr = max_end_vpn.into();
-        let mut user_stack_low: usize = max_end_va.into();
+        let mut user_stack_bottom: usize = max_end_va.into();
         // guard page
-        user_stack_low += PAGE_SIZE;
-        let user_stack_high = user_stack_low + USER_STACK_SIZE;
+        user_stack_bottom += PAGE_SIZE;
+        let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
         user_space.push_section(
             Section::new(
-                user_stack_low.into(),
+                user_stack_bottom.into(),
                 user_stack_high.into(),
                 MapType::Framed,
                 Permission::R | Permission::W | Permission::U,
@@ -221,52 +224,6 @@ impl AddrSpace {
         (
             user_space,
             user_stack_high,
-            elf.header.pt2.entry_point() as usize,
-        )
-    }
-    /// Include sections in elf and trampoline,
-    /// also returns user_sp_base and entry point.
-    pub fn from_elf(elf_data: &[u8]) -> (Self, usize, usize) {
-        let mut addr_space = Self::new_empty();
-        // map trampoline
-        addr_space.map_trampoline();
-        // map program headers of elf, with U flag
-        let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
-        let elf_header = elf.header;
-        let magic = elf_header.pt1.magic;
-        assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
-        let ph_count = elf_header.pt2.ph_count();
-        let mut max_end_vpn = VirtPageNum(0);
-        for i in 0..ph_count {
-            let ph = elf.program_header(i).unwrap();
-            if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
-                let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
-                let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
-                let mut map_perm = Permission::U;
-                let ph_flags = ph.flags();
-                if ph_flags.is_read() {
-                    map_perm |= Permission::R;
-                }
-                if ph_flags.is_write() {
-                    map_perm |= Permission::W;
-                }
-                if ph_flags.is_execute() {
-                    map_perm |= Permission::X;
-                }
-                let map_area = Section::new(start_va, end_va, MapType::Framed, map_perm);
-                max_end_vpn = map_area.vpn_range.get_end();
-                addr_space.push_section(
-                    map_area,
-                    Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
-                );
-            }
-        }
-        let max_end_va: VirtAddr = max_end_vpn.into();
-        let mut user_stack_base: usize = max_end_va.into();
-        user_stack_base += PAGE_SIZE;
-        (
-            addr_space,
-            user_stack_base,
             elf.header.pt2.entry_point() as usize,
         )
     }

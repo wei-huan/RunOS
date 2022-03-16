@@ -23,6 +23,7 @@ pub fn interrupt_get() -> bool {
 pub struct IntrLock<'a> {
     pub cpu: &'a Cpu,
 }
+
 impl<'a> Drop for IntrLock<'a> {
     fn drop(&mut self) {
         unsafe {

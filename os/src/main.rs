@@ -99,11 +99,10 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Spec Version: {}.{}", spec_major, spec_minor);
 
         info!("=== MyOS Info ===");
-        // info!(" Heap region: {:#p}-{:#p}", heap_start, heap_end);
-        // info!(" Paging scheme: {:?}", csr::satp::read().mode);
-        // fs::list_apps();
+        process::add_apps();
         START.store(true, Ordering::Relaxed);
-        boot_all_harts(hartid);
+        // boot_all_harts(hartid);
+        cpus::run_processes();
     } else {
         trap::init();
         mm::init();

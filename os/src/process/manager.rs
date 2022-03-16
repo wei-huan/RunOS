@@ -1,5 +1,5 @@
 use super::ProcessControlBlock;
-use alloc::collections::{BTreeMap, VecDeque};
+use alloc::collections::VecDeque;
 use alloc::sync::Arc;
 use lazy_static::*;
 use spin::Mutex;
@@ -25,13 +25,13 @@ impl ProcessManager {
 }
 
 lazy_static! {
-    pub static ref PROC_MANAGER: Mutex<ProcessManager> = Mutex::new(ProcessManager::new());
+    pub static ref PROCESS_MANAGER: Mutex<ProcessManager> = Mutex::new(ProcessManager::new());
 }
 
 pub fn add_process(task: Arc<ProcessControlBlock>) {
-    PROC_MANAGER.lock().add(task);
+    PROCESS_MANAGER.lock().add(task);
 }
 
 pub fn fetch_process() -> Option<Arc<ProcessControlBlock>> {
-    PROC_MANAGER.lock().fetch()
+    PROCESS_MANAGER.lock().fetch()
 }

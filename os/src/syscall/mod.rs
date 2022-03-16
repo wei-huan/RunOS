@@ -1,6 +1,6 @@
 mod fs;
-mod process;
 mod sync;
+mod process;
 mod thread;
 
 // use fs::*;
@@ -8,8 +8,8 @@ use process::*;
 // use sync::*;
 // use thread::*;
 
-const SYSCALL_OPEN: usize = 56;
-const SYSCALL_CLOSE: usize = 57;
+// const SYSCALL_OPEN: usize = 56;
+// const SYSCALL_CLOSE: usize = 57;
 const SYSCALL_EXIT: usize = 93;
 
 pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
