@@ -110,6 +110,6 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!("A");
     }
     loop {
-        unsafe {asm!("wfi")};
+        unsafe { asm!("wfi") };
     }
 }

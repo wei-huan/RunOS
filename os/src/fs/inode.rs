@@ -5,7 +5,7 @@ use spin::Mutex;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
-use myfs::{MyFileSystem, Inode};
+use easy_fs::{EasyFileSystem, Inode};
 use lazy_static::*;
 
 // OSInode 表示进程中一个被打开的常规文件或目录。
@@ -46,8 +46,8 @@ impl OSInode {
 
 lazy_static! {
     pub static ref ROOT_INODE: Arc<Inode> = {
-        let myfs = MyFileSystem::open(BLOCK_DEVICE.clone());
-        Arc::new(MyFileSystem::root_inode(&myfs))
+        let myfs = EasyFileSystem::open(BLOCK_DEVICE.clone());
+        Arc::new(EasyFileSystem::root_inode(&myfs))
     };
 }
 

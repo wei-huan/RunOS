@@ -1,4 +1,3 @@
-/// 磁盘块管理层
 use super::{
     block_cache_sync_all, get_block_cache, Bitmap, BlockDevice, DiskInode, DiskInodeType, Inode,
     SuperBlock,
@@ -7,7 +6,7 @@ use crate::BLOCK_SZ;
 use alloc::sync::Arc;
 use spin::Mutex;
 
-pub struct MyFileSystem {
+pub struct EasyFileSystem {
     pub block_device: Arc<dyn BlockDevice>,
     pub inode_bitmap: Bitmap,
     pub data_bitmap: Bitmap,
@@ -17,7 +16,7 @@ pub struct MyFileSystem {
 
 type DataBlock = [u8; BLOCK_SZ];
 
-impl MyFileSystem {
+impl EasyFileSystem {
     pub fn create(
         block_device: Arc<dyn BlockDevice>,
         total_blocks: u32,
@@ -100,6 +99,7 @@ impl MyFileSystem {
                 Arc::new(Mutex::new(efs))
             })
     }
+
     pub fn root_inode(efs: &Arc<Mutex<Self>>) -> Inode {
         let block_device = Arc::clone(&efs.lock().block_device);
         // acquire efs lock temporarily
@@ -107,6 +107,7 @@ impl MyFileSystem {
         // release efs lock
         Inode::new(block_id, block_offset, Arc::clone(efs), block_device)
     }
+
     pub fn get_disk_inode_pos(&self, inode_id: u32) -> (u32, usize) {
         let inode_size = core::mem::size_of::<DiskInode>();
         let inodes_per_block = (BLOCK_SZ / inode_size) as u32;
@@ -116,16 +117,20 @@ impl MyFileSystem {
             (inode_id % inodes_per_block) as usize * inode_size,
         )
     }
+
     pub fn get_data_block_id(&self, data_block_id: u32) -> u32 {
         self.data_area_start_block + data_block_id
     }
+
     pub fn alloc_inode(&mut self) -> u32 {
         self.inode_bitmap.alloc(&self.block_device).unwrap() as u32
     }
+
     /// Return a block ID not ID in the data area.
     pub fn alloc_data(&mut self) -> u32 {
         self.data_bitmap.alloc(&self.block_device).unwrap() as u32 + self.data_area_start_block
     }
+
     pub fn dealloc_data(&mut self, block_id: u32) {
         get_block_cache(block_id as usize, Arc::clone(&self.block_device))
             .lock()

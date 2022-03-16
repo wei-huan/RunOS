@@ -1,4 +1,3 @@
-/// 块设备接口层
 use core::any::Any;
 
 pub trait BlockDevice: Send + Sync + Any {

@@ -1,5 +1,5 @@
 use clap::{Command, Arg};
-use myfs::{BlockDevice, MyFileSystem};
+use easy_fs::{BlockDevice, EasyFileSystem};
 use std::fs::{read_dir, File, OpenOptions};
 use std::io::{Read, Seek, SeekFrom, Write};
 use std::sync::Arc;
@@ -16,6 +16,7 @@ impl BlockDevice for BlockFile {
             .expect("Error when seeking!");
         assert_eq!(file.read(buf).unwrap(), BLOCK_SZ, "Not a complete block!");
     }
+
     fn write_block(&self, block_id: usize, buf: &[u8]) {
         let mut file = self.0.lock().unwrap();
         file.seek(SeekFrom::Start((block_id * BLOCK_SZ) as u64))
@@ -29,7 +30,7 @@ fn main() {
 }
 
 fn easy_fs_pack() -> std::io::Result<()> {
-    let matches = Command::new("MyFileSystem packer")
+    let matches = Command::new("EasyFileSystem packer")
         .arg(
             Arg::new("source")
                 .short('s')
@@ -58,8 +59,8 @@ fn easy_fs_pack() -> std::io::Result<()> {
         f
     })));
     // 16MiB, at most 4095 files
-    let myfs = MyFileSystem::create(block_file, 16 * 2048, 1);
-    let root_inode = Arc::new(MyFileSystem::root_inode(&myfs));
+    let efs = EasyFileSystem::create(block_file, 16 * 2048, 1);
+    let root_inode = Arc::new(EasyFileSystem::root_inode(&efs));
     let apps: Vec<_> = read_dir(src_path)
         .unwrap()
         .into_iter()
@@ -97,9 +98,9 @@ fn efs_test() -> std::io::Result<()> {
         f.set_len(8192 * 512).unwrap();
         f
     })));
-    MyFileSystem::create(block_file.clone(), 4096, 1);
-    let myfs = MyFileSystem::open(block_file.clone());
-    let root_inode = MyFileSystem::root_inode(&myfs);
+    EasyFileSystem::create(block_file.clone(), 4096, 1);
+    let efs = EasyFileSystem::open(block_file.clone());
+    let root_inode = EasyFileSystem::root_inode(&efs);
     root_inode.create("filea");
     root_inode.create("fileb");
     for name in root_inode.ls() {
@@ -136,6 +137,7 @@ fn efs_test() -> std::io::Result<()> {
         }
         assert_eq!(str, read_str);
     };
+
     random_str_test(4 * BLOCK_SZ);
     random_str_test(8 * BLOCK_SZ + BLOCK_SZ / 2);
     random_str_test(100 * BLOCK_SZ);
@@ -144,5 +146,6 @@ fn efs_test() -> std::io::Result<()> {
     random_str_test(400 * BLOCK_SZ);
     random_str_test(1000 * BLOCK_SZ);
     random_str_test(2000 * BLOCK_SZ);
+
     Ok(())
 }

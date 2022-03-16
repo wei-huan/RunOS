@@ -5,7 +5,6 @@
 extern crate user;
 
 #[no_mangle]
-pub fn main() -> i32 {
+pub fn main() {
     println!("Hello world from user mode program!");
-    0
 }

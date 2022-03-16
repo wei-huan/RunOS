@@ -1,4 +1,3 @@
-/// 磁盘数据结构层
 use super::{get_block_cache, BlockDevice, BLOCK_SZ};
 use alloc::sync::Arc;
 
@@ -25,6 +24,7 @@ impl Bitmap {
             blocks,
         }
     }
+
     pub fn alloc(&self, block_device: &Arc<dyn BlockDevice>) -> Option<usize> {
         for block_id in 0..self.blocks {
             let pos = get_block_cache(
@@ -52,6 +52,7 @@ impl Bitmap {
         }
         None
     }
+
     pub fn dealloc(&self, block_device: &Arc<dyn BlockDevice>, bit: usize) {
         let (block_pos, bits64_pos, inner_pos) = decomposition(bit);
         get_block_cache(block_pos + self.start_block_id, Arc::clone(block_device))
@@ -61,6 +62,7 @@ impl Bitmap {
                 bitmap_block[bits64_pos] -= 1u64 << inner_pos;
             });
     }
+
     pub fn maximum(&self) -> usize {
         self.blocks * BLOCK_BITS
     }
