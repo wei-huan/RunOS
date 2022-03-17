@@ -7,6 +7,7 @@ use alloc::vec::Vec;
 use bitflags::*;
 use myfs::{MyFileSystem, Inode};
 use lazy_static::*;
+use log::*;
 
 // OSInode 表示进程中一个被打开的常规文件或目录。
 pub struct OSInode {
