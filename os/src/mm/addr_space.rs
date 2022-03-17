@@ -90,11 +90,11 @@ impl AddrSpace {
         // map trampoline
         kernel_space.map_trampoline();
         // map kernel sections
-        println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
-        println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(".bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
-        println!("mapping .text section");
+        // println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        // println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+        // println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+        // println!(".bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
+        // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
                 (stext as usize).into(),
@@ -104,7 +104,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .rodata section");
+        // println!("mapping .rodata section");
         kernel_space.push_section(
             Section::new(
                 (srodata as usize).into(),
@@ -114,7 +114,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .data section");
+        // println!("mapping .data section");
         kernel_space.push_section(
             Section::new(
                 (sdata as usize).into(),
@@ -124,7 +124,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .bss section");
+        // println!("mapping .bss section");
         kernel_space.push_section(
             Section::new(
                 (sbss as usize).into(),
@@ -134,7 +134,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping physical memory");
+        // println!("mapping physical memory");
         kernel_space.push_section(
             Section::new(
                 (ekernel as usize).into(),
@@ -144,7 +144,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping memory-mapped registers");
+        // println!("mapping memory-mapped registers");
         for pair in MMIO {
             kernel_space.push_section(
                 Section::new(

@@ -1,6 +1,5 @@
 use super::current_process;
-use super::{cpu_id, CPUS};
-use crate::process::{ProcessContext, ProcessControlBlock, __switch};
+use crate::process::{ProcessContext, ProcessControlBlock};
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::trap::TrapContext;
 use alloc::sync::Arc;
@@ -72,11 +71,3 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
         .get_trap_cx()
 }
 
-pub fn schedule(switched_task_cx_ptr: *mut ProcessContext) {
-    let mut cpu = CPUS[cpu_id()].exclusive_access();
-    let idle_task_cx_ptr = cpu.take_idle_proc_cx_ptr();
-    drop(cpu);
-    unsafe {
-        __switch(switched_task_cx_ptr, idle_task_cx_ptr);
-    }
-}
