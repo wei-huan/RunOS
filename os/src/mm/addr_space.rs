@@ -1,6 +1,6 @@
 use super::{
     address::{PhysAddr, VirtAddr, VirtPageNum},
-    page_table::{PTEFlags, PageTable},
+    page_table::{PTEFlags, PageTable, PageTableEntry},
     section::{MapType, Permission, Section},
 };
 use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
@@ -29,11 +29,11 @@ lazy_static! {
 }
 
 pub fn kernel_token() -> usize {
-    KERNEL_SPACE.lock().get_root_ppn()
+    KERNEL_SPACE.lock().get_token()
 }
 
 pub struct AddrSpace {
-    page_table: PageTable,
+    pub page_table: PageTable,
     sections: Vec<Section>,
 }
 
@@ -44,8 +44,31 @@ impl AddrSpace {
             sections: Vec::new(),
         }
     }
-    pub fn get_root_ppn(&self) -> usize {
-        self.page_table.get_root_ppn().into()
+    pub fn get_token(&self) -> usize {
+        self.page_table.get_token()
+    }
+    /// Assume that no conflicts.
+    pub fn insert_framed_area(
+        &mut self,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+        permission: Permission,
+    ) {
+        self.push_section(
+            Section::new(start_va, end_va, MapType::Framed, permission),
+            None,
+        );
+    }
+    pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
+        if let Some((idx, area)) = self
+            .sections
+            .iter_mut()
+            .enumerate()
+            .find(|(_, area)| area.vpn_range.get_start() == start_vpn)
+        {
+            area.unmap(&mut self.page_table);
+            self.sections.remove(idx);
+        }
     }
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         section.map(&mut self.page_table);
@@ -67,11 +90,11 @@ impl AddrSpace {
         // map trampoline
         kernel_space.map_trampoline();
         // map kernel sections
-        println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
-        println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(".bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
-        println!("mapping .text section");
+        // println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        // println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+        // println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+        // println!(".bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
+        // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
                 (stext as usize).into(),
@@ -81,7 +104,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .rodata section");
+        // println!("mapping .rodata section");
         kernel_space.push_section(
             Section::new(
                 (srodata as usize).into(),
@@ -91,7 +114,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .data section");
+        // println!("mapping .data section");
         kernel_space.push_section(
             Section::new(
                 (sdata as usize).into(),
@@ -101,7 +124,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .bss section");
+        // println!("mapping .bss section");
         kernel_space.push_section(
             Section::new(
                 (sbss as usize).into(),
@@ -111,7 +134,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping physical memory");
+        // println!("mapping physical memory");
         kernel_space.push_section(
             Section::new(
                 (ekernel as usize).into(),
@@ -121,7 +144,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping memory-mapped registers");
+        // println!("mapping memory-mapped registers");
         for pair in MMIO {
             kernel_space.push_section(
                 Section::new(
@@ -136,8 +159,11 @@ impl AddrSpace {
         // println!("mapping kernel finish");
         kernel_space
     }
+    /// Include sections in elf and trampoline and TrapContext and user stack,
+    /// also returns user_sp and entry point.
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
         let mut user_space = Self::new_empty();
+        // map trampoline
         user_space.map_trampoline();
         // map program headers of elf, with U flag
         let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
@@ -172,13 +198,13 @@ impl AddrSpace {
         }
         // map user stack with U flags
         let max_end_va: VirtAddr = max_end_vpn.into();
-        let mut user_stack_low: usize = max_end_va.into();
+        let mut user_stack_bottom: usize = max_end_va.into();
         // guard page
-        user_stack_low += PAGE_SIZE;
-        let user_stack_high = user_stack_low + USER_STACK_SIZE;
+        user_stack_bottom += PAGE_SIZE;
+        let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
         user_space.push_section(
             Section::new(
-                user_stack_low.into(),
+                user_stack_bottom.into(),
                 user_stack_high.into(),
                 MapType::Framed,
                 Permission::R | Permission::W | Permission::U,
@@ -201,9 +227,15 @@ impl AddrSpace {
             elf.header.pt2.entry_point() as usize,
         )
     }
+    pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
+        self.page_table.translate(vpn)
+    }
+    pub fn recycle_data_pages(&mut self) {
+        //*self = Self::new_bare();
+        self.sections.clear();
+    }
     pub fn activate(&mut self) {
-        let root_ppn = self.page_table.get_root_ppn();
-        let satp = 8usize << 60 | root_ppn.0;
+        let satp = self.page_table.get_token();
         unsafe {
             satp::write(satp);
             asm!("sfence.vma");

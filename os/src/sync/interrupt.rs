@@ -13,12 +13,10 @@ pub fn interrupt_off() {
         sstatus::clear_sie();
     }
 }
-
 // are device interrupts enabled?
 pub fn interrupt_get() -> bool {
     sstatus::read().sie()
 }
-
 // Since there may be more than one IntrLock,
 // make it an immutable reference to the Cpu struct.
 // so, noff is wrapped in UnsafeCell.

@@ -7,6 +7,9 @@ KERNEL_BIN := $(KERNEL_ELF).bin
 # PLATFORM
 PLATFORM ?= qemu
 
+# FS
+FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
+
 #SBI
 SBI := ../bootloader/opensbi-img/fw_jump.bin
 
@@ -34,6 +37,8 @@ run: build
     	-nographic \
     	-bios $(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
+		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPU_NUM)
 
 debug:
@@ -43,6 +48,8 @@ debug:
     	-nographic \
     	-bios $(SBI) \
 		-device loader,file=target/riscv64gc-unknown-none-elf/release/os.bin,addr=0x80200000 \
+		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-s -S \
 		-smp $(CPU_NUM)
 

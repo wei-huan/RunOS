@@ -1,48 +1,41 @@
 use super::cpu::Cpu;
-use crate::sync::{interrupt_get, interrupt_off, IntrLock};
+use crate::process::{ProcessControlBlock, ProcessContext, __switch};
+use crate::sync::UPSafeCell;
+use alloc::sync::Arc;
 use array_macro::array;
 use core::arch::asm;
-use core::cell::UnsafeCell;
+use lazy_static::*;
 
 const CPU_NUM: usize = 4;
 
-pub struct Cpus([UnsafeCell<Cpu>; CPU_NUM]);
-unsafe impl Sync for Cpus {}
+// Must be called with interrupts disabled,
+// to prevent race with process being moved
+// to a different CPU.
+#[inline]
+pub fn cpu_id() -> usize {
+    let id;
+    unsafe { asm!("mv {0}, tp", out(reg) id) };
+    id
+}
 
-impl Cpus {
-    const fn new() -> Self {
-        Self(array![_ => UnsafeCell::new(Cpu::new()); CPU_NUM])
-    }
+lazy_static! {
+    pub static ref CPUS: [UPSafeCell<Cpu>; CPU_NUM] =
+        array![_ => UPSafeCell::new(Cpu::new()); CPU_NUM];
+}
 
-    // Must be called with interrupts disabled,
-    // to prevent race with process being moved
-    // to a different CPU.
-    #[inline]
-    pub fn cpu_id() -> usize {
-        let id;
-        unsafe { asm!("mv {0}, tp", out(reg) id) };
-        id
-    }
+pub fn take_current_process() -> Option<Arc<ProcessControlBlock>> {
+    CPUS[cpu_id()].exclusive_access().take_current()
+}
 
-    // Return the pointer this Cpus's Cpu struct.
-    // interrupts must be disabled.
-    pub unsafe fn my_cpu(&self) -> &mut Cpu {
-        let id = Self::cpu_id();
-        &mut *self.0[id].get()
-    }
+pub fn current_process() -> Option<Arc<ProcessControlBlock>> {
+    CPUS[cpu_id()].exclusive_access().current()
+}
 
-    // intr_lock() disable interrupts on mycpu().
-    // if all `intr_lock`'s are dropped, interrupts may recover
-    // to previous state.
-    pub fn intr_lock(&self) -> IntrLock {
-        let old = interrupt_get();
-        interrupt_off();
-        unsafe { self.my_cpu().lock(old) }
-    }
-
-    // It is only safe to call it in Mutex's force_unlock().
-    // It cannot be used anywhere else.
-    pub unsafe fn intr_unlock(&self) {
-        self.my_cpu().unlock();
+pub fn schedule(switched_task_cx_ptr: *mut ProcessContext) {
+    let mut cpu = CPUS[cpu_id()].exclusive_access();
+    let idle_task_cx_ptr = cpu.take_idle_proc_cx_ptr();
+    drop(cpu);
+    unsafe {
+        __switch(switched_task_cx_ptr, idle_task_cx_ptr);
     }
 }

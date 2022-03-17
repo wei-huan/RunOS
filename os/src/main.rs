@@ -13,7 +13,6 @@ extern crate fdt;
 
 #[macro_use]
 mod console;
-mod platform;
 mod config;
 mod cpus;
 mod drivers;
@@ -23,7 +22,10 @@ mod lang_items;
 mod logging;
 mod mm;
 mod opensbi;
+mod platform;
+mod process;
 mod sync;
+mod syscall;
 mod timer;
 mod trap;
 mod utils;
@@ -31,8 +33,7 @@ mod utils;
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
-use dt::{CPU_NUMS, TIMER_FREQ, MODEL};
-use fdt::Fdt;
+use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
 use opensbi::{impl_id, impl_version, spec_version};
 
@@ -69,7 +70,6 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         logging::init();
         mm::boot_init();
         timer::init();
-        // let model = MODEL.load(Ordering::Relaxed);
         let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
         let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
         let (impl_major, impl_minor) = {
@@ -99,16 +99,15 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Spec Version: {}.{}", spec_major, spec_minor);
 
         info!("=== MyOS Info ===");
-        // info!(" Heap region: {:#p}-{:#p}", heap_start, heap_end);
-        // info!(" Paging scheme: {:?}", csr::satp::read().mode);
-
+        process::add_apps();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
+        cpus::run_processes();
     } else {
         trap::init();
         mm::init();
         timer::init();
-        info!("A");
+        cpus::run_processes();
     }
-    loop {}
+    unreachable!();
 }
