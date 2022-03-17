@@ -5,7 +5,6 @@ pub use cpu::{current_trap_cx, current_user_token, Cpu};
 pub use cpus::{cpu_id, current_process, take_current_process, CPUS, schedule};
 
 use crate::task::{fetch_process, idle_process, ProcessContext, ProcessStatus, __switch};
-use crate::trap;
 
 pub fn run_processes() {
     loop {
@@ -25,7 +24,6 @@ pub fn run_processes() {
                 __switch(idle_proc_cx_ptr, next_proc_cx_ptr);
             }
         } else {
-            trap::init();
             idle_process();
         }
     }
