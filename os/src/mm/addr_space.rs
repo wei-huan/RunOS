@@ -230,6 +230,10 @@ impl AddrSpace {
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)
     }
+    pub fn recycle_data_pages(&mut self) {
+        //*self = Self::new_bare();
+        self.sections.clear();
+    }
     pub fn activate(&mut self) {
         let satp = self.page_table.get_token();
         unsafe {

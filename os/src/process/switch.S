@@ -2,8 +2,8 @@
 .macro SAVE_SN n
     sd s\n, (\n+2)*8(a0)
 .endm
-.macro LOAD_SN n r
-    ld s\n, (\n+2)*8(\r)
+.macro LOAD_SN n
+    ld s\n, (\n+2)*8(a1)
 .endm
     .section .text
     .globl __switch
@@ -25,7 +25,7 @@ __switch:
     ld ra, 0(a1)
     .set n, 0
     .rept 12
-        LOAD_SN %n a1
+        LOAD_SN %n
         .set n, n + 1
     .endr
     # restore kernel stack of next task

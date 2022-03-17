@@ -28,8 +28,8 @@ lazy_static! {
     pub static ref PROCESS_MANAGER: Mutex<ProcessManager> = Mutex::new(ProcessManager::new());
 }
 
-pub fn add_process(task: Arc<ProcessControlBlock>) {
-    PROCESS_MANAGER.lock().add(task);
+pub fn add_process(proc: Arc<ProcessControlBlock>) {
+    PROCESS_MANAGER.lock().add(proc);
 }
 
 pub fn fetch_process() -> Option<Arc<ProcessControlBlock>> {

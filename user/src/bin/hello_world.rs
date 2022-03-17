@@ -8,7 +8,12 @@ use user::get_time;
 
 #[no_mangle]
 pub fn main() -> i32 {
-    get_time();
-    println!("Hello world from user mode program!");
+    let start = get_time();
+    let mut end = get_time();
+    while end - start <= 100 {
+        // println!("sleep");
+        end = get_time();
+    }
+    println!("Hello world from user mode program 0!");
     0
 }

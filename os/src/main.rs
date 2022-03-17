@@ -31,7 +31,7 @@ mod trap;
 mod utils;
 
 use crate::opensbi::hart_start;
-use core::arch::{asm, global_asm};
+use core::arch::global_asm;
 use core::sync::atomic::{AtomicBool, Ordering};
 use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
@@ -107,9 +107,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         trap::init();
         mm::init();
         timer::init();
-        info!("A");
+        cpus::run_processes();
     }
-    loop {
-        unsafe { asm!("wfi") };
-    }
+    unreachable!();
 }

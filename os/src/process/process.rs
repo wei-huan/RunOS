@@ -4,7 +4,7 @@ use super::kernelstack::{kstack_alloc, KernelStack};
 use super::{pid_alloc, PidHandle};
 use crate::config::TRAP_CONTEXT;
 use crate::fs::{File, Stdin, Stdout};
-use crate::trap::TrapContext;
+use crate::trap::{user_trap_handler, TrapContext};
 use crate::{
     mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr},
     sync::UPSafeCell,
@@ -32,12 +32,11 @@ pub struct ProcessControlBlock {
 pub struct ProcessControlBlockInner {
     pub trap_cx_ppn: PhysPageNum,
     pub base_size: usize,
-    // pub signals: SignalFlags,
     pub proc_cx: ProcessContext,
     pub proc_status: ProcessStatus,
     pub addrspace: AddrSpace,
-    pub children: Vec<Arc<ProcessControlBlock>>,
     pub parent: Option<Weak<ProcessControlBlock>>,
+    pub children: Vec<Arc<ProcessControlBlock>>,
     pub exit_code: i32,
     pub fd_table: Vec<Option<Arc<dyn File + Send + Sync>>>,
 }
@@ -109,6 +108,7 @@ impl ProcessControlBlock {
             ustack_base,
             kernel_token(),
             kernel_stack_top,
+            user_trap_handler as usize,
         );
         process
     }

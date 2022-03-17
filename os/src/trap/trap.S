@@ -117,13 +117,15 @@ __uservec:
     sd t2, 2*8(sp)
     # load kernel_satp into t0
     ld t0, 34*8(sp)
+    # load trap_handler into t1
+    ld t1, 36*8(sp)
     # move to kernel_sp
     ld sp, 35*8(sp)
     # switch to kernel space
     csrw satp, t0
     sfence.vma
     # jump to trap_handler
-    call user_trap_handler
+    jr t1
 
 __restore:
     # a0: *TrapContext in user space(Constant); a1: user space token
