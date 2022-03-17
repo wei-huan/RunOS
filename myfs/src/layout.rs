@@ -1,17 +1,22 @@
+/// 磁盘数据结构层
 use super::{get_block_cache, BlockDevice, BLOCK_SZ};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::fmt::{Debug, Formatter, Result};
 
 const EFS_MAGIC: u32 = 0x3b800001;
-const INODE_DIRECT_COUNT: usize = 28;
 const NAME_LENGTH_LIMIT: usize = 27;
-const INODE_INDIRECT1_COUNT: usize = BLOCK_SZ / 4;
-const INODE_INDIRECT2_COUNT: usize = INODE_INDIRECT1_COUNT * INODE_INDIRECT1_COUNT;
+const INODE_DIRECT_COUNT: usize = 28;
 const DIRECT_BOUND: usize = INODE_DIRECT_COUNT;
+const INODE_INDIRECT1_COUNT: usize = BLOCK_SZ / 4;
+/// 128
 const INDIRECT1_BOUND: usize = DIRECT_BOUND + INODE_INDIRECT1_COUNT;
+/// 128 + 28 = 156
+const INODE_INDIRECT2_COUNT: usize = INODE_INDIRECT1_COUNT * INODE_INDIRECT1_COUNT;
+/// 156 × 156
 #[allow(unused)]
 const INDIRECT2_BOUND: usize = INDIRECT1_BOUND + INODE_INDIRECT2_COUNT;
+/// 128 + 156 × 156
 
 #[repr(C)]
 pub struct SuperBlock {
@@ -67,9 +72,10 @@ pub enum DiskInodeType {
 type IndirectBlock = [u32; BLOCK_SZ / 4];
 type DataBlock = [u8; BLOCK_SZ];
 
+/// 每个文件/目录在磁盘上均以一个 DiskInode 的形式存储。其中包含文件/目录的元数据
 #[repr(C)]
 pub struct DiskInode {
-    pub size: u32,
+    pub size: u32, // 以字节为单位
     pub direct: [u32; INODE_DIRECT_COUNT],
     pub indirect1: u32,
     pub indirect2: u32,
@@ -93,13 +99,15 @@ impl DiskInode {
         self.type_ == DiskInodeType::File
     }
     /// Return block number correspond to size.
+    /// 返回 size 字节数据需要的扇区数
     pub fn data_blocks(&self) -> u32 {
         Self::_data_blocks(self.size)
     }
     fn _data_blocks(size: u32) -> u32 {
         (size + BLOCK_SZ as u32 - 1) / BLOCK_SZ as u32
     }
-    /// Return number of blocks needed include indirect1/2.
+    /// Return number of blocks needed include indirect1/2
+    /// 包含数据块，还需要统计索引块
     pub fn total_blocks(size: u32) -> u32 {
         let data_blocks = Self::_data_blocks(size) as usize;
         let mut total = data_blocks as usize;
@@ -116,6 +124,7 @@ impl DiskInode {
         }
         total as u32
     }
+    /// 改变容量需要的块/回收的块 后面返回值可能要改
     pub fn blocks_num_needed(&self, new_size: u32) -> u32 {
         assert!(new_size >= self.size);
         Self::total_blocks(new_size) - Self::total_blocks(self.size)
@@ -144,6 +153,7 @@ impl DiskInode {
                 })
         }
     }
+    /// 其实最好做个容量检查
     pub fn increase_size(
         &mut self,
         new_size: u32,
@@ -155,12 +165,15 @@ impl DiskInode {
         let mut total_blocks = self.data_blocks();
         let mut new_blocks = new_blocks.into_iter();
         // fill direct
+        // 如果当前扇区数量大于直接索引数量就直接跳过
         while current_blocks < total_blocks.min(INODE_DIRECT_COUNT as u32) {
             self.direct[current_blocks as usize] = new_blocks.next().unwrap();
             current_blocks += 1;
         }
         // alloc indirect1
+        // 如果最终占用的扇区数量大于直接索引数量，则考虑是否需要分配间接索引
         if total_blocks > INODE_DIRECT_COUNT as u32 {
+            // 如果当前扇区数刚好是直接索引数量，则说明之前没分配一级索引，现在就可以分配一级索引扇区
             if current_blocks == INODE_DIRECT_COUNT as u32 {
                 self.indirect1 = new_blocks.next().unwrap();
             }
@@ -170,6 +183,7 @@ impl DiskInode {
             return;
         }
         // fill indirect1
+        // 分配一级索引指向的扇区
         get_block_cache(self.indirect1 as usize, Arc::clone(block_device))
             .lock()
             .modify(0, |indirect1: &mut IndirectBlock| {
@@ -179,7 +193,9 @@ impl DiskInode {
                 }
             });
         // alloc indirect2
+        // 如果最终占用的扇区数量大于一级数量，则考虑是否需要分配二级索引
         if total_blocks > INODE_INDIRECT1_COUNT as u32 {
+            // 如果当前扇区数刚好是一级数量，则说明之前没分配二级索引，现在就可以分配二级索引扇区
             if current_blocks == INODE_INDIRECT1_COUNT as u32 {
                 self.indirect2 = new_blocks.next().unwrap();
             }
@@ -189,8 +205,10 @@ impl DiskInode {
             return;
         }
         // fill indirect2 from (a0, b0) -> (a1, b1)
+        // 得到当前二级块序号和在二级块内偏移序号
         let mut a0 = current_blocks as usize / INODE_INDIRECT1_COUNT;
         let mut b0 = current_blocks as usize % INODE_INDIRECT1_COUNT;
+        // 得到最终二级块序号和在最终块内偏移序号
         let a1 = total_blocks as usize / INODE_INDIRECT1_COUNT;
         let b1 = total_blocks as usize % INODE_INDIRECT1_COUNT;
         // alloc low-level indirect1
@@ -216,7 +234,6 @@ impl DiskInode {
                 }
             });
     }
-
     /// Clear size to zero and return blocks that should be deallocated.
     ///
     /// We will clear the block contents to zero later.
@@ -259,12 +276,14 @@ impl DiskInode {
         }
         // indirect2
         assert!(data_blocks <= INODE_INDIRECT2_COUNT);
+        // 得到当前二级块序号和在二级块内偏移序号，即一级块序号
         let a1 = data_blocks / INODE_INDIRECT1_COUNT;
         let b1 = data_blocks % INODE_INDIRECT1_COUNT;
         get_block_cache(self.indirect2 as usize, Arc::clone(block_device))
             .lock()
             .modify(0, |indirect2: &mut IndirectBlock| {
                 // full indirect1 blocks
+                // 回收除了最后一个的每个二级序号以及下面的一级号
                 for entry in indirect2.iter_mut().take(a1) {
                     v.push(*entry);
                     get_block_cache(*entry as usize, Arc::clone(block_device))
@@ -370,12 +389,14 @@ impl DiskInode {
     }
 }
 
+/// 目录项
 #[repr(C)]
 pub struct DirEntry {
     name: [u8; NAME_LENGTH_LIMIT + 1],
     inode_number: u32,
 }
 
+/// 目录项大小 27 + 1 + 4 字节
 pub const DIRENT_SZ: usize = 32;
 
 impl DirEntry {

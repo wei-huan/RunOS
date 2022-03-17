@@ -1,16 +1,18 @@
+/// 索引节点层
 use super::{
     block_cache_sync_all, get_block_cache, BlockDevice, DirEntry, DiskInode, DiskInodeType,
-    EasyFileSystem, DIRENT_SZ,
+    MyFileSystem, DIRENT_SZ,
 };
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::{Mutex, MutexGuard};
 
+/// 记录文件索引节点信息的数据结构
 pub struct Inode {
     block_id: usize,
     block_offset: usize,
-    fs: Arc<Mutex<EasyFileSystem>>,
+    fs: Arc<Mutex<MyFileSystem>>,
     block_device: Arc<dyn BlockDevice>,
 }
 
@@ -19,7 +21,7 @@ impl Inode {
     pub fn new(
         block_id: u32,
         block_offset: usize,
-        fs: Arc<Mutex<EasyFileSystem>>,
+        fs: Arc<Mutex<MyFileSystem>>,
         block_device: Arc<dyn BlockDevice>,
     ) -> Self {
         Self {
@@ -29,19 +31,17 @@ impl Inode {
             block_device,
         }
     }
-
     fn read_disk_inode<V>(&self, f: impl FnOnce(&DiskInode) -> V) -> V {
         get_block_cache(self.block_id, Arc::clone(&self.block_device))
             .lock()
             .read(self.block_offset, f)
     }
-
     fn modify_disk_inode<V>(&self, f: impl FnOnce(&mut DiskInode) -> V) -> V {
         get_block_cache(self.block_id, Arc::clone(&self.block_device))
             .lock()
             .modify(self.block_offset, f)
     }
-
+    /// 文件索引的查找
     fn find_inode_id(&self, name: &str, disk_inode: &DiskInode) -> Option<u32> {
         // assert it is a directory
         assert!(disk_inode.is_dir());
@@ -58,7 +58,6 @@ impl Inode {
         }
         None
     }
-
     pub fn find(&self, name: &str) -> Option<Arc<Inode>> {
         let fs = self.fs.lock();
         self.read_disk_inode(|disk_inode| {
@@ -73,12 +72,27 @@ impl Inode {
             })
         })
     }
-
+    pub fn ls(&self) -> Vec<String> {
+        let _fs = self.fs.lock();
+        self.read_disk_inode(|disk_inode| {
+            let file_count = (disk_inode.size as usize) / DIRENT_SZ;
+            let mut v: Vec<String> = Vec::new();
+            for i in 0..file_count {
+                let mut dirent = DirEntry::empty();
+                assert_eq!(
+                    disk_inode.read_at(i * DIRENT_SZ, dirent.as_bytes_mut(), &self.block_device,),
+                    DIRENT_SZ,
+                );
+                v.push(String::from(dirent.name()));
+            }
+            v
+        })
+    }
     fn increase_size(
         &self,
         new_size: u32,
         disk_inode: &mut DiskInode,
-        fs: &mut MutexGuard<EasyFileSystem>,
+        fs: &mut MutexGuard<MyFileSystem>,
     ) {
         if new_size < disk_inode.size {
             return;
@@ -90,7 +104,6 @@ impl Inode {
         }
         disk_inode.increase_size(new_size, v, &self.block_device);
     }
-
     pub fn create(&self, name: &str) -> Option<Arc<Inode>> {
         let mut fs = self.fs.lock();
         let op = |root_inode: &DiskInode| {
@@ -126,7 +139,6 @@ impl Inode {
                 &self.block_device,
             );
         });
-
         let (block_id, block_offset) = fs.get_disk_inode_pos(new_inode_id);
         block_cache_sync_all();
         // return inode
@@ -138,29 +150,10 @@ impl Inode {
         )))
         // release efs lock automatically by compiler
     }
-
-    pub fn ls(&self) -> Vec<String> {
-        let _fs = self.fs.lock();
-        self.read_disk_inode(|disk_inode| {
-            let file_count = (disk_inode.size as usize) / DIRENT_SZ;
-            let mut v: Vec<String> = Vec::new();
-            for i in 0..file_count {
-                let mut dirent = DirEntry::empty();
-                assert_eq!(
-                    disk_inode.read_at(i * DIRENT_SZ, dirent.as_bytes_mut(), &self.block_device,),
-                    DIRENT_SZ,
-                );
-                v.push(String::from(dirent.name()));
-            }
-            v
-        })
-    }
-
     pub fn read_at(&self, offset: usize, buf: &mut [u8]) -> usize {
         let _fs = self.fs.lock();
         self.read_disk_inode(|disk_inode| disk_inode.read_at(offset, buf, &self.block_device))
     }
-
     pub fn write_at(&self, offset: usize, buf: &[u8]) -> usize {
         let mut fs = self.fs.lock();
         let size = self.modify_disk_inode(|disk_inode| {
@@ -170,7 +163,6 @@ impl Inode {
         block_cache_sync_all();
         size
     }
-
     pub fn clear(&self) {
         let mut fs = self.fs.lock();
         self.modify_disk_inode(|disk_inode| {

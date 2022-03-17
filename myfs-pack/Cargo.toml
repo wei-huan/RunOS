@@ -1,12 +1,11 @@
 [package]
-name = "easy-fs-pack"
+name = "myfs-pack"
 version = "0.1.0"
-authors = ["Yifan Wu <shinbokuow@163.com>"]
-edition = "2018"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-clap = "3.1.6"
-easy-fs = { path = "../easy-fs" }
+clap = "3.1.5"
+myfs = { path = "../myfs" }
 rand = "0.8.0"

@@ -1,7 +1,7 @@
 TARGET := riscv64gc-unknown-none-elf
 MODE := release
 DIR := $(shell pwd)
-PACK_IMG_DIR := $(DIR)/easy-fs-pack
+PACK_IMG_DIR := $(DIR)/myfs-pack
 USER_DIR := $(DIR)/user
 IMG_DIR := $(USER_DIR)/target/$(TARGET)/$(MODE)/
 OS_DIR := $(DIR)/os

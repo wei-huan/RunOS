@@ -1,3 +1,4 @@
+/// 块缓存层
 use super::{BlockDevice, BLOCK_SZ};
 use alloc::collections::VecDeque;
 use alloc::sync::Arc;
@@ -12,7 +13,6 @@ pub struct BlockCache {
 }
 
 impl BlockCache {
-    /// Load a new BlockCache from disk.
     pub fn new(block_id: usize, block_device: Arc<dyn BlockDevice>) -> Self {
         let mut cache = [0u8; BLOCK_SZ];
         block_device.read_block(block_id, &mut cache);
@@ -23,11 +23,9 @@ impl BlockCache {
             modified: false,
         }
     }
-
     fn addr_of_offset(&self, offset: usize) -> usize {
         &self.cache[offset] as *const _ as usize
     }
-
     pub fn get_ref<T>(&self, offset: usize) -> &T
     where
         T: Sized,
@@ -37,7 +35,6 @@ impl BlockCache {
         let addr = self.addr_of_offset(offset);
         unsafe { &*(addr as *const T) }
     }
-
     pub fn get_mut<T>(&mut self, offset: usize) -> &mut T
     where
         T: Sized,
@@ -48,15 +45,12 @@ impl BlockCache {
         let addr = self.addr_of_offset(offset);
         unsafe { &mut *(addr as *mut T) }
     }
-
     pub fn read<T, V>(&self, offset: usize, f: impl FnOnce(&T) -> V) -> V {
         f(self.get_ref(offset))
     }
-
     pub fn modify<T, V>(&mut self, offset: usize, f: impl FnOnce(&mut T) -> V) -> V {
         f(self.get_mut(offset))
     }
-
     pub fn sync(&mut self) {
         if self.modified {
             self.modified = false;
@@ -83,7 +77,6 @@ impl BlockCacheManager {
             queue: VecDeque::new(),
         }
     }
-
     pub fn get_block_cache(
         &mut self,
         block_id: usize,
@@ -117,11 +110,6 @@ impl BlockCacheManager {
     }
 }
 
-lazy_static! {
-    pub static ref BLOCK_CACHE_MANAGER: Mutex<BlockCacheManager> =
-        Mutex::new(BlockCacheManager::new());
-}
-
 pub fn get_block_cache(
     block_id: usize,
     block_device: Arc<dyn BlockDevice>,
@@ -136,4 +124,9 @@ pub fn block_cache_sync_all() {
     for (_, cache) in manager.queue.iter() {
         cache.lock().sync();
     }
+}
+
+lazy_static! {
+    pub static ref BLOCK_CACHE_MANAGER: Mutex<BlockCacheManager> =
+        Mutex::new(BlockCacheManager::new());
 }
