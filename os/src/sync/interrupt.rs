@@ -7,6 +7,7 @@ pub fn interrupt_on() {
         sstatus::set_sie();
     }
 }
+#[allow(unused)]
 // disable device interrupts
 pub fn interrupt_off() {
     unsafe {

@@ -70,14 +70,6 @@ impl Section {
             self.unmap_one_page(page_table, vpn);
         }
     }
-    pub fn map_from_existed(another: &Section) -> Self {
-        Self {
-            perm: another.perm,
-            map_type: another.map_type,
-            data_frames: BTreeMap::new(),
-            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
-        }
-    }
     /// data: start-aligned but maybe with shorter length
     /// assume that all frames were cleared before
     pub fn copy_data(&mut self, page_table: &mut PageTable, data: &[u8]) {

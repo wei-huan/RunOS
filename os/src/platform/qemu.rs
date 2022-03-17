@@ -4,12 +4,14 @@ pub const MMIO: &[(usize, usize)] = &[(0x10001000, 0x1000)];
 
 pub type BlockDeviceImpl = crate::drivers::block::VirtIOBlock;
 
+#[allow(unused)]
 pub enum ExitStatus {
     Pass,
     Reset,
     Fail(u16),
 }
 
+#[allow(unused)]
 pub fn exit(_exit_status: ExitStatus) -> ! {
     // let virt_test: *mut u32 = match satp::read().mode {
     //     satp::SatpMode::Bare => 0x10_0000 as *mut u32,

@@ -3,11 +3,13 @@ mod qemu;
 #[cfg(feature = "platform-k210")]
 mod k210;
 
+#[allow(unused)]
 pub enum ExitStatus<'a> {
     Ok,
     Error(&'a dyn core::fmt::Display),
 }
 
+#[allow(unused)]
 #[cfg(not(any(feature = "platform-k210")))]
 pub fn exit(status: ExitStatus) -> ! {
     qemu::exit(match status {

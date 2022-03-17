@@ -10,9 +10,6 @@ pub struct Cpu {
     idle_proc_cx: ProcessContext,
     intr_depth: usize, // 中断嵌套深度
     intr_status: bool, // 本层中断状态
-    // 统计信息
-    idle_ms: usize, // 空闲时长，单位mm
-    usage: f64,     // 一秒钟内的使用率
 }
 
 impl Cpu {
@@ -22,8 +19,6 @@ impl Cpu {
             idle_proc_cx: ProcessContext::zero_init(),
             intr_depth: 0,
             intr_status: false,
-            idle_ms: 0,
-            usage: 0.0,
         }
     }
     // pub fn set_current(&mut self, op: Option<Arc<ProcessControlBlock>>){
@@ -39,6 +34,7 @@ impl Cpu {
         self.current.as_ref().map(Arc::clone)
     }
     // interrupts must be disabled.
+    #[allow(unused)]
     pub unsafe fn lock(&mut self, old: bool) -> IntrLock {
         if self.intr_depth == 0 {
             self.intr_status = old;
