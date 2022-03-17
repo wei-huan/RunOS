@@ -15,8 +15,8 @@ pub use pid::{pid_alloc, PidHandle};
 pub use process::{ProcessControlBlock, ProcessStatus};
 pub use switch::__switch;
 
-use crate::cpus::schedule;
-use crate::cpus::take_current_process;
+use crate::cpu::schedule;
+use crate::cpu::take_current_process;
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use alloc::sync::Arc;
 use manager::add_process;
@@ -36,7 +36,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     let task = take_current_process().unwrap();
     // **** access current TCB exclusively
     let mut inner = task.inner_exclusive_access();
-    // Change status to Zombie
+    // Change status to Ready
     inner.proc_status = ProcessStatus::Zombie;
     // Record exit code
     inner.exit_code = exit_code;

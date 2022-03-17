@@ -1,5 +1,6 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_user_token, current_trap_cx};
+use crate::task::exit_current_and_run_next;
 use crate::syscall::syscall;
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
@@ -64,20 +65,19 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::InstructionPageFault)
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
-            /*
             println!(
                 "[kernel] {:?} in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
                 scause.cause(),
                 stval,
                 current_trap_cx().sepc,
             );
-            */
-            // current_add_signal(SignalFlags::SIGSEGV);
-            info!("SIGSEGV");
+            // page fault exit code
+            exit_current_and_run_next(-2);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            info!("SIGILL");
-            // current_add_signal(SignalFlags::SIGILL);
+            println!("[kernel] IllegalInstruction in application, kernel killed it.");
+            // illegal instruction exit code
+            exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();

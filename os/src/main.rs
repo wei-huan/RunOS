@@ -70,6 +70,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         logging::init();
         mm::boot_init();
         timer::init();
+
         let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
         let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
         let (impl_major, impl_minor) = {
