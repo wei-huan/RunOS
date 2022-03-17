@@ -1,5 +1,5 @@
 use super::cpu::Cpu;
-use crate::process::{ProcessControlBlock, ProcessContext, __switch};
+use crate::task::{ProcessControlBlock, ProcessContext, __switch};
 use crate::sync::UPSafeCell;
 use alloc::sync::Arc;
 use array_macro::array;

@@ -1,6 +1,6 @@
 // DEVICE TREE mod
 
-use crate::cpus::cpu_id;
+use crate::cpu::cpu_id;
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use fdt::node::FdtNode;

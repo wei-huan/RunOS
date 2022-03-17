@@ -1,4 +1,4 @@
-use crate::cpus::Cpu;
+use crate::cpu::Cpu;
 use riscv::register::sstatus;
 
 // enable device interrupts

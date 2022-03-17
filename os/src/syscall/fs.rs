@@ -1,4 +1,4 @@
-use crate::cpus::{current_process, current_user_token};
+use crate::cpu::{current_process, current_user_token};
 use crate::mm::{translated_byte_buffer, translated_str, UserBuffer};
 use crate::fs::{open_file, OpenFlags};
 

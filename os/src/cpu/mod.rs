@@ -4,7 +4,7 @@ mod cpus;
 pub use cpu::{current_trap_cx, current_user_token, Cpu};
 pub use cpus::{cpu_id, current_process, take_current_process, CPUS, schedule};
 
-use crate::process::{fetch_process, idle_process, ProcessContext, ProcessStatus, __switch};
+use crate::task::{fetch_process, idle_process, ProcessContext, ProcessStatus, __switch};
 use crate::trap;
 
 pub fn run_processes() {

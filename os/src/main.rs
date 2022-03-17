@@ -14,7 +14,7 @@ extern crate fdt;
 #[macro_use]
 mod console;
 mod config;
-mod cpus;
+mod cpu;
 mod drivers;
 mod dt;
 mod fs;
@@ -23,7 +23,7 @@ mod logging;
 mod mm;
 mod opensbi;
 mod platform;
-mod process;
+mod task;
 mod sync;
 mod syscall;
 mod timer;
@@ -99,15 +99,15 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Spec Version: {}.{}", spec_major, spec_minor);
 
         info!("=== MyOS Info ===");
-        process::add_apps();
+        task::add_apps();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
-        cpus::run_processes();
+        cpu::run_processes();
     } else {
         trap::init();
         mm::init();
         timer::init();
-        cpus::run_processes();
+        cpu::run_processes();
     }
     unreachable!();
 }

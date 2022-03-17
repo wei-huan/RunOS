@@ -1,5 +1,5 @@
 use crate::{
-    cpus::cpu_id,
+    cpu::cpu_id,
     dt::TIMER_FREQ,
     timer::get_time,
     utils::{micros, time_parts},

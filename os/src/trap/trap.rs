@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpus::{current_user_token, current_trap_cx};
+use crate::cpu::{current_user_token, current_trap_cx};
 use crate::syscall::syscall;
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};

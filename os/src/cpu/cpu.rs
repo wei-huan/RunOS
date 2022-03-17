@@ -1,5 +1,5 @@
 use super::current_process;
-use crate::process::{ProcessContext, ProcessControlBlock};
+use crate::task::{ProcessContext, ProcessControlBlock};
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::trap::TrapContext;
 use alloc::sync::Arc;
