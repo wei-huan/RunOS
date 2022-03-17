@@ -1,32 +1,36 @@
-use crate::process::ProcessControlBlock;
-use crate::sync::UPSafeCell;
+use crate::process::{ProcessControlBlock, ProcessContext};
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::trap::TrapContext;
 use alloc::sync::Arc;
-use lazy_static::*;
+use super::current_process;
 
 // Per-CPU state
 pub struct Cpu {
     pub current: Option<Arc<ProcessControlBlock>>, // The process running on this cpu, or None.
-    pub intr_depth: usize,             // 中断嵌套深度
-    pub intr_status: bool,                         // 本层中断状态
+    idle_proc_cx: ProcessContext,
+    intr_depth: usize,                         // 中断嵌套深度
+    intr_status: bool,                         // 本层中断状态
     // 统计信息
-    pub idle_ms: usize, // 空闲时长，单位mm
-    pub usage: f64,     // 一秒钟内的使用率
+    idle_ms: usize, // 空闲时长，单位mm
+    usage: f64,     // 一秒钟内的使用率
 }
 
 impl Cpu {
-    pub const fn new() -> Self {
+    pub fn new() -> Self {
         Self {
             current: None,
+            idle_proc_cx: ProcessContext::zero_init(),
             intr_depth: 0,
             intr_status: false,
             idle_ms: 0,
             usage: 0.0,
         }
     }
-    pub fn set_current(&mut self, op: Option<Arc<ProcessControlBlock>>){
-        self.current = op;
+    // pub fn set_current(&mut self, op: Option<Arc<ProcessControlBlock>>){
+    //     self.current = op;
+    // }
+    pub fn take_idle_proc_cx_ptr(&mut self) -> *mut ProcessContext {
+        &mut self.idle_proc_cx as *mut _
     }
     pub fn take_current(&mut self) -> Option<Arc<ProcessControlBlock>> {
         self.current.take()
@@ -54,26 +58,14 @@ impl Cpu {
     }
 }
 
-lazy_static! {
-    pub static ref CPU: UPSafeCell<Cpu> = UPSafeCell::new(Cpu::new());
-}
-
-pub fn take_current_task() -> Option<Arc<ProcessControlBlock>> {
-    CPU.exclusive_access().take_current()
-}
-
-pub fn current_task() -> Option<Arc<ProcessControlBlock>> {
-    CPU.exclusive_access().current()
-}
-
 pub fn current_user_token() -> usize {
-    let task = current_task().unwrap();
+    let task = current_process().unwrap();
     let token = task.inner_exclusive_access().get_user_token();
     token
 }
 
 pub fn current_trap_cx() -> &'static mut TrapContext {
-    current_task()
+    current_process()
         .unwrap()
         .inner_exclusive_access()
         .get_trap_cx()

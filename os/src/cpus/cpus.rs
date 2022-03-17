@@ -1,7 +1,9 @@
 use super::cpu::Cpu;
+use crate::process::ProcessControlBlock;
+use crate::sync::UPSafeCell;
+use alloc::sync::Arc;
 use array_macro::array;
 use core::arch::asm;
-use crate::sync::UPSafeCell;
 use lazy_static::*;
 
 const CPU_NUM: usize = 4;
@@ -17,5 +19,14 @@ pub fn cpu_id() -> usize {
 }
 
 lazy_static! {
-    pub static ref CPUS:[UPSafeCell<Cpu>; CPU_NUM] = array![_ => UPSafeCell::new(Cpu::new()); CPU_NUM];
+    pub static ref CPUS: [UPSafeCell<Cpu>; CPU_NUM] =
+        array![_ => UPSafeCell::new(Cpu::new()); CPU_NUM];
+}
+
+pub fn take_current_process() -> Option<Arc<ProcessControlBlock>> {
+    CPUS[cpu_id()].exclusive_access().take_current()
+}
+
+pub fn current_process() -> Option<Arc<ProcessControlBlock>> {
+    CPUS[cpu_id()].exclusive_access().current()
 }

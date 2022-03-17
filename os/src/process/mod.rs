@@ -8,12 +8,12 @@ mod recyclealloc;
 mod signal;
 mod switch;
 
-pub use switch::__first_switch;
+pub use context::ProcessContext;
 pub use kernelprocess::idle_process;
 pub use manager::fetch_process;
 pub use pid::{pid_alloc, PidHandle};
 pub use process::{ProcessControlBlock, ProcessStatus};
-pub use context::ProcessContext;
+pub use switch::__switch;
 
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use alloc::sync::Arc;

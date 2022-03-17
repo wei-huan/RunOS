@@ -1,7 +1,6 @@
 // use super::signal::SignalFlags;
 use super::context::ProcessContext;
-use super::kernelstack::kstack_alloc;
-use super::kernelstack::KernelStack;
+use super::kernelstack::{kstack_alloc, KernelStack};
 use super::{pid_alloc, PidHandle};
 use crate::config::TRAP_CONTEXT;
 use crate::fs::{File, Stdin, Stdout};

@@ -44,6 +44,7 @@ fn set_user_trap_entry() {
 
 #[no_mangle]
 pub fn user_trap_handler() -> ! {
+    info!("user_trap");
     set_kernel_trap_entry();
     let scause = scause::read();
     let stval = stval::read();
@@ -107,11 +108,13 @@ pub fn user_trap_return() -> ! {
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;
     let user_satp = current_user_token();
+    info!("07");
     extern "C" {
         fn __uservec();
         fn __restore();
     }
     let restore_va = __restore as usize - __uservec as usize + TRAMPOLINE;
+    info!("08");
     unsafe {
         asm!(
             "fence.i",

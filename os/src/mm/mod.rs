@@ -10,7 +10,7 @@ pub use address::{addr_test, PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPag
 pub use frame::{frame_alloc, frame_allocator_test, frame_dealloc, frame_test, Frame};
 pub use heap::{heap_test, init_heap, whereis_heap};
 pub use section::Permission;
-pub use page_table::{PageTable, PageTableEntry, UserBuffer};
+pub use page_table::{PageTable, PageTableEntry, UserBuffer, translated_byte_buffer, translated_str};
 
 pub fn boot_init() {
     heap::init_heap();
