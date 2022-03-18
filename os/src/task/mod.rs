@@ -20,7 +20,6 @@ use crate::cpu::take_current_process;
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use alloc::sync::Arc;
 use manager::add_process;
-use log::*;
 
 pub fn add_apps() {
     for app in ROOT_INODE.ls() {

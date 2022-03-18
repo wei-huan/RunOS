@@ -1,9 +1,9 @@
 .altmacro
 .macro SAVE_SN n
-    sd s\n, (\n+2)*8(a0)
+    sd s\n, (\n+3)*8(a0)
 .endm
 .macro LOAD_SN n
-    ld s\n, (\n+2)*8(a1)
+    ld s\n, (\n+3)*8(a1)
 .endm
     .section .text
     .globl __switch
@@ -21,6 +21,13 @@ __switch:
         SAVE_SN %n
         .set n, n + 1
     .endr
+    # save sstatus of current execution
+    csrr s0, sstatus
+    sd s0, 16(a0)
+
+    # restore sstatus of current execution
+    ld s0, 16(a1)
+    csrw sstatus, s0
     # restore ra & s0~s11 of next execution
     ld ra, 0(a1)
     .set n, 0

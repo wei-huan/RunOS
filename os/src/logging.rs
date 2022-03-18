@@ -51,6 +51,9 @@ impl log::Log for MyLogger {
         if !self.enabled(record.metadata()) {
             return;
         }
+        while USING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) == Ok(false) {
+            core::hint::spin_loop();
+        }
         let mut mod_path = record
             .module_path_static()
             .or_else(|| record.module_path())
@@ -72,10 +75,6 @@ impl log::Log for MyLogger {
             Level::Error => RED,
         };
         let clear = CLEAR;
-        while USING.load(Ordering::SeqCst) {
-            core::hint::spin_loop();
-        }
-        USING.store(true, Ordering::SeqCst);
         println!(
             "[{:>5}.{:<03}][ {}{:>5}{} ][HART {}][{}] {}",
             secs,
@@ -93,6 +92,10 @@ impl log::Log for MyLogger {
     }
     fn flush(&self) {}
 }
+
+// lazy_static! {
+//     pub static ref MYLOGGER: Mutex<MyLogger> = Mutex::new(log::create());
+// }
 
 pub fn init() {
     set_hart_filter(8);
