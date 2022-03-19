@@ -1,10 +1,10 @@
-use crate::opensbi::set_timer;
 use crate::dt::TIMER_FREQ;
-use riscv::register::{time, sie};
-use core::sync::atomic::{Ordering};
+use crate::opensbi::set_timer;
+use core::sync::atomic::Ordering;
+use riscv::register::{sie, time};
 
 const MSEC_PER_SEC: usize = 1000;
-const TICKS_PER_SEC: usize = 1;
+const TICKS_PER_SEC: usize = 100;
 
 pub fn get_time() -> usize {
     time::read()

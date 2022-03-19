@@ -1,7 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_user_token, current_trap_cx};
-use crate::task::exit_current_and_run_next;
+use crate::cpu::{current_trap_cx, current_user_token};
 use crate::syscall::syscall;
+use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use log::*;
@@ -80,10 +80,9 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            // info!("YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
             set_next_trigger();
-            info!("user timer_trigger");
-            // check_timer();
-            // suspend_current_and_run_next();
+            suspend_current_and_run_next();
         }
         _ => {
             panic!(
