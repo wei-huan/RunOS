@@ -1,9 +1,10 @@
-use core::fmt::{self, Write};
+use core::fmt::{self, Write, Error};
 
 const STDIN: usize = 0;
 const STDOUT: usize = 1;
 
 use super::{read, write};
+use alloc::string::String;
 
 struct Stdout;
 
@@ -36,4 +37,39 @@ pub fn getchar() -> u8 {
     let mut c = [0u8; 1];
     read(STDIN, &mut c);
     c[0]
+}
+
+const LF: u8 = 0x0au8;
+const CR: u8 = 0x0du8;
+const DL: u8 = 0x7fu8;
+const BS: u8 = 0x08u8;
+
+pub fn read_line(line: &mut String) -> Result<usize, Error> {
+    let mut cnt: usize = 0;
+    loop {
+        let c = getchar();
+        match c {
+            LF | CR => {
+                println!("");
+                if !line.is_empty() {
+                    line.push('\0');
+                    return Ok(cnt);
+                }
+            }
+            BS | DL => {
+                if !line.is_empty() {
+                    print!("{}", BS as char);
+                    print!(" ");
+                    print!("{}", BS as char);
+                    line.pop();
+                    cnt -= 1;
+                }
+            }
+            _ => {
+                print!("{}", c as char);
+                line.push(c as char);
+                cnt += 1;
+            }
+        }
+    }
 }
