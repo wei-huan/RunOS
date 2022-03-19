@@ -1,6 +1,7 @@
-use super::recyclealloc::RecycleAllocator;
+use super::recycle_allocator::RecycleAllocator;
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
 use crate::mm::{Permission, VirtAddr, KERNEL_SPACE};
+use alloc::string::ToString;
 use lazy_static::*;
 use spin::Mutex;
 
@@ -21,6 +22,7 @@ pub fn kstack_alloc() -> KernelStack {
     let kstack_id = KSTACK_ALLOCATOR.lock().alloc();
     let (kstack_bottom, kstack_top) = kernel_stack_position(kstack_id);
     KERNEL_SPACE.lock().insert_framed_area(
+        ".kstack".to_string(),
         kstack_bottom.into(),
         kstack_top.into(),
         Permission::R | Permission::W,

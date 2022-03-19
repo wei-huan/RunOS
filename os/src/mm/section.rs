@@ -7,6 +7,7 @@ use super::{
 use bitflags::bitflags;
 use crate::config::PAGE_SIZE;
 use alloc::collections::BTreeMap;
+use alloc::string::String;
 
 bitflags! {
     pub struct Permission: u8 {
@@ -24,6 +25,7 @@ pub enum MapType {
 }
 
 pub struct Section {
+    name: String,
     perm: Permission,
     map_type: MapType,
     pub vpn_range: VPNRange,
@@ -31,8 +33,9 @@ pub struct Section {
 }
 
 impl Section {
-    pub fn new(start_va: VirtAddr, end_va: VirtAddr, map_type: MapType, perm: Permission) -> Self {
+    pub fn new(name: String, start_va: VirtAddr, end_va: VirtAddr, map_type: MapType, perm: Permission) -> Self {
         Self {
+            name,
             perm,
             map_type,
             data_frames: BTreeMap::new(),

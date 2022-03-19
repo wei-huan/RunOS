@@ -1,65 +1,68 @@
 mod context;
-mod kernelprocess;
-mod kernelstack;
+mod kernel_task;
+mod kernel_stack;
 mod manager;
 mod pid;
-mod process;
-mod recyclealloc;
+mod task;
+mod recycle_allocator;
 mod signal;
 mod switch;
 
-pub use context::ProcessContext;
-pub use kernelprocess::idle_process;
-pub use manager::fetch_process;
+pub use context::TaskContext;
+pub use kernel_task::idle_task;
+pub use manager::fetch_task;
 pub use pid::{pid_alloc, PidHandle};
-pub use process::{ProcessControlBlock, ProcessStatus};
+pub use task::{TaskControlBlock, TaskStatus};
 pub use switch::__switch;
 
-use crate::cpu::schedule;
-use crate::cpu::take_current_process;
+
+use crate::trap::{TrapContext, user_trap_handler};
+use crate::cpu::schedule_new;
+use crate::cpu::take_current_task;
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use alloc::sync::Arc;
-use manager::add_process;
+use manager::add_task;
+use crate::mm::kernel_token;
 
 pub fn add_apps() {
     for app in ROOT_INODE.ls() {
         if let Some(app_inode) = open_file(app.as_str(), OpenFlags::RDONLY) {
             let elf_data = app_inode.read_all();
-            let new_processs = ProcessControlBlock::new(elf_data.as_slice());
-            add_process(Arc::new(new_processs));
+            let new_task = TaskControlBlock::new(elf_data.as_slice());
+            add_task(Arc::new(new_task));
         }
     }
 }
 
+/// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32) {
     // take from Processor
-    let task = take_current_process().unwrap();
+    let task = take_current_task().unwrap();
     // **** access current TCB exclusively
     let mut inner = task.inner_exclusive_access();
     // Change status to Ready
-    inner.proc_status = ProcessStatus::Zombie;
+    inner.task_status = TaskStatus::Ready;
     // Record exit code
     inner.exit_code = exit_code;
-    // do not move to its parent but under initproc
-
-    // // ++++++ access initproc TCB exclusively
-    // {
-    //     let mut initproc_inner = INITPROC.inner_exclusive_access();
-    //     for child in inner.children.iter() {
-    //         child.inner_exclusive_access().parent = Some(Arc::downgrade(&INITPROC));
-    //         initproc_inner.children.push(child.clone());
-    //     }
-    // }
-    // ++++++ release parent PCB
-
+    // Delete children task
     inner.children.clear();
+    // Refresh Task context
+    let kernel_stack_top =task.kernel_stack.get_top();
+    inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
+    // Refresh Trap context
+    let trap_cx = inner.get_trap_cx();
+    *trap_cx = TrapContext::app_init_context(
+        task.entry_point,
+        inner.ustack_bottom,
+        kernel_token(),
+        kernel_stack_top,
+        user_trap_handler as usize,
+    );
     // deallocate user space
-    inner.addrspace.recycle_data_pages();
+    // inner.addrspace.recycle_data_pages();
     drop(inner);
-    // **** release current PCB
-    // drop task manually to maintain rc correctly
-    drop(task);
+    add_task(task);
     // we do not have to save task context
-    let mut _unused = ProcessContext::zero_init();
-    schedule(&mut _unused as *mut _);
+    let mut _unused = TaskContext::zero_init();
+    schedule_new(&mut _unused as *mut _);
 }

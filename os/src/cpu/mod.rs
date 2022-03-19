@@ -2,31 +2,29 @@ mod cpu;
 mod cpus;
 
 pub use cpu::{current_trap_cx, current_user_token, Cpu};
-pub use cpus::{cpu_id, current_process, take_current_process, CPUS, schedule};
+pub use cpus::{cpu_id, current_task, take_current_task, CPUS, schedule_new};
 
-use crate::task::{fetch_process, idle_process, ProcessContext, ProcessStatus, __switch};
-use crate::trap;
+use crate::task::{fetch_task, idle_task, TaskContext, TaskStatus, __switch};
 
-pub fn run_processes() {
+pub fn schedule() {
     loop {
         let mut cpu = CPUS[cpu_id()].exclusive_access();
-        if let Some(process) = fetch_process() {
-            let idle_proc_cx_ptr = cpu.take_idle_proc_cx_ptr();
-            // access coming process TCB exclusively
-            let mut process_inner = process.inner_exclusive_access();
-            let next_proc_cx_ptr = &process_inner.proc_cx as *const ProcessContext;
-            process_inner.proc_status = ProcessStatus::Running;
-            drop(process_inner);
-            // release coming process TCB manually
-            cpu.current = Some(process);
+        if let Some(task) = fetch_task() {
+            let kernel_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
+            // access coming task TCB exclusively
+            let mut task_inner = task.inner_exclusive_access();
+            let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
+            task_inner.task_status = TaskStatus::Running;
+            drop(task_inner);
+            // release coming task TCB manually
+            cpu.current = Some(task);
             // release processor manually
             drop(cpu);
             unsafe {
-                __switch(idle_proc_cx_ptr, next_proc_cx_ptr);
+                __switch(kernel_task_cx_ptr, next_task_cx_ptr);
             }
         } else {
-            trap::init();
-            idle_process();
+            idle_task();
         }
     }
 }

@@ -1,5 +1,5 @@
 use super::cpu::Cpu;
-use crate::task::{ProcessControlBlock, ProcessContext, __switch};
+use crate::task::{TaskControlBlock, TaskContext, __switch};
 use crate::sync::UPSafeCell;
 use alloc::sync::Arc;
 use array_macro::array;
@@ -9,7 +9,7 @@ use lazy_static::*;
 const CPU_NUM: usize = 4;
 
 // Must be called with interrupts disabled,
-// to prevent race with process being moved
+// to prevent race with task being moved
 // to a different CPU.
 #[inline]
 pub fn cpu_id() -> usize {
@@ -23,19 +23,20 @@ lazy_static! {
         array![_ => UPSafeCell::new(Cpu::new()); CPU_NUM];
 }
 
-pub fn take_current_process() -> Option<Arc<ProcessControlBlock>> {
+pub fn take_current_task() -> Option<Arc<TaskControlBlock>> {
     CPUS[cpu_id()].exclusive_access().take_current()
 }
 
-pub fn current_process() -> Option<Arc<ProcessControlBlock>> {
+pub fn current_task() -> Option<Arc<TaskControlBlock>> {
     CPUS[cpu_id()].exclusive_access().current()
 }
 
-pub fn schedule(switched_task_cx_ptr: *mut ProcessContext) {
+/// 从一个任务A切换到另一个任务B
+pub fn schedule_new(switched_task_cx_ptr: *mut TaskContext) {
     let mut cpu = CPUS[cpu_id()].exclusive_access();
-    let idle_task_cx_ptr = cpu.take_idle_proc_cx_ptr();
+    let kernel_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
     drop(cpu);
     unsafe {
-        __switch(switched_task_cx_ptr, idle_task_cx_ptr);
+        __switch(switched_task_cx_ptr, kernel_task_cx_ptr);
     }
 }

@@ -1,4 +1,4 @@
-use super::recyclealloc::RecycleAllocator;
+use super::recycle_allocator::RecycleAllocator;
 use lazy_static::*;
 use spin::Mutex;
 
