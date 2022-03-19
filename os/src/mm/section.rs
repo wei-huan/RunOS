@@ -25,6 +25,7 @@ pub enum MapType {
 }
 
 pub struct Section {
+    #[allow(unused)]
     name: String,
     perm: Permission,
     map_type: MapType,

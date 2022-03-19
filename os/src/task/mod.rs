@@ -17,7 +17,7 @@ pub use switch::__switch;
 
 
 use crate::trap::{TrapContext, user_trap_handler};
-use crate::cpu::schedule_new;
+use crate::cpu::back_to_schedule;
 use crate::cpu::take_current_task;
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use alloc::sync::Arc;
@@ -62,7 +62,6 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // inner.addrspace.recycle_data_pages();
     drop(inner);
     add_task(task);
-    // we do not have to save task context
-    let mut _unused = TaskContext::zero_init();
-    schedule_new(&mut _unused as *mut _);
+    // 回到调度程序
+    back_to_schedule();
 }

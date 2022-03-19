@@ -248,6 +248,7 @@ impl AddrSpace {
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)
     }
+    #[allow(unused)]
     pub fn recycle_data_pages(&mut self) {
         self.sections.clear();
     }

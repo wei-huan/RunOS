@@ -18,6 +18,7 @@ use core::cell::RefMut;
 pub enum TaskStatus {
     Ready,
     Running,
+    #[allow(unused)]
     Zombie,
 }
 
@@ -52,12 +53,12 @@ impl TaskControlBlockInner {
     pub fn get_user_token(&self) -> usize {
         self.addrspace.get_token()
     }
-    fn get_status(&self) -> TaskStatus {
-        self.task_status
-    }
-    pub fn is_zombie(&self) -> bool {
-        self.get_status() == TaskStatus::Zombie
-    }
+    // fn get_status(&self) -> TaskStatus {
+    //     self.task_status
+    // }
+    // pub fn is_zombie(&self) -> bool {
+    //     self.get_status() == TaskStatus::Zombie
+    // }
     pub fn alloc_fd(&mut self) -> usize {
         if let Some(fd) = (0..self.fd_table.len()).find(|fd| self.fd_table[*fd].is_none()) {
             fd

@@ -1,6 +1,6 @@
 use super::current_task;
-use crate::task::{TaskContext, TaskControlBlock};
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
+use crate::task::{TaskContext, TaskControlBlock};
 use crate::trap::TrapContext;
 use alloc::sync::Arc;
 
@@ -21,9 +21,6 @@ impl Cpu {
             intr_status: false,
         }
     }
-    // pub fn set_current(&mut self, op: Option<Arc<TaskControlBlock>>){
-    //     self.current = op;
-    // }
     pub fn take_kernel_task_cx_ptr(&mut self) -> *mut TaskContext {
         &mut self.kernel_task_cx as *mut _
     }
@@ -66,4 +63,3 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
         .inner_exclusive_access()
         .get_trap_cx()
 }
-
