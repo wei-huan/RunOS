@@ -1,4 +1,4 @@
-use super::recyclealloc::RecycleAllocator;
+use super::recycle_allocator::RecycleAllocator;
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
 use crate::mm::{Permission, VirtAddr, KERNEL_SPACE};
 use alloc::string::ToString;

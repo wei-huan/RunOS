@@ -1,15 +1,15 @@
 mod context;
-mod kerneltask;
-mod kernelstack;
+mod kernel_task;
+mod kernel_stack;
 mod manager;
 mod pid;
 mod task;
-mod recyclealloc;
+mod recycle_allocator;
 mod signal;
 mod switch;
 
 pub use context::TaskContext;
-pub use kerneltask::idle_task;
+pub use kernel_task::idle_task;
 pub use manager::fetch_task;
 pub use pid::{pid_alloc, PidHandle};
 pub use task::{TaskControlBlock, TaskStatus};
