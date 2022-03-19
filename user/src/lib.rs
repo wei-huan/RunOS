@@ -44,6 +44,9 @@ pub extern "C" fn _start() -> ! {
     }
     exit(main());
 }
+pub fn read(fd: usize, buf: &mut [u8]) -> isize {
+    sys_read(fd, buf)
+}
 pub fn write(fd: usize, buf: &[u8]) -> isize {
     sys_write(fd, buf)
 }
@@ -70,4 +73,10 @@ bitflags! {
 }
 pub fn kill(pid: usize, signal: i32) -> isize {
     sys_kill(pid, signal)
+}
+pub fn sleep(period_ms: usize) {
+    let start = sys_get_time();
+    while sys_get_time() < start + period_ms as isize {
+        sys_yield();
+    }
 }
