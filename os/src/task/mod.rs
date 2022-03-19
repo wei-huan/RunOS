@@ -15,7 +15,7 @@ pub use pid::{pid_alloc, PidHandle};
 pub use switch::__switch;
 pub use task::{TaskControlBlock, TaskStatus};
 
-use crate::cpu::{back_to_schedule, schedule, take_current_task};
+use crate::cpu::{exit_back_to_schedule, suspend_back_to_schedule, take_current_task};
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use crate::mm::kernel_token;
 use crate::trap::{user_trap_handler, TrapContext};
@@ -59,23 +59,23 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // deallocate user space
     // inner.addrspace.recycle_data_pages();
     drop(inner);
+    // push back to ready queue.
     add_task(task);
     // 回到调度程序
-    back_to_schedule();
+    exit_back_to_schedule();
 }
 
 pub fn suspend_current_and_run_next() {
     // There must be an application running.
     let task = take_current_task().unwrap();
     // ---- access current TCB exclusively
-    let mut task_inner = task.inner_exclusive_access();
-    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
+    let mut inner = task.inner_exclusive_access();
+    let task_cx_ptr = &mut inner.task_cx as *mut TaskContext;
     // Change status to Ready
-    task_inner.task_status = TaskStatus::Ready;
-    drop(task_inner);
-    // ---- release current PCB
+    inner.task_status = TaskStatus::Ready;
+    drop(inner);
     // push back to ready queue.
     add_task(task);
     // jump to scheduling cycle
-    schedule(task_cx_ptr);
+    suspend_back_to_schedule(task_cx_ptr);
 }
