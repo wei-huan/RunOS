@@ -7,6 +7,7 @@
 .endm
     .section .text
     .globl __switch
+    .globl __load
 __switch:
     # __switch(
     #     current_task_cx_ptr: *mut TaskContext,
@@ -24,7 +25,6 @@ __switch:
     # save sstatus of current execution
     csrr s0, sstatus
     sd s0, 16(a0)
-
     # restore sstatus of current execution
     ld s0, 16(a1)
     csrw sstatus, s0
