@@ -5,11 +5,6 @@
 
 extern crate alloc;
 extern crate fdt;
-// #[cfg(feature = "platform-k210")]
-// #[path = "platform/k210.rs"]
-// mod platform;
-// #[cfg(not(any(feature = "platform-k210")))]
-// #[path = "platform/qemu.rs"]
 
 #[macro_use]
 mod console;
@@ -103,12 +98,12 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         task::add_apps();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
-        cpu::run_processes();
+        cpu::schedule();
     } else {
         trap::init();
         mm::init();
         timer::init();
-        cpu::run_processes();
+        cpu::schedule();
     }
     unreachable!();
 }

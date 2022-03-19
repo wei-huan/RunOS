@@ -1,15 +1,15 @@
 use crate::trap::user_trap_return;
-use riscv::register::sstatus::{self, Sstatus, SPP};
+use riscv::register::sstatus::{self, Sstatus};
 
 #[repr(C)]
-pub struct ProcessContext {
+pub struct TaskContext {
     ra: usize,
     sp: usize,
     sstatus: Sstatus,
     s: [usize; 12],
 }
 
-impl ProcessContext {
+impl TaskContext {
     pub fn zero_init() -> Self {
         let sstatus = sstatus::read();
         Self {

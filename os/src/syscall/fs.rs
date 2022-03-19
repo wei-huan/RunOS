@@ -1,10 +1,10 @@
-use crate::cpu::{current_process, current_user_token};
+use crate::cpu::{current_task, current_user_token};
 use crate::mm::{translated_byte_buffer, translated_str, UserBuffer};
 use crate::fs::{open_file, OpenFlags};
 
 pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
-    let task = current_process().unwrap();
+    let task = current_task().unwrap();
     let inner = task.inner_exclusive_access();
     if fd >= inner.fd_table.len() {
         return -1;
@@ -23,7 +23,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
 }
 
 pub fn sys_open(path: *const u8, flags: u32) -> isize {
-    let task = current_process().unwrap();
+    let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
     if let Some(inode) = open_file(path.as_str(), OpenFlags::from_bits(flags).unwrap()) {
@@ -37,7 +37,7 @@ pub fn sys_open(path: *const u8, flags: u32) -> isize {
 }
 
 pub fn sys_close(fd: usize) -> isize {
-    let task = current_process().unwrap();
+    let task = current_task().unwrap();
     let mut inner = task.inner_exclusive_access();
     if fd >= inner.fd_table.len() {
         return -1;

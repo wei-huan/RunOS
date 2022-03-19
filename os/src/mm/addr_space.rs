@@ -4,11 +4,12 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
+use crate::platform::MMIO;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::arch::asm;
 use lazy_static::lazy_static;
 use riscv::register::satp;
-use crate::platform::MMIO;
 use spin::Mutex;
 
 extern "C" {
@@ -50,12 +51,13 @@ impl AddrSpace {
     /// Assume that no conflicts.
     pub fn insert_framed_area(
         &mut self,
+        name: String,
         start_va: VirtAddr,
         end_va: VirtAddr,
         permission: Permission,
     ) {
         self.push_section(
-            Section::new(start_va, end_va, MapType::Framed, permission),
+            Section::new(name, start_va, end_va, MapType::Framed, permission),
             None,
         );
     }
@@ -97,6 +99,7 @@ impl AddrSpace {
         // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
+                "text".to_string(),
                 (stext as usize).into(),
                 (etext as usize).into(),
                 MapType::Identical,
@@ -107,6 +110,7 @@ impl AddrSpace {
         // println!("mapping .rodata section");
         kernel_space.push_section(
             Section::new(
+                "rodata".to_string(),
                 (srodata as usize).into(),
                 (erodata as usize).into(),
                 MapType::Identical,
@@ -117,6 +121,7 @@ impl AddrSpace {
         // println!("mapping .data section");
         kernel_space.push_section(
             Section::new(
+                "data".to_string(),
                 (sdata as usize).into(),
                 (edata as usize).into(),
                 MapType::Identical,
@@ -127,6 +132,7 @@ impl AddrSpace {
         // println!("mapping .bss section");
         kernel_space.push_section(
             Section::new(
+                "bss".to_string(),
                 (sbss as usize).into(),
                 (ebss as usize).into(),
                 MapType::Identical,
@@ -137,6 +143,7 @@ impl AddrSpace {
         // println!("mapping physical memory");
         kernel_space.push_section(
             Section::new(
+                "phys_mm".to_string(),
                 (ekernel as usize).into(),
                 MEMORY_END.into(),
                 MapType::Identical,
@@ -148,6 +155,7 @@ impl AddrSpace {
         for pair in MMIO {
             kernel_space.push_section(
                 Section::new(
+                    "MMIO".to_string(),
                     (*pair).0.into(),
                     ((*pair).0 + (*pair).1).into(),
                     MapType::Identical,
@@ -175,6 +183,8 @@ impl AddrSpace {
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
+                let s = elf.get_string(i.into()).unwrap();
+                println!("name: {}", s);
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
                 let mut map_perm = Permission::U;
@@ -188,7 +198,13 @@ impl AddrSpace {
                 if ph_flags.is_execute() {
                     map_perm |= Permission::X;
                 }
-                let section = Section::new(start_va, end_va, MapType::Framed, map_perm);
+                let section = Section::new(
+                    "default".to_string(),
+                    start_va,
+                    end_va,
+                    MapType::Framed,
+                    map_perm,
+                );
                 max_end_vpn = section.vpn_range.get_end();
                 user_space.push_section(
                     section,
@@ -204,6 +220,7 @@ impl AddrSpace {
         let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
         user_space.push_section(
             Section::new(
+                "user_stack".to_string(),
                 user_stack_bottom.into(),
                 user_stack_high.into(),
                 MapType::Framed,
@@ -214,6 +231,7 @@ impl AddrSpace {
         // map TrapContext
         user_space.push_section(
             Section::new(
+                "trap_cx".to_string(),
                 TRAP_CONTEXT.into(),
                 TRAMPOLINE.into(),
                 MapType::Framed,
@@ -231,7 +249,6 @@ impl AddrSpace {
         self.page_table.translate(vpn)
     }
     pub fn recycle_data_pages(&mut self) {
-        //*self = Self::new_bare();
         self.sections.clear();
     }
     pub fn activate(&mut self) {
@@ -249,26 +266,20 @@ pub fn remap_test() {
     let mid_text: VirtAddr = ((stext as usize + etext as usize) / 2).into();
     let mid_rodata: VirtAddr = ((srodata as usize + erodata as usize) / 2).into();
     let mid_data: VirtAddr = ((sdata as usize + edata as usize) / 2).into();
-    assert!(
-        !kernel_space
-            .page_table
-            .translate(mid_text.floor())
-            .unwrap()
-            .is_writable(),
-    );
-    assert!(
-        !kernel_space
-            .page_table
-            .translate(mid_rodata.floor())
-            .unwrap()
-            .is_writable(),
-    );
-    assert!(
-        !kernel_space
-            .page_table
-            .translate(mid_data.floor())
-            .unwrap()
-            .is_executable(),
-    );
+    assert!(!kernel_space
+        .page_table
+        .translate(mid_text.floor())
+        .unwrap()
+        .is_writable(),);
+    assert!(!kernel_space
+        .page_table
+        .translate(mid_rodata.floor())
+        .unwrap()
+        .is_writable(),);
+    assert!(!kernel_space
+        .page_table
+        .translate(mid_data.floor())
+        .unwrap()
+        .is_executable(),);
     println!("remap_test passed!");
 }
