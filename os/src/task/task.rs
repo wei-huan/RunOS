@@ -25,13 +25,14 @@ pub struct TaskControlBlock {
     // immutable
     pub pid: PidHandle,
     pub kernel_stack: KernelStack,
+    pub entry_point: usize, // 用户程序入口点
     // mutable
     inner: UPSafeCell<TaskControlBlockInner>,
 }
 
 pub struct TaskControlBlockInner {
     pub trap_cx_ppn: PhysPageNum,
-    pub base_size: usize,
+    pub ustack_bottom: usize,
     pub task_cx: TaskContext,
     pub task_status: TaskStatus,
     pub addrspace: AddrSpace,
@@ -48,12 +49,12 @@ impl TaskControlBlockInner {
     pub fn get_user_token(&self) -> usize {
         self.addrspace.get_token()
     }
-    // fn get_status(&self) -> TaskStatus {
-    //     self.task_status
-    // }
-    // pub fn is_zombie(&self) -> bool {
-    //     self.get_status() == TaskStatus::Zombie
-    // }
+    fn get_status(&self) -> TaskStatus {
+        self.task_status
+    }
+    pub fn is_zombie(&self) -> bool {
+        self.get_status() == TaskStatus::Zombie
+    }
     pub fn alloc_fd(&mut self) -> usize {
         if let Some(fd) = (0..self.fd_table.len()).find(|fd| self.fd_table[*fd].is_none()) {
             fd
@@ -82,9 +83,10 @@ impl TaskControlBlock {
         let task = Self {
             pid: pid_handle,
             kernel_stack,
+            entry_point,
             inner: UPSafeCell::new(TaskControlBlockInner {
                 trap_cx_ppn,
-                base_size: ustack_base,
+                ustack_bottom: ustack_base,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
                 addrspace,

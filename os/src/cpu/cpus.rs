@@ -31,11 +31,12 @@ pub fn current_task() -> Option<Arc<TaskControlBlock>> {
     CPUS[cpu_id()].exclusive_access().current()
 }
 
+/// 从一个任务A切换到另一个任务B
 pub fn schedule_new(switched_task_cx_ptr: *mut TaskContext) {
     let mut cpu = CPUS[cpu_id()].exclusive_access();
-    let idle_task_cx_ptr = cpu.take_idle_task_cx_ptr();
+    let kernel_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
     drop(cpu);
     unsafe {
-        __switch(switched_task_cx_ptr, idle_task_cx_ptr);
+        __switch(switched_task_cx_ptr, kernel_task_cx_ptr);
     }
 }

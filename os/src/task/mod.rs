@@ -15,11 +15,14 @@ pub use pid::{pid_alloc, PidHandle};
 pub use task::{TaskControlBlock, TaskStatus};
 pub use switch::__switch;
 
+
+use crate::trap::{TrapContext, user_trap_handler};
 use crate::cpu::schedule_new;
 use crate::cpu::take_current_task;
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use alloc::sync::Arc;
 use manager::add_task;
+use crate::mm::kernel_token;
 
 pub fn add_apps() {
     for app in ROOT_INODE.ls() {
@@ -31,6 +34,7 @@ pub fn add_apps() {
     }
 }
 
+/// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32) {
     // take from Processor
     let task = take_current_task().unwrap();
@@ -45,12 +49,18 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // Refresh Task context
     let kernel_stack_top =task.kernel_stack.get_top();
     inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
+    // Refresh Trap context
+    let trap_cx = inner.get_trap_cx();
+    *trap_cx = TrapContext::app_init_context(
+        task.entry_point,
+        inner.ustack_bottom,
+        kernel_token(),
+        kernel_stack_top,
+        user_trap_handler as usize,
+    );
     // deallocate user space
     // inner.addrspace.recycle_data_pages();
     drop(inner);
-    // **** release current PCB
-    // drop task manually to maintain rc correctly
-    // drop(task);
     add_task(task);
     // we do not have to save task context
     let mut _unused = TaskContext::zero_init();

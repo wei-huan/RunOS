@@ -10,7 +10,7 @@ pub fn schedule() {
     loop {
         let mut cpu = CPUS[cpu_id()].exclusive_access();
         if let Some(task) = fetch_task() {
-            let idle_task_cx_ptr = cpu.take_idle_task_cx_ptr();
+            let kernel_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
             // access coming task TCB exclusively
             let mut task_inner = task.inner_exclusive_access();
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
@@ -21,7 +21,7 @@ pub fn schedule() {
             // release processor manually
             drop(cpu);
             unsafe {
-                __switch(idle_task_cx_ptr, next_task_cx_ptr);
+                __switch(kernel_task_cx_ptr, next_task_cx_ptr);
             }
         } else {
             idle_task();

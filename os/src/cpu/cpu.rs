@@ -7,7 +7,7 @@ use alloc::sync::Arc;
 // Per-CPU state
 pub struct Cpu {
     pub current: Option<Arc<TaskControlBlock>>, // The task running on this cpu, or None.
-    idle_task_cx: TaskContext,
+    kernel_task_cx: TaskContext,
     intr_depth: usize, // 中断嵌套深度
     intr_status: bool, // 本层中断状态
 }
@@ -16,7 +16,7 @@ impl Cpu {
     pub fn new() -> Self {
         Self {
             current: None,
-            idle_task_cx: TaskContext::zero_init(),
+            kernel_task_cx: TaskContext::zero_init(),
             intr_depth: 0,
             intr_status: false,
         }
@@ -24,8 +24,8 @@ impl Cpu {
     // pub fn set_current(&mut self, op: Option<Arc<TaskControlBlock>>){
     //     self.current = op;
     // }
-    pub fn take_idle_task_cx_ptr(&mut self) -> *mut TaskContext {
-        &mut self.idle_task_cx as *mut _
+    pub fn take_kernel_task_cx_ptr(&mut self) -> *mut TaskContext {
+        &mut self.kernel_task_cx as *mut _
     }
     pub fn take_current(&mut self) -> Option<Arc<TaskControlBlock>> {
         self.current.take()
