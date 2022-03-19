@@ -1,28 +1,26 @@
 mod context;
-mod kernel_task;
 mod kernel_stack;
+mod kernel_task;
 mod manager;
 mod pid;
-mod task;
 mod recycle_allocator;
 mod signal;
 mod switch;
+mod task;
 
 pub use context::TaskContext;
 pub use kernel_task::idle_task;
 pub use manager::fetch_task;
 pub use pid::{pid_alloc, PidHandle};
-pub use task::{TaskControlBlock, TaskStatus};
 pub use switch::__switch;
+pub use task::{TaskControlBlock, TaskStatus};
 
-
-use crate::trap::{TrapContext, user_trap_handler};
-use crate::cpu::back_to_schedule;
-use crate::cpu::take_current_task;
+use crate::cpu::{back_to_schedule, schedule, take_current_task};
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
+use crate::mm::kernel_token;
+use crate::trap::{user_trap_handler, TrapContext};
 use alloc::sync::Arc;
 use manager::add_task;
-use crate::mm::kernel_token;
 
 pub fn add_apps() {
     for app in ROOT_INODE.ls() {
@@ -47,7 +45,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // Delete children task
     inner.children.clear();
     // Refresh Task context
-    let kernel_stack_top =task.kernel_stack.get_top();
+    let kernel_stack_top = task.kernel_stack.get_top();
     inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
     // Refresh Trap context
     let trap_cx = inner.get_trap_cx();
@@ -64,4 +62,20 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     add_task(task);
     // 回到调度程序
     back_to_schedule();
+}
+
+pub fn suspend_current_and_run_next() {
+    // There must be an application running.
+    let task = take_current_task().unwrap();
+    // ---- access current TCB exclusively
+    let mut task_inner = task.inner_exclusive_access();
+    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
+    // Change status to Ready
+    task_inner.task_status = TaskStatus::Ready;
+    drop(task_inner);
+    // ---- release current PCB
+    // push back to ready queue.
+    add_task(task);
+    // jump to scheduling cycle
+    schedule(task_cx_ptr);
 }
