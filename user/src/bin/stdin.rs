@@ -10,9 +10,13 @@ use user::console::{getchar, read_line};
 
 #[no_mangle]
 pub fn main() -> i32 {
-    // let mut line = String::new();
+    // println!("please input:");
     // let c = getchar();
-    // read_line(&mut line).expect("error");
+    // println!("get char: {}", c);
+    let mut line = String::new();
+    println!("please input:");
+    read_line(&mut line).expect("error");
+    println!("get line: {}", line);
     0
 }
 

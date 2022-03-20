@@ -7,6 +7,13 @@ KERNEL_BIN := $(KERNEL_ELF).bin
 # PLATFORM
 PLATFORM ?= qemu
 
+# KERNEL ENTRY
+ifeq ($(PLATFORM), qemu)
+	KERNEL_ENTRY_PA := 0x80200000
+else ifeq ($(PLATFORM), k210)
+	KERNEL_ENTRY_PA := 0x80020000
+endif
+
 # FS
 FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 
@@ -14,7 +21,7 @@ FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 SBI := ../bootloader/opensbi-img/fw_jump.bin
 
 # CPU_NUM
-CPU_NUM := 2
+CPU_NUM := 1
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
@@ -36,7 +43,7 @@ run: build
     	-machine virt \
     	-nographic \
     	-bios $(SBI) \
-		-device loader,file=$(KERNEL_BIN),addr=0x80200000 \
+		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
 		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPU_NUM)
@@ -47,7 +54,7 @@ debug:
     	-machine virt \
     	-nographic \
     	-bios $(SBI) \
-		-device loader,file=$(KERNEL_BIN),addr=0x80200000 \
+		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
 		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-s -S \

@@ -70,7 +70,7 @@ pub fn opensbi_call(
         );
     }
     match error {
-        0 => SBIResult::Ok(value),
+        0..=128 => SBIResult::Ok(value),
         e => SBIResult::Err(SbiError::new(e)),
     }
 }

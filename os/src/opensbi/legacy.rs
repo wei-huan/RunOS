@@ -43,34 +43,36 @@ pub fn console_putchar(c: usize) {
 }
 
 // pub fn console_getchar() -> usize {
-//     let mut ret: usize = 0;
-//     opensbi_call(
+//     let res = opensbi_call(
 //         SBI_CONSOLE_GETCHAR_EID,
 //         SBI_CONSOLE_GETCHAR_FID,
-//         ret,
 //         0,
 //         0,
 //         0,
 //         0,
 //         0,
-//     ).unwrap()
+//         0,
+//     ).unwrap();
+//     match res {
+//         Failed => 0,
+//         n => n as usize,
+//     }
 // }
 
-/// `sbi_console_getchar` extension ID
-pub const CONSOLE_GETCHAR_EID: usize = 0x02;
-/// yes
 pub fn console_getchar() -> usize {
-    let mut ret: usize;
-
+    let mut err: i8 = 0;
     unsafe {
         asm!(
             "ecall",
-            lateout("a0") ret,
-            inout("a7") CONSOLE_GETCHAR_EID => _,
+            inlateout("x10") err => err,
+            in("x16") SBI_CONSOLE_GETCHAR_FID,
+            in("x17") SBI_CONSOLE_GETCHAR_EID,
         );
     }
-
-    ret
+    match err {
+        -1 => 0,
+        n => n as usize,
+    }
 }
 
 #[allow(unused)]
