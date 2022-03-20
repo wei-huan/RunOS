@@ -13,15 +13,9 @@ pub fn main() -> i32 {
     // println!("please input:");
     // let c = getchar();
     // println!("get char: {}", c);
-    loop {
-        let mut line = String::new();
-        println!("please input:");
-        read_line(&mut line).expect("error");
-        println!("get line: {}", line);
-        if line.contains("pat") {
-            println!("back");
-            break;
-        }
-    }
+    let mut line = String::new();
+    println!("please input:");
+    read_line(&mut line).expect("error");
+    println!("get line: {}", line);
     0
 }
