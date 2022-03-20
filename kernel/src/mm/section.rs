@@ -25,8 +25,7 @@ pub enum MapType {
 }
 
 pub struct Section {
-    #[allow(unused)]
-    name: String,
+    pub name: String,
     perm: Permission,
     map_type: MapType,
     pub vpn_range: VPNRange,
@@ -93,6 +92,25 @@ impl Section {
             if start >= len {
                 break;
             }
+            current_vpn.step();
+        }
+    }
+    /// data: start-aligned but maybe with shorter length
+    /// assume that all frames were cleared before
+    pub fn clear(&mut self, page_table: &mut PageTable) {
+        assert_eq!(self.map_type, MapType::Framed);
+        let mut current_vpn = self.vpn_range.get_start();
+        let src = &[0; PAGE_SIZE];
+        loop {
+            if current_vpn == self.vpn_range.get_end() {
+                break;
+            }
+            let dst = &mut page_table
+                .translate(current_vpn)
+                .unwrap()
+                .ppn()
+                .get_bytes_array()[..PAGE_SIZE];
+            dst.copy_from_slice(src);
             current_vpn.step();
         }
     }

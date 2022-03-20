@@ -58,6 +58,8 @@ pub fn exit_current_and_run_next(exit_code: i32) {
         kernel_stack_top,
         user_trap_handler as usize,
     );
+    // clear some data section
+    inner.addrspace.clear_bss_pages();
     // drop file descriptors
     inner.fd_table.clear();
     inner.fd_table = vec![

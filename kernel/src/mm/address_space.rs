@@ -248,6 +248,14 @@ impl AddrSpace {
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)
     }
+    pub fn clear_bss_pages(&mut self) {
+        let sect_iterator = self.sections.iter_mut();
+        for sect in sect_iterator {
+            if sect.name == ".bss" {
+                sect.clear(&mut self.page_table);
+            }
+        }
+    }
     #[allow(unused)]
     pub fn recycle_data_pages(&mut self) {
         self.sections.clear();
