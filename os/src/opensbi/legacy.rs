@@ -60,7 +60,7 @@ pub fn console_putchar(c: usize) {
 // }
 
 pub fn console_getchar() -> usize {
-    let mut err: i8 = 0;
+    let mut err: isize = 0;
     unsafe {
         asm!(
             "ecall",
@@ -69,6 +69,7 @@ pub fn console_getchar() -> usize {
             in("x17") SBI_CONSOLE_GETCHAR_EID,
         );
     }
+    // println!("dead");
     match err {
         -1 => 0,
         n => n as usize,

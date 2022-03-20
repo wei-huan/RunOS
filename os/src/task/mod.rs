@@ -20,6 +20,8 @@ use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use crate::mm::kernel_token;
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::sync::Arc;
+use crate::fs::{Stdin, Stdout};
+use alloc::vec;
 use manager::add_task;
 
 pub fn add_apps() {
@@ -56,6 +58,16 @@ pub fn exit_current_and_run_next(exit_code: i32) {
         kernel_stack_top,
         user_trap_handler as usize,
     );
+    // drop file descriptors
+    inner.fd_table.clear();
+    inner.fd_table = vec![
+        // 0 -> stdin
+        Some(Arc::new(Stdin)),
+        // 1 -> stdout
+        Some(Arc::new(Stdout)),
+        // 2 -> stderr
+        Some(Arc::new(Stdout)),
+    ];
     // deallocate user space
     // inner.addrspace.recycle_data_pages();
     drop(inner);
