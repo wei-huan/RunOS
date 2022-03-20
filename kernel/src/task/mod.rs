@@ -20,8 +20,6 @@ use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use crate::mm::kernel_token;
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::sync::Arc;
-use crate::fs::{Stdin, Stdout};
-use alloc::vec;
 use manager::add_task;
 
 pub fn add_apps() {
