@@ -16,7 +16,7 @@ const SYSCALL_EXIT: usize = 93;
 const SYSCALL_YIELD: usize = 124;
 const SYSCALL_GET_TIME: usize = 169;
 
-pub fn syscall(syscall_id: usize, args: [usize; 3]) -> isize {
+pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     match syscall_id {
         SYSCALL_OPEN => sys_open(args[0] as *const u8, args[1] as u32),
         SYSCALL_CLOSE => sys_close(args[0]),

@@ -1,6 +1,7 @@
 /// Legacy Extension
 use crate::opensbi::opensbi_call;
 use crate::opensbi::SBIResult;
+use core::arch::asm;
 
 const SBI_SET_TIMER_EID: usize = 0;
 const SBI_CONSOLE_PUTCHAR_EID: usize = 1;
@@ -41,17 +42,35 @@ pub fn console_putchar(c: usize) {
     );
 }
 
+// pub fn console_getchar() -> usize {
+//     let mut ret: usize = 0;
+//     opensbi_call(
+//         SBI_CONSOLE_GETCHAR_EID,
+//         SBI_CONSOLE_GETCHAR_FID,
+//         ret,
+//         0,
+//         0,
+//         0,
+//         0,
+//         0,
+//     ).unwrap()
+// }
+
+/// `sbi_console_getchar` extension ID
+pub const CONSOLE_GETCHAR_EID: usize = 0x02;
+/// yes
 pub fn console_getchar() -> usize {
-    opensbi_call(
-        SBI_CONSOLE_GETCHAR_EID,
-        SBI_CONSOLE_GETCHAR_FID,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-    ).unwrap()
+    let mut ret: usize;
+
+    unsafe {
+        asm!(
+            "ecall",
+            lateout("a0") ret,
+            inout("a7") CONSOLE_GETCHAR_EID => _,
+        );
+    }
+
+    ret
 }
 
 #[allow(unused)]

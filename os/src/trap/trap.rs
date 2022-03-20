@@ -28,7 +28,7 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();
-            info!("timer_trigger");
+            // info!("timer_trigger");
         }
         _ => {
             println!("stval = {}, sepc = 0x{:X}", stval::read(), sepc::read());
@@ -54,7 +54,10 @@ pub fn user_trap_handler() -> ! {
             let mut cx = current_trap_cx();
             cx.sepc += 4;
             // get system call return value
-            let result = syscall(cx.x[17], [cx.x[10], cx.x[11], cx.x[12]]);
+            let result = syscall(
+                cx.x[17],
+                [cx.x[10], cx.x[11], cx.x[12], cx.x[13], cx.x[14], cx.x[15]],
+            );
             // cx is changed during sys_exec, so we have to call it again
             cx = current_trap_cx();
             cx.x[10] = result as usize;
