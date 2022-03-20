@@ -118,6 +118,22 @@ impl TaskControlBlock {
         );
         task
     }
+    pub fn reset_trap_context(&mut self) {
+        let mut inner = self.inner_exclusive_access();
+        let trap_cx = inner.get_trap_cx();
+        *trap_cx = TrapContext::app_init_context(
+            self.entry_point,
+            inner.ustack_bottom,
+            kernel_token(),
+            self.kernel_stack.get_top(),
+            user_trap_handler as usize,
+        );
+    }
+    pub fn reset_task_context(&mut self) {
+        let mut inner = self.inner_exclusive_access();
+        let kernel_stack_top = self.kernel_stack.get_top();
+        inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
+    }
     // pub fn getpid(&self) -> usize {
     //     self.pid.0
     // }

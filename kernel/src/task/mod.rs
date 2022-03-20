@@ -46,10 +46,10 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     inner.exit_code = exit_code;
     // Delete children task
     inner.children.clear();
-    // Refresh Task context
+    // Reset Task context
     let kernel_stack_top = task.kernel_stack.get_top();
     inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
-    // Refresh Trap context
+    // Reset Trap context
     let trap_cx = inner.get_trap_cx();
     *trap_cx = TrapContext::app_init_context(
         task.entry_point,
@@ -58,20 +58,9 @@ pub fn exit_current_and_run_next(exit_code: i32) {
         kernel_stack_top,
         user_trap_handler as usize,
     );
-    // clear some data section
+    // Clear bss section
     inner.addrspace.clear_bss_pages();
-    // drop file descriptors
-    inner.fd_table.clear();
-    inner.fd_table = vec![
-        // 0 -> stdin
-        Some(Arc::new(Stdin)),
-        // 1 -> stdout
-        Some(Arc::new(Stdout)),
-        // 2 -> stderr
-        Some(Arc::new(Stdout)),
-    ];
-    // deallocate user space
-    // inner.addrspace.recycle_data_pages();
+
     drop(inner);
     // push back to ready queue.
     add_task(task);
