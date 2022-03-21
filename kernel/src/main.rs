@@ -25,9 +25,9 @@ mod timer;
 mod trap;
 mod utils;
 
-use crate::opensbi::hart_start;
+use crate::cpu::SMP_START;
 use core::arch::global_asm;
-use core::sync::atomic::{AtomicBool, Ordering};
+use core::sync::atomic::Ordering;
 use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
 use opensbi::{impl_id, impl_version, spec_version};
@@ -42,23 +42,9 @@ fn clear_bss() {
     (sbss as usize..ebss as usize).for_each(|a| unsafe { (a as *mut u8).write_volatile(0) })
 }
 
-fn boot_all_harts(hartid: usize) {
-    extern "C" {
-        fn _start();
-    }
-    let ncpu = CPU_NUMS.load(Ordering::Acquire);
-    for i in 0..ncpu {
-        if i != hartid {
-            // priv: 1 for supervisor; 0 for user;
-            hart_start(i, _start as usize, 1).unwrap();
-        }
-    }
-}
-
-static START: AtomicBool = AtomicBool::new(false);
 #[no_mangle]
 fn os_main(hartid: usize, fdt: *mut u8) {
-    if !START.load(Ordering::Acquire) {
+    if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         trap::init();
         dt::init(fdt);
@@ -80,11 +66,9 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         };
 
         info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
-
-        // info!(blue, "=== Machine Info ===");
+        info!("=== Machine Info ===");
         info!(" Total CPUs: {}", n_cpus);
         info!(" Timer Clock: {}Hz", timebase_frequency);
-
         info!("=== SBI Implementation ===");
         info!(
             " Implementor: {:?} (version: {}.{})",
@@ -93,11 +77,10 @@ fn os_main(hartid: usize, fdt: *mut u8) {
             impl_minor
         );
         info!(" Spec Version: {}.{}", spec_major, spec_minor);
-
         info!("=== MyOS Info ===");
+
         task::add_apps();
-        START.store(true, Ordering::Relaxed);
-        boot_all_harts(hartid);
+        cpu::boot_all_harts(hartid);
         cpu::schedule();
     } else {
         trap::init();
