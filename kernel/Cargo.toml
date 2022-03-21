@@ -21,7 +21,6 @@ k210-soc = { git = "https://github.com/wyfcyx/k210-soc" }
 myfs = { path = "../myfs" }
 log = "0.4.14"
 fdt = "0.1.3"
-# logging_macro = {path = "./logging_macro" }
 
 [features]
 platform-k210 = []
