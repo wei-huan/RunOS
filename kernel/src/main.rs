@@ -18,9 +18,9 @@ mod logging;
 mod mm;
 mod opensbi;
 mod platform;
-mod task;
 mod sync;
 mod syscall;
+mod task;
 mod timer;
 mod trap;
 mod utils;
@@ -81,7 +81,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
 
         info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
 
-        info!("=== Machine Info ===");
+        // info!(blue, "=== Machine Info ===");
         info!(" Total CPUs: {}", n_cpus);
         info!(" Timer Clock: {}Hz", timebase_frequency);
 

@@ -106,3 +106,4 @@ pub fn init() {
 fn set_hart_filter(hart_id: usize) {
     HART_FILTER.store(hart_id, Ordering::Relaxed);
 }
+
