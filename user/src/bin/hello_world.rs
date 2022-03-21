@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-#[macro_use]
+// #[macro_use]
 extern crate user;
 
 use user::get_time;
