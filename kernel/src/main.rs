@@ -24,6 +24,7 @@ mod syscall;
 mod timer;
 mod trap;
 mod utils;
+mod scheduler;
 
 use crate::opensbi::hart_start;
 use core::arch::global_asm;
@@ -93,15 +94,14 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Spec Version: {}.{}", spec_major, spec_minor);
 
         info!("=== MyOS Info ===");
-        task::add_apps();
+        scheduler::add_apps();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
-        cpu::schedule();
+        scheduler::schedule();
     } else {
         trap::init();
         mm::init();
         timer::init();
-        cpu::schedule();
+        scheduler::schedule();
     }
-    unreachable!();
 }

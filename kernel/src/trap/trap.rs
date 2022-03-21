@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, schedule};
+use crate::cpu::{current_trap_cx, current_user_token};
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
@@ -87,7 +87,7 @@ pub fn user_trap_handler() -> ! {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();
             suspend_current_and_run_next();
-            // log::debug!("User Timer Interrupt");
+            log::debug!("User Timer Interrupt");
         }
         _ => {
             panic!(

@@ -14,6 +14,6 @@ pub fn main() -> i32 {
         // println!("sleep");
         end = get_time();
     }
-    // println!("Hello world from user mode program 0!");
+    println!("Hello world from user mode program 0!");
     0
 }
