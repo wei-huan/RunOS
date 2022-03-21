@@ -65,7 +65,6 @@ pub fn schedule_new(next_task_cx_ptr: *const TaskContext) {
     log::debug!("Have Process9");
     // schedule_new 只有内核才能使用，故均为内核上下文
     let current_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
-    log::debug!("Have Process10");
     drop(cpu);
     unsafe {
         __switch(current_task_cx_ptr, next_task_cx_ptr);
