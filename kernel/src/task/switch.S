@@ -7,7 +7,6 @@
 .endm
     .section .text
     .globl __switch
-    .globl __load
 __switch:
     # __switch(
     #     current_task_cx_ptr: *mut TaskContext,

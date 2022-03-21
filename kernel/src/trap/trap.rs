@@ -52,6 +52,7 @@ pub fn user_trap_handler() -> ! {
     let stval = stval::read();
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
+            log::debug!("UserEnvCall");
             // jump to next instruction anyway
             let mut cx = current_trap_cx();
             cx.sepc += 4;
@@ -61,8 +62,9 @@ pub fn user_trap_handler() -> ! {
                 [cx.x[10], cx.x[11], cx.x[12], cx.x[13], cx.x[14], cx.x[15]],
             );
             // cx is changed during sys_exec, so we have to call it again
-            cx = current_trap_cx();
-            cx.x[10] = result as usize;
+            // cx = current_trap_cx();
+            // cx.x[10] = result as usize;
+            log::debug!("UserEnvCall back");
         }
         Trap::Exception(Exception::StoreFault)
         | Trap::Exception(Exception::StorePageFault)
@@ -107,6 +109,7 @@ pub fn user_trap_handler() -> ! {
 
 #[no_mangle]
 pub fn user_trap_return() -> ! {
+    log::debug!("user_trap_return");
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;
     let user_satp = current_user_token();
@@ -125,6 +128,7 @@ pub fn user_trap_return() -> ! {
             options(noreturn)
         );
     }
+    log::debug!("unreachable user_trap_return");
 }
 
 // #[no_mangle]
