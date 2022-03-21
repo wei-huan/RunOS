@@ -95,7 +95,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Spec Version: {}.{}", spec_major, spec_minor);
 
         info!("=== MyOS Info ===");
-        task::add_apps();
+        task::add_initproc();
         START.store(true, Ordering::Relaxed);
         boot_all_harts(hartid);
         cpu::schedule();

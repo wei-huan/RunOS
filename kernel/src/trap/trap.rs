@@ -83,7 +83,6 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // info!("YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
             set_next_trigger();
             suspend_current_and_run_next();
         }

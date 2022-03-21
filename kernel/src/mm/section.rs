@@ -4,10 +4,10 @@ use super::{
     frame::{frame_alloc, Frame},
     page_table::{PTEFlags, PageTable},
 };
-use bitflags::bitflags;
 use crate::config::PAGE_SIZE;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
+use bitflags::bitflags;
 
 bitflags! {
     pub struct Permission: u8 {
@@ -33,13 +33,28 @@ pub struct Section {
 }
 
 impl Section {
-    pub fn new(name: String, start_va: VirtAddr, end_va: VirtAddr, map_type: MapType, perm: Permission) -> Self {
+    pub fn new(
+        name: String,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+        map_type: MapType,
+        perm: Permission,
+    ) -> Self {
         Self {
             name,
             perm,
             map_type,
             data_frames: BTreeMap::new(),
             vpn_range: VPNRange::new(start_va.floor(), end_va.ceil()),
+        }
+    }
+    pub fn from_another(another: &Section) -> Self {
+        Self {
+            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
+            data_frames: BTreeMap::new(),
+            map_type: another.map_type,
+            perm: another.perm,
+            name: String::from(&another.name),
         }
     }
     pub fn map_one_page(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
