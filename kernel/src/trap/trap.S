@@ -13,30 +13,25 @@
 __kernelvec:
     // make room to save registers.
     addi sp, sp, -256
-
     // save the registers.
     .set n, 0
     .rept 32
         SAVE_GP %n
         .set n, n+1
     .endr
-
-    // call the Rust trap handler in trap.sr
+    // call the Rust trap handler in trap.rs
     call kernel_trap_handler
-
     // restore registers.
     .set n, 0
     .rept 32
         LOAD_GP %n
         .set n, n+1
     .endr
-
+    // give back room.
     addi sp, sp, 256
-
     // return to whatever we were doing in the kernel.
     sret
 
-    .extern user_trap_handler
     .section .text.trampoline
     .align 4
     .globl __uservec

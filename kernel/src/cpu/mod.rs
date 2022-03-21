@@ -6,10 +6,12 @@ pub use cpus::{cpu_id, current_task, take_current_task, CPUS, schedule_new, exit
 
 use crate::task::{fetch_task, idle_task, TaskContext, TaskStatus};
 
+#[no_mangle]
 pub fn schedule() {
+    log::debug!("Starting scheduling");
     loop {
-        let mut cpu = CPUS[cpu_id()].exclusive_access();
         if let Some(task) = fetch_task() {
+            let mut cpu = CPUS[cpu_id()].exclusive_access();
             // access coming task PCB exclusively
             let mut task_inner = task.inner_exclusive_access();
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;

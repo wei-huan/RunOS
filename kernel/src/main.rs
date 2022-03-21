@@ -70,8 +70,6 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
         let (impl_major, impl_minor) = {
             let version = impl_version();
-            // This is how OpenSBI encodes their version, hopefully will be the same
-            // between others
             (version >> 16, version & 0xFFFF)
         };
         let (spec_major, spec_minor) = {

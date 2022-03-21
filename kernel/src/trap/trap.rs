@@ -1,10 +1,9 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token};
+use crate::cpu::{current_trap_cx, current_user_token, schedule};
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
-// use log::*;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
@@ -28,7 +27,10 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();
-            // info!("timer_trigger");
+            log::debug!("Supervisor Timer Interrupt");
+        }
+        Trap::Interrupt(Interrupt::SupervisorExternal) => {
+            log::debug!("Supervisor External Interrupt");
         }
         _ => {
             println!("stval = {}, sepc = 0x{:X}", stval::read(), sepc::read());
@@ -83,9 +85,9 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // info!("YYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYYY");
             set_next_trigger();
             suspend_current_and_run_next();
+            // log::debug!("User Timer Interrupt");
         }
         _ => {
             panic!(
@@ -124,3 +126,16 @@ pub fn user_trap_return() -> ! {
         );
     }
 }
+
+// #[no_mangle]
+// pub fn kernel_trap_goto_schedule() -> ! {
+//     unsafe {
+//         asm!(
+//             "jr {restore_va}",
+//             restore_va = in(reg) restore_va,
+//             in("a0") trap_cx_ptr,
+//             in("a1") user_satp,
+//             options(noreturn)
+//         );
+//     }
+// }
