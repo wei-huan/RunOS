@@ -49,6 +49,7 @@ pub fn user_trap_handler() -> ! {
     let stval = stval::read();
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
+            // log::debug!("UserEnvCall");
             // jump to next instruction anyway
             let mut cx = current_trap_cx();
             cx.sepc += 4;

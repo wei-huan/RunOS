@@ -7,7 +7,7 @@ use lazy_static::*;
 use round_robin::RoundRobinScheduler;
 
 pub trait Scheduler: Send {
-    fn schedule(&self) -> !;
+    fn schedule(&self);
     fn add_task(&self, task: Arc<TaskControlBlock>);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;
 }
@@ -16,7 +16,7 @@ lazy_static! {
     pub static ref SCHEDULER: RoundRobinScheduler = RoundRobinScheduler::new();
 }
 
-pub fn schedule() -> ! {
+pub fn schedule() {
     SCHEDULER.schedule()
 }
 

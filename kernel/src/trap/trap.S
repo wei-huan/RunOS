@@ -38,8 +38,9 @@ __kernelvec:
 
     .extern user_trap_handler
     .section .text.trampoline
-    .align 4
     .globl __uservec
+    .globl __restore
+    .align 4
 __uservec:
     csrrw sp, sscratch, sp
     # now sp->*TrapContext in user space, sscratch->user stack
