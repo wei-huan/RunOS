@@ -1,7 +1,6 @@
 mod context;
 mod kernel_stack;
 mod kernel_task;
-mod manager;
 mod pid;
 mod recycle_allocator;
 mod signal;
@@ -10,27 +9,26 @@ mod task;
 
 pub use context::TaskContext;
 pub use kernel_task::idle_task;
-pub use manager::fetch_task;
 pub use pid::{pid_alloc, PidHandle};
 pub use switch::__switch;
 pub use task::{TaskControlBlock, TaskStatus};
 
 use crate::cpu::{exit_back_to_schedule, suspend_back_to_schedule, take_current_task};
-use crate::fs::{open_file, OpenFlags, ROOT_INODE};
+// use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use crate::mm::kernel_token;
 use crate::trap::{user_trap_handler, TrapContext};
-use alloc::sync::Arc;
-use manager::add_task;
+// use alloc::sync::Arc;
+use crate::scheduler::add_task;
 
-pub fn add_apps() {
-    for app in ROOT_INODE.ls() {
-        if let Some(app_inode) = open_file(app.as_str(), OpenFlags::RDONLY) {
-            let elf_data = app_inode.read_all();
-            let new_task = TaskControlBlock::new(elf_data.as_slice());
-            add_task(Arc::new(new_task));
-        }
-    }
-}
+// pub fn add_apps() {
+//     for app in ROOT_INODE.ls() {
+//         if let Some(app_inode) = open_file(app.as_str(), OpenFlags::RDONLY) {
+//             let elf_data = app_inode.read_all();
+//             let new_task = TaskControlBlock::new(elf_data.as_slice());
+//             add_task(Arc::new(new_task));
+//         }
+//     }
+// }
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32) {
@@ -58,9 +56,9 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     );
     // Clear bss section
     inner.addrspace.clear_bss_pages();
-
+    // drop inner
     drop(inner);
-    // push back to ready queue.
+    // Push back to ready queue.
     add_task(task);
     // 回到调度程序
     exit_back_to_schedule();
@@ -74,8 +72,9 @@ pub fn suspend_current_and_run_next() {
     let task_cx_ptr = &mut inner.task_cx as *mut TaskContext;
     // Change status to Ready
     inner.task_status = TaskStatus::Ready;
+    // drop inner
     drop(inner);
-    // push back to ready queue.
+    // Push back to ready queue.
     add_task(task);
     // jump to scheduling cycle
     suspend_back_to_schedule(task_cx_ptr);

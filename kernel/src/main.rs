@@ -18,6 +18,7 @@ mod logging;
 mod mm;
 mod opensbi;
 mod platform;
+mod scheduler;
 mod sync;
 mod syscall;
 mod task;
@@ -26,7 +27,7 @@ mod trap;
 mod utils;
 
 use crate::cpu::SMP_START;
-use core::arch::global_asm;
+use core::{arch::global_asm};
 use core::sync::atomic::Ordering;
 use dt::{CPU_NUMS, TIMER_FREQ};
 use log::*;
@@ -79,14 +80,13 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!(" Spec Version: {}.{}", spec_major, spec_minor);
         info!("=== MyOS Info ===");
 
-        task::add_apps();
+        scheduler::add_apps();
         cpu::boot_all_harts(hartid);
-        cpu::schedule();
+        scheduler::schedule();
     } else {
         trap::init();
         mm::init();
         timer::init();
-        cpu::schedule();
+        scheduler::schedule();
     }
-    unreachable!();
 }
