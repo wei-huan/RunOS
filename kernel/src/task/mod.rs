@@ -20,16 +20,6 @@ use crate::trap::{user_trap_handler, TrapContext};
 // use alloc::sync::Arc;
 use crate::scheduler::add_task;
 
-// pub fn add_apps() {
-//     for app in ROOT_INODE.ls() {
-//         if let Some(app_inode) = open_file(app.as_str(), OpenFlags::RDONLY) {
-//             let elf_data = app_inode.read_all();
-//             let new_task = TaskControlBlock::new(elf_data.as_slice());
-//             add_task(Arc::new(new_task));
-//         }
-//     }
-// }
-
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32) {
     // take from Processor
