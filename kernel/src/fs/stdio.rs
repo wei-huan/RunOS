@@ -20,6 +20,7 @@ impl File for Stdin {
         loop {
             c = console_getchar();
             if c == 0 {
+                log::debug!("Get char Suspend");
                 suspend_current_and_run_next();
                 continue;
             } else {

@@ -19,23 +19,22 @@ impl RoundRobinScheduler {
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) {
         log::debug!("Starting scheduling");
-        loop {
-            if let Some(task) = self.fetch_task() {
-                let mut cpu = take_my_cpu();
-                let mut task_inner = task.inner_exclusive_access();
-                let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
-                task_inner.task_status = TaskStatus::Running;
-                drop(task_inner);
-                // release coming task PCB manually
-                cpu.current = Some(task);
-                // release processor manually
-                drop(cpu);
-                // schedule new task
-                schedule_new(next_task_cx_ptr);
-            } else {
-                log::debug!("No Process");
-                idle_task();
-            }
+        if let Some(task) = self.fetch_task() {
+            let mut cpu = take_my_cpu();
+            let mut task_inner = task.inner_exclusive_access();
+            let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
+            task_inner.task_status = TaskStatus::Running;
+            drop(task_inner);
+            // release coming task PCB manually
+            cpu.current = Some(task);
+            // release processor manually
+            drop(cpu);
+            // schedule new task
+            schedule_new(next_task_cx_ptr);
+            log::debug!("Schedule Back");
+        } else {
+            log::debug!("No Process");
+            idle_task();
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {

@@ -83,6 +83,7 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            log::debug!("Supervisor Timer");
             set_next_trigger();
             suspend_current_and_run_next();
         }
@@ -112,6 +113,7 @@ pub fn user_trap_return() -> ! {
         fn __restore();
     }
     let restore_va = __restore as usize - __uservec as usize + TRAMPOLINE;
+    // log::debug!("trap return");
     unsafe {
         asm!(
             "fence.i",
