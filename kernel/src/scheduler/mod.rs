@@ -8,7 +8,7 @@ use lazy_static::*;
 use round_robin::RoundRobinScheduler;
 
 pub trait Scheduler: Send {
-    fn schedule(&self);
+    fn schedule(&self) -> !;
     fn add_task(&self, task: Arc<TaskControlBlock>);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;
 }
@@ -17,7 +17,7 @@ lazy_static! {
     pub static ref SCHEDULER: RoundRobinScheduler = RoundRobinScheduler::new();
 }
 
-pub fn schedule() {
+pub fn schedule() -> !{
     SCHEDULER.schedule()
 }
 
@@ -38,6 +38,6 @@ pub fn add_apps() {
 global_asm!(include_str!("schedule.S"));
 
 extern "C" {
-    // ! __switch will return
-    pub fn __save_current_taskcontext(current_task_cx_ptr: *mut TaskContext);
+    pub fn __goto_user(next_task_cx_ptr: *const TaskContext) -> !;
+    pub fn __save_current_tx(current_task_cx_ptr: *mut TaskContext) ;
 }

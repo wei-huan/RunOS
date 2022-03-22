@@ -40,6 +40,7 @@ impl Drop for KernelStack {
     }
 }
 
+/// 从上到下生长
 impl KernelStack {
     // #[allow(unused)]
     // pub fn push_on_top<T>(&self, value: T) -> *mut T
@@ -56,5 +57,9 @@ impl KernelStack {
     pub fn get_top(&self) -> usize {
         let (_, kernel_stack_top) = kernel_stack_position(self.0);
         kernel_stack_top
+    }
+    pub fn get_bottom(&self) -> usize {
+        let (kernel_stack_bottom, _) = kernel_stack_position(self.0);
+        kernel_stack_bottom
     }
 }

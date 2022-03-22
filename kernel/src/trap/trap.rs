@@ -1,6 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token};
+use crate::cpu::{current_trap_cx, current_user_token, take_my_cpu};
 use crate::syscall::syscall;
+use crate::scheduler;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
@@ -27,7 +28,14 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();
-            // info!("timer_trigger");
+            log::debug!("Supervisor Timer");
+            // let mut cpu = take_my_cpu();
+            // let current_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
+            // drop(cpu);
+            // unsafe {
+            //     scheduler::__save_current_tx(current_task_cx_ptr);
+            // }
+            // scheduler::schedule();
         }
         _ => {
             println!("stval = {}, sepc = 0x{:X}", stval::read(), sepc::read());
@@ -68,7 +76,7 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::InstructionPageFault)
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
-            println!(
+            log::debug!(
                 "[kernel] {:?} in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
                 scause.cause(),
                 stval,
@@ -78,12 +86,12 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-2);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            println!("[kernel] IllegalInstruction in application, kernel killed it.");
+            log::debug!("[kernel] IllegalInstruction in application, kernel killed it.");
             // illegal instruction exit code
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            log::debug!("Supervisor Timer");
+            log::debug!("User Timer");
             set_next_trigger();
             suspend_current_and_run_next();
         }
@@ -105,6 +113,7 @@ pub fn user_trap_handler() -> ! {
 
 #[no_mangle]
 pub fn user_trap_return() -> ! {
+    // log::debug!("trap return");
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;
     let user_satp = current_user_token();
@@ -113,7 +122,6 @@ pub fn user_trap_return() -> ! {
         fn __restore();
     }
     let restore_va = __restore as usize - __uservec as usize + TRAMPOLINE;
-    // log::debug!("trap return");
     unsafe {
         asm!(
             "fence.i",

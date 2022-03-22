@@ -1,6 +1,9 @@
 use super::Scheduler;
-use crate::cpu::{schedule_new, take_my_cpu};
+use crate::cpu::take_my_cpu;
+use crate::scheduler;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
+use crate::timer;
+use crate::trap;
 use alloc::{collections::VecDeque, sync::Arc};
 use spin::Mutex;
 
@@ -17,7 +20,7 @@ impl RoundRobinScheduler {
 }
 
 impl Scheduler for RoundRobinScheduler {
-    fn schedule(&self) {
+    fn schedule(&self) -> ! {
         log::debug!("Starting scheduling");
         if let Some(task) = self.fetch_task() {
             let mut cpu = take_my_cpu();
@@ -30,10 +33,10 @@ impl Scheduler for RoundRobinScheduler {
             // release processor manually
             drop(cpu);
             // schedule new task
-            schedule_new(next_task_cx_ptr);
-            log::debug!("Schedule Back");
+            unsafe { scheduler::__goto_user(next_task_cx_ptr) }
         } else {
-            log::debug!("No Process");
+            trap::init();
+            timer::init();
             idle_task();
         }
     }
