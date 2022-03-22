@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-// #[macro_use]
+#[macro_use]
 extern crate user;
 
 const LEN: usize = 100;
@@ -24,6 +24,6 @@ unsafe fn main() -> i32 {
         }
     }
     // println!("{}^{} = {}(MOD {})", p, iter, S[cur], m);
-    // println!("Test power_7 OK!");
+    println!("Test power_7 OK!");
     0
 }

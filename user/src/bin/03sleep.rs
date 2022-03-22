@@ -1,7 +1,7 @@
 #![no_std]
 #![no_main]
 
-// #[macro_use]
+#[macro_use]
 extern crate user;
 
 use user::{get_time, yield_};
@@ -13,6 +13,6 @@ fn main() -> i32 {
     while get_time() < wait_for {
         yield_();
     }
-    // println!("Test sleep OK!");
+    println!("Test sleep OK!");
     0
 }

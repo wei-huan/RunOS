@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, schedule};
+use crate::cpu::{current_trap_cx, current_user_token};
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
@@ -52,6 +52,7 @@ pub fn user_trap_handler() -> ! {
     let stval = stval::read();
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
+            // log::debug!("UserEnvCall");
             // jump to next instruction anyway
             let mut cx = current_trap_cx();
             cx.sepc += 4;
