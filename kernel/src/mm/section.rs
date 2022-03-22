@@ -108,10 +108,11 @@ impl Section {
                 .ppn()
                 .get_bytes_array()[..PAGE_SIZE];
             dst.copy_from_slice(src);
+            current_vpn.step();
+            // 左闭右开区间
             if current_vpn == self.vpn_range.get_end() {
                 break;
             }
-            current_vpn.step();
         }
     }
 }
