@@ -1,6 +1,9 @@
 use super::Scheduler;
-use crate::cpu::{schedule_new, take_my_cpu};
+use super::__schedule_new;
+use crate::cpu::take_my_cpu;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
+use crate::timer;
+use crate::trap;
 use alloc::{collections::VecDeque, sync::Arc};
 use spin::Mutex;
 
@@ -17,25 +20,24 @@ impl RoundRobinScheduler {
 }
 
 impl Scheduler for RoundRobinScheduler {
-    fn schedule(&self) -> !{
-        log::debug!("Starting scheduling");
-        loop {
-            if let Some(task) = self.fetch_task() {
-                let mut cpu = take_my_cpu();
-                let mut task_inner = task.inner_exclusive_access();
-                let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
-                task_inner.task_status = TaskStatus::Running;
-                drop(task_inner);
-                // release coming task PCB manually
-                cpu.current = Some(task);
-                // release processor manually
-                drop(cpu);
-                // schedule new task
-                schedule_new(next_task_cx_ptr);
-            } else {
-                log::debug!("No Process");
-                idle_task();
-            }
+    fn schedule(&self) -> ! {
+        if let Some(task) = self.fetch_task() {
+            let mut task_inner = task.inner_exclusive_access();
+            let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
+            task_inner.task_status = TaskStatus::Running;
+            // release coming task PCB manually
+            drop(task_inner);
+            // add task cx to current cpu
+            let mut cpu = take_my_cpu();
+            cpu.current = Some(task);
+            // release cpu manually
+            drop(cpu);
+            // schedule new task
+            unsafe { __schedule_new(next_task_cx_ptr) }
+        } else {
+            trap::init();
+            timer::init();
+            idle_task();
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {

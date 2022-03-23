@@ -10,14 +10,17 @@ pub struct TaskContext {
 }
 
 impl TaskContext {
-    pub fn zero_init() -> Self {
-        let sstatus = sstatus::read();
-        Self {
-            ra: 0,
-            sp: 0,
-            sstatus,
-            s: [0; 12],
-        }
+    // pub fn zero_init() -> Self {
+    //     let sstatus = sstatus::read();
+    //     Self {
+    //         ra: 0,
+    //         sp: 0,
+    //         sstatus,
+    //         s: [0; 12],
+    //     }
+    // }
+    pub fn set_goto_trap_return(&mut self) {
+        self.ra = user_trap_return as usize;
     }
     pub fn goto_trap_return(kstack_ptr: usize) -> Self {
         let mut sstatus = sstatus::read();

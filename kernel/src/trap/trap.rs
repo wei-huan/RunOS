@@ -1,6 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_trap_cx, current_user_token};
 use crate::syscall::syscall;
+use crate::scheduler::schedule;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
@@ -26,11 +27,9 @@ pub fn kernel_trap_handler() {
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            // log::debug!("Supervisor Timer");
             set_next_trigger();
-            log::debug!("Supervisor Timer Interrupt");
-        }
-        Trap::Interrupt(Interrupt::SupervisorExternal) => {
-            log::debug!("Supervisor External Interrupt");
+            schedule();
         }
         _ => {
             println!("stval = {}, sepc = 0x{:X}", stval::read(), sepc::read());
@@ -71,7 +70,7 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::InstructionPageFault)
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
-            println!(
+            log::debug!(
                 "[kernel] {:?} in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
                 scause.cause(),
                 stval,
@@ -81,11 +80,12 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-2);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            println!("[kernel] IllegalInstruction in application, kernel killed it.");
+            log::debug!("[kernel] IllegalInstruction in application, kernel killed it.");
             // illegal instruction exit code
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
+            // log::debug!("User Timer");
             set_next_trigger();
             suspend_current_and_run_next();
             // log::debug!("User Timer Interrupt");
@@ -98,16 +98,12 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
-    // check signals
-    // if let Some((errno, msg)) = check_signals_of_current() {
-    //     println!("[kernel] {}", msg);
-    //     exit_current_and_run_next(errno);
-    // }
     user_trap_return();
 }
 
 #[no_mangle]
 pub fn user_trap_return() -> ! {
+    // log::debug!("trap return");
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;
     let user_satp = current_user_token();

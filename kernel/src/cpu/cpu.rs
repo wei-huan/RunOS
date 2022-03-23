@@ -1,28 +1,23 @@
 use super::current_task;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
-use crate::task::{TaskContext, TaskControlBlock};
+use crate::task::TaskControlBlock;
 use crate::trap::TrapContext;
 use alloc::sync::Arc;
 
 // Per-CPU state
 pub struct Cpu {
     pub current: Option<Arc<TaskControlBlock>>, // The task running on this cpu, or None.
-    kernel_task_cx: TaskContext,
-    intr_depth: usize, // 中断嵌套深度
-    intr_status: bool, // 本层中断状态
+    intr_depth: usize,                          // 中断嵌套深度
+    intr_status: bool,                          // 本层中断状态
 }
 
 impl Cpu {
     pub fn new() -> Self {
         Self {
             current: None,
-            kernel_task_cx: TaskContext::zero_init(),
             intr_depth: 0,
             intr_status: false,
         }
-    }
-    pub fn take_kernel_task_cx_ptr(&mut self) -> *mut TaskContext {
-        &mut self.kernel_task_cx as *mut _
     }
     pub fn take_current(&mut self) -> Option<Arc<TaskControlBlock>> {
         self.current.take()

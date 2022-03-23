@@ -47,9 +47,6 @@ impl TaskControlBlockInner {
     pub fn get_trap_cx(&self) -> &'static mut TrapContext {
         self.trap_cx_ppn.get_mut()
     }
-    // pub fn take_task_cx_ptr(&mut self) -> *mut TaskContext {
-    //     &mut self.task_cx as *mut _
-    // }
     pub fn get_user_token(&self) -> usize {
         self.addrspace.get_token()
     }

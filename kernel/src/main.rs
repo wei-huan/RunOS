@@ -47,11 +47,9 @@ fn clear_bss() {
 fn os_main(hartid: usize, fdt: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
-        trap::init();
         dt::init(fdt);
         logging::init();
         mm::boot_init();
-        timer::init();
 
         let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
         let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
@@ -79,6 +77,8 @@ fn os_main(hartid: usize, fdt: *mut u8) {
         info!("=== MyOS Info ===");
 
         scheduler::add_apps();
+        trap::init();
+        timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
         scheduler::schedule();

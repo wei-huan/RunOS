@@ -16,12 +16,13 @@ impl File for Stdin {
     fn read(&self, mut user_buf: UserBuffer) -> usize {
         assert_eq!(user_buf.len(), 1);
         // busy loop
-        let mut c: usize;
+        let c: usize;
         loop {
             c = console_getchar();
             if c == 0 {
+                // log::debug!("Get char Suspend");
+                drop(c);
                 suspend_current_and_run_next();
-                continue;
             } else {
                 break;
             }
