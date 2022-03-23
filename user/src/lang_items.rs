@@ -15,6 +15,5 @@ fn panic(info: &PanicInfo) -> ! {
         println!("Panicked: {}", info.message().unwrap());
     }
     // kill(getpid() as usize, SignalFlags::SIGABRT.bits());
-    // unreachable!()
-    exit(-1);
+    exit(-2);
 }
