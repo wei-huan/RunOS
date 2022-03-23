@@ -1,4 +1,5 @@
 // use super::{getpid, kill, SignalFlags};
+use super::exit;
 use core::panic::PanicInfo;
 
 #[panic_handler]
@@ -14,5 +15,6 @@ fn panic(info: &PanicInfo) -> ! {
         println!("Panicked: {}", info.message().unwrap());
     }
     // kill(getpid() as usize, SignalFlags::SIGABRT.bits());
-    unreachable!()
+    // unreachable!()
+    exit(-1);
 }
