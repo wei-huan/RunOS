@@ -22,7 +22,6 @@ impl File for Stdin {
             if c == 0 {
                 log::debug!("Get char Suspend");
                 suspend_current_and_run_next();
-                continue;
             } else {
                 break;
             }
