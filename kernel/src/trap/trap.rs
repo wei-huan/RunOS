@@ -32,7 +32,7 @@ pub fn kernel_trap_handler() {
             schedule();
         }
         _ => {
-            println!("stval = {}, sepc = 0x{:X}", stval::read(), sepc::read());
+            println!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
             panic!("a trap {:?} from kernel!", scause.cause());
         }
     }
