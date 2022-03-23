@@ -7,7 +7,7 @@ use core::arch::global_asm;
 use lazy_static::*;
 use round_robin::RoundRobinScheduler;
 
-pub trait Scheduler: Send {
+pub trait Scheduler: {
     fn schedule(&self) -> !;
     fn add_task(&self, task: Arc<TaskControlBlock>);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;

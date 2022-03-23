@@ -49,6 +49,9 @@ pub fn read_line(line: &mut String) -> Result<usize, Error> {
     loop {
         let c = getchar();
         match c {
+            0 => {
+                continue;
+            }
             LF | CR => {
                 println!("");
                 if !line.is_empty() {

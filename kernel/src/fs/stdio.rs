@@ -21,7 +21,7 @@ impl File for Stdin {
             c = console_getchar();
             if c == 0 {
                 // log::debug!("Get char Suspend");
-                drop(c);
+                drop(user_buf);
                 suspend_current_and_run_next();
             } else {
                 break;

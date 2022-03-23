@@ -1,7 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_trap_cx, current_user_token};
-use crate::syscall::syscall;
 use crate::scheduler::schedule;
+use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
@@ -49,20 +49,22 @@ pub fn user_trap_handler() -> ! {
     set_kernel_trap_entry();
     let scause = scause::read();
     let stval = stval::read();
+    // log::debug!("kstack ptr: 0x{:X}", current_trap_cx().kernel_sp);
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
             // log::debug!("UserEnvCall");
-            // jump to next instruction anyway
+            // jump to syscall next instruction anyway, avoid re-trigger
             let mut cx = current_trap_cx();
             cx.sepc += 4;
             // get system call return value
-            let result = syscall(
+            // let result =
+            syscall(
                 cx.x[17],
                 [cx.x[10], cx.x[11], cx.x[12], cx.x[13], cx.x[14], cx.x[15]],
             );
-            // cx is changed during sys_exec, so we have to call it again
-            cx = current_trap_cx();
-            cx.x[10] = result as usize;
+            // // cx is changed during sys_exec, so we have to call it again
+            // cx = current_trap_cx();
+            // cx.x[10] = result as usize;
         }
         Trap::Exception(Exception::StoreFault)
         | Trap::Exception(Exception::StorePageFault)
