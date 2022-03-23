@@ -39,5 +39,5 @@ global_asm!(include_str!("schedule.S"));
 
 extern "C" {
     pub fn __goto_user(next_task_cx_ptr: *const TaskContext) -> !;
-    pub fn __save_current_tx(current_task_cx_ptr: *mut TaskContext) ;
+    pub fn __save_current_cx(current_task_cx_ptr: *mut TaskContext) ;
 }

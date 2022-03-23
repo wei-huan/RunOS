@@ -21,18 +21,20 @@ impl RoundRobinScheduler {
 
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) -> ! {
-        log::debug!("Starting scheduling");
+        log::debug!("Start scheduling");
         if let Some(task) = self.fetch_task() {
-            let mut cpu = take_my_cpu();
             let mut task_inner = task.inner_exclusive_access();
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;
-            drop(task_inner);
             // release coming task PCB manually
+            drop(task_inner);
+            // add task cx to current cpu
+            let mut cpu = take_my_cpu();
             cpu.current = Some(task);
-            // release processor manually
+            // release cpu manually
             drop(cpu);
             // schedule new task
+            log::debug!("Go new");
             unsafe { scheduler::__goto_user(next_task_cx_ptr) }
         } else {
             trap::init();

@@ -10,6 +10,7 @@ static mut S: [u64; LEN] = [0u64; LEN];
 
 #[no_mangle]
 unsafe fn main() -> i32 {
+    println!("power_3!");
     let p = 3u64;
     let m = 998244353u64;
     let iter: usize = 300000;

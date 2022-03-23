@@ -1,7 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_trap_cx, current_user_token, take_my_cpu};
 use crate::syscall::syscall;
-use crate::scheduler;
+use crate::scheduler::schedule;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
@@ -28,14 +28,14 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();
-            log::debug!("Supervisor Timer");
+            // log::debug!("Supervisor Timer");
             // let mut cpu = take_my_cpu();
             // let current_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
             // drop(cpu);
             // unsafe {
             //     scheduler::__save_current_tx(current_task_cx_ptr);
             // }
-            // scheduler::schedule();
+            // schedule();
         }
         _ => {
             println!("stval = {}, sepc = 0x{:X}", stval::read(), sepc::read());

@@ -3,10 +3,10 @@
     sd s\n, (\n+3)*8(a0)
 .endm
     .section .text
-    .globl __save_current_tx
+    .globl __save_current_cx
     .align 4
-__save_current_tx:
-    # __save_current_tx(
+__save_current_cx:
+    # __save_current_cx(
     #     current_task_cx_ptr: *mut TaskContext,
     # )
     # save kernel stack of current task
@@ -20,6 +20,7 @@ __save_current_tx:
     .endr
     # save sstatus of current execution
     csrr s0, sstatus
+    sd s0, 16(a0)
     ret
 
 .altmacro
