@@ -4,7 +4,7 @@ pub const MEMORY_END: usize = 0x80800000;
 // 内核堆大小2MB
 pub const KERNEL_HEAP_SIZE: usize = 0x20_0000;
 // 给buddy_system_allocator使用的，这个值大于32即可
-pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 64;
+pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;
 #[allow(unused)]
 pub const USER_STACK_SIZE: usize = PAGE_SIZE * 2;
 #[allow(unused)]

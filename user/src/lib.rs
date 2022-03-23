@@ -21,8 +21,11 @@ const USER_HEAP_SIZE: usize = 4096 * 8;
 
 static mut HEAP_SPACE: [u8; USER_HEAP_SIZE] = [0; USER_HEAP_SIZE];
 
+// 给buddy_system_allocator使用的，这个值大于32即可, 应该是每次分配的最小单位
+pub const HEAP_ALLOCATE_MIN_SIZE: usize = 32;
+
 #[global_allocator]
-static HEAP: LockedHeap<64> = LockedHeap::empty();
+static HEAP: LockedHeap<HEAP_ALLOCATE_MIN_SIZE> = LockedHeap::empty();
 
 #[alloc_error_handler]
 pub fn handle_alloc_error(layout: core::alloc::Layout) -> ! {
