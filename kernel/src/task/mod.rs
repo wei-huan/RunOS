@@ -18,11 +18,11 @@ use crate::cpu::take_current_task;
 use crate::mm::kernel_token;
 use crate::trap::{user_trap_handler, TrapContext};
 // use alloc::sync::Arc;
-use crate::scheduler::{schedule, add_task, __save_current_cx};
+use crate::scheduler::{add_task, schedule};
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
-pub fn exit_current_and_run_next(exit_code: i32) -> !{
-    log::debug!("exit");
+pub fn exit_current_and_run_next(exit_code: i32) -> ! {
+    // log::debug!("exit");
     // take from Processor
     let task = take_current_task().unwrap();
     // **** access current TCB exclusively
@@ -56,21 +56,20 @@ pub fn exit_current_and_run_next(exit_code: i32) -> !{
 }
 
 pub fn suspend_current_and_run_next() -> ! {
-    log::debug!("suspend");
+    // log::debug!("suspend");
     // There must be an application running.
     let task = take_current_task().unwrap();
     // ---- access current TCB exclusively
     let mut task_inner = task.inner_exclusive_access();
-    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
+    // set current task ra to user_trap_return
+    // ! 当前操作防止了重复进入schedule函数, 但不一定能解决上下文的全部问题
+    task_inner.task_cx.set_goto_trap_return();
     // drop inner
     drop(task_inner);
     // Push back to ready queue.
     add_task(task);
     // jump to scheduling cycle
-    unsafe {
-        __save_current_cx(task_cx_ptr);
-    }
     schedule()
 }

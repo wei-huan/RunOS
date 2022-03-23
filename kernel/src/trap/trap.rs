@@ -27,15 +27,15 @@ pub fn kernel_trap_handler() {
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            set_next_trigger();
             // log::debug!("Supervisor Timer");
+            set_next_trigger();
             // let mut cpu = take_my_cpu();
             // let current_task_cx_ptr = cpu.take_kernel_task_cx_ptr();
             // drop(cpu);
             // unsafe {
             //     scheduler::__save_current_tx(current_task_cx_ptr);
             // }
-            // schedule();
+            schedule();
         }
         _ => {
             println!("stval = {}, sepc = 0x{:X}", stval::read(), sepc::read());
@@ -91,7 +91,7 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            log::debug!("User Timer");
+            // log::debug!("User Timer");
             set_next_trigger();
             suspend_current_and_run_next();
         }
@@ -103,11 +103,6 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
-    // check signals
-    // if let Some((errno, msg)) = check_signals_of_current() {
-    //     println!("[kernel] {}", msg);
-    //     exit_current_and_run_next(errno);
-    // }
     user_trap_return();
 }
 
