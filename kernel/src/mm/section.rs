@@ -102,9 +102,6 @@ impl Section {
         let mut current_vpn = self.vpn_range.get_start();
         let src = &[0; PAGE_SIZE];
         loop {
-            if current_vpn == self.vpn_range.get_end() {
-                break;
-            }
             let dst = &mut page_table
                 .translate(current_vpn)
                 .unwrap()
@@ -112,6 +109,9 @@ impl Section {
                 .get_bytes_array()[..PAGE_SIZE];
             dst.copy_from_slice(src);
             current_vpn.step();
+            if current_vpn == self.vpn_range.get_end() {
+                break;
+            }
         }
     }
 }
