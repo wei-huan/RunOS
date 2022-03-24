@@ -2,7 +2,7 @@ mod cpu;
 mod cpus;
 
 pub use cpu::{current_trap_cx, current_user_token, Cpu};
-pub use cpus::{cpu_id, current_task, take_current_task, take_my_cpu, CPUS};
+pub use cpus::{cpu_id, current_task, take_current_task, take_my_cpu, CPUS, CPU_NUM};
 
 use crate::dt::CPU_NUMS;
 use crate::opensbi::hart_start;

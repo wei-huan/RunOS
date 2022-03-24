@@ -6,7 +6,7 @@ use array_macro::array;
 use core::arch::asm;
 use core::cell::RefMut;
 use lazy_static::*;
-const CPU_NUM: usize = 4;
+pub const CPU_NUM: usize = 4;
 
 // Must be called with interrupts disabled,
 // to prevent race with task being moved

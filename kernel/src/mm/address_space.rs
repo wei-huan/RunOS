@@ -5,12 +5,14 @@ use super::{
 };
 use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
 use crate::platform::MMIO;
+use crate::sync::UPSafeCell;
+use crate::cpu::{CPU_NUM, cpu_id};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use array_macro::array;
 use core::arch::asm;
 use lazy_static::lazy_static;
 use riscv::register::satp;
-use spin::Mutex;
 
 extern "C" {
     fn stext();
@@ -26,11 +28,12 @@ extern "C" {
 }
 
 lazy_static! {
-    pub static ref KERNEL_SPACE: Mutex<AddrSpace> = Mutex::new(AddrSpace::create_kernel_space());
+    pub static ref KERNEL_SPACE: [UPSafeCell<AddrSpace>; CPU_NUM] =
+        array![_ => UPSafeCell::new(AddrSpace::create_kernel_space()); CPU_NUM];
 }
 
 pub fn kernel_token() -> usize {
-    KERNEL_SPACE.lock().get_token()
+    KERNEL_SPACE[cpu_id()].exclusive_access().get_token()
 }
 
 pub struct AddrSpace {
@@ -186,7 +189,7 @@ impl AddrSpace {
                 // first section header is dummy, not match program header, so i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                 let name = sect.get_name(&elf).unwrap();
-                println!("name: {}", name);
+                // println!("name: {}", name);
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
                 // println!("start_va: 0x{:X}", usize::from(start_va));
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
@@ -282,7 +285,7 @@ impl AddrSpace {
 
 #[allow(unused)]
 pub fn remap_test() {
-    let mut kernel_space = KERNEL_SPACE.lock();
+    let mut kernel_space = KERNEL_SPACE[cpu_id()].exclusive_access();
     let mid_text: VirtAddr = ((stext as usize + etext as usize) / 2).into();
     let mid_rodata: VirtAddr = ((srodata as usize + erodata as usize) / 2).into();
     let mid_data: VirtAddr = ((sdata as usize + edata as usize) / 2).into();

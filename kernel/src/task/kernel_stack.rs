@@ -1,5 +1,6 @@
 use super::recycle_allocator::RecycleAllocator;
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
+use crate::cpu::cpu_id;
 use crate::mm::{Permission, VirtAddr, KERNEL_SPACE};
 use alloc::string::ToString;
 use lazy_static::*;
@@ -21,12 +22,14 @@ pub struct KernelStack(pub usize);
 pub fn kstack_alloc() -> KernelStack {
     let kstack_id = KSTACK_ALLOCATOR.lock().alloc();
     let (kstack_bottom, kstack_top) = kernel_stack_position(kstack_id);
-    KERNEL_SPACE.lock().insert_framed_area(
-        ".kstack".to_string(),
-        kstack_bottom.into(),
-        kstack_top.into(),
-        Permission::R | Permission::W,
-    );
+    KERNEL_SPACE[cpu_id()]
+        .exclusive_access()
+        .insert_framed_area(
+            ".kstack".to_string(),
+            kstack_bottom.into(),
+            kstack_top.into(),
+            Permission::R | Permission::W,
+        );
     KernelStack(kstack_id)
 }
 
@@ -34,8 +37,8 @@ impl Drop for KernelStack {
     fn drop(&mut self) {
         let (kernel_stack_bottom, _) = kernel_stack_position(self.0);
         let kernel_stack_bottom_va: VirtAddr = kernel_stack_bottom.into();
-        KERNEL_SPACE
-            .lock()
+        KERNEL_SPACE[cpu_id()]
+            .exclusive_access()
             .remove_area_with_start_vpn(kernel_stack_bottom_va.into());
     }
 }
