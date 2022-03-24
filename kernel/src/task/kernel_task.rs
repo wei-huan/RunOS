@@ -1,9 +1,10 @@
+use crate::sync::interrupt_on;
 use core::arch::asm;
-use log::*;
 
-pub fn idle_task() -> !{
-    info!("No Process");
+pub fn idle_task() -> ! {
+    interrupt_on();
+    // log::debug!("No Process");
     loop {
-        unsafe {asm!("wfi")};
+        unsafe { asm!("wfi") };
     }
 }

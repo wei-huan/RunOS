@@ -26,6 +26,7 @@ SECTIONS
         *(.bss .bss.*)
         *(.sbss .sbss.*)
     }
+    . = ALIGN(4K);
     /DISCARD/ : {
         *(.eh_frame)
         *(.debug*)

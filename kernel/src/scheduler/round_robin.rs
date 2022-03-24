@@ -1,9 +1,8 @@
 use super::Scheduler;
 use super::__schedule_new;
 use crate::cpu::take_my_cpu;
+use crate::sync::interrupt_off;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
-use crate::timer;
-use crate::trap;
 use alloc::{collections::VecDeque, sync::Arc};
 use spin::Mutex;
 
@@ -21,7 +20,9 @@ impl RoundRobinScheduler {
 
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) -> ! {
+        interrupt_off();
         if let Some(task) = self.fetch_task() {
+            log::debug!("get task");
             let mut task_inner = task.inner_exclusive_access();
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;
@@ -35,8 +36,6 @@ impl Scheduler for RoundRobinScheduler {
             // schedule new task
             unsafe { __schedule_new(next_task_cx_ptr) }
         } else {
-            trap::init();
-            timer::init();
             idle_task();
         }
     }

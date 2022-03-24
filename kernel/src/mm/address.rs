@@ -1,6 +1,6 @@
 use super::PageTableEntry;
 use crate::config::{PAGE_SIZE, PAGE_SIZE_BITS};
-use core::fmt::{Debug};
+use core::fmt::Debug;
 
 const PA_WIDTH_SV39: usize = 56;
 const VA_WIDTH_SV39: usize = 39;
@@ -123,6 +123,11 @@ impl VirtAddr {
 }
 
 impl PhysPageNum {
+    pub fn clear(&mut self) {
+        let pa: usize = (*self).into();
+        let ea = pa + PAGE_SIZE;
+        (pa..ea).for_each(|a| unsafe { (a as *mut u8).write_volatile(0) });
+    }
     pub fn get_bytes_array(&self) -> &'static mut [u8] {
         let pa: PhysAddr = (*self).into();
         unsafe { core::slice::from_raw_parts_mut(pa.0 as *mut u8, PAGE_SIZE) }
@@ -235,10 +240,11 @@ where
         if self.current == self.end {
             None
         } else {
-            let t= self.current;
+            let t = self.current;
             self.current.step();
             Some(t)
         }
     }
 }
 pub type VPNRange = SimpleRange<VirtPageNum>;
+// pub type PPNRange = SimpleRange<PhysPageNum>;

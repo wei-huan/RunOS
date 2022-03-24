@@ -3,9 +3,9 @@ extern crate spin;
 use super::address::{PhysAddr, PhysPageNum};
 use crate::config::MEMORY_END;
 // use crate::sync::Mutex;
-use core::fmt::{self, Debug, Formatter};
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
+use core::fmt::{self, Debug, Formatter};
 use lazy_static::*;
 use spin::Mutex;
 
@@ -52,6 +52,10 @@ impl FIFOFrameAllocator {
     pub fn init(&mut self, start: PhysPageNum, end: PhysPageNum) {
         self.current = start.0;
         self.end = end.0;
+        // for ppn_usize in self.current..self.end {
+        //     let mut ppn: PhysPageNum = (ppn_usize << 12).into();
+        //     ppn.clear();
+        // }
     }
 }
 
@@ -68,7 +72,7 @@ impl FrameAllocator for FIFOFrameAllocator {
         if let Some(ppn) = self.recycled.pop_front() {
             Some(ppn.into())
         } else if self.current == self.end {
-            None
+            panic!("Shit No pages");
         } else {
             self.current += 1;
             Some((self.current - 1).into())
@@ -114,7 +118,7 @@ pub fn init_frame_allocator() {
     );
 }
 
-pub fn frame_alloc() -> Option<Frame>{
+pub fn frame_alloc() -> Option<Frame> {
     FRAME_ALLOCATOR.lock().alloc().map(Frame::new)
 }
 

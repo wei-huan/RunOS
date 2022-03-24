@@ -4,10 +4,10 @@ use super::{
     frame::{frame_alloc, Frame},
     page_table::{PTEFlags, PageTable},
 };
-use bitflags::bitflags;
 use crate::config::PAGE_SIZE;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
+use bitflags::bitflags;
 
 bitflags! {
     pub struct Permission: u8 {
@@ -33,7 +33,13 @@ pub struct Section {
 }
 
 impl Section {
-    pub fn new(name: String, start_va: VirtAddr, end_va: VirtAddr, map_type: MapType, perm: Permission) -> Self {
+    pub fn new(
+        name: String,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+        map_type: MapType,
+        perm: Permission,
+    ) -> Self {
         Self {
             name,
             perm,
@@ -80,6 +86,10 @@ impl Section {
         let mut start: usize = 0;
         let mut current_vpn = self.vpn_range.get_start();
         let len = data.len();
+        if len == 0 {
+            // println!(".bss");
+            return;
+        }
         loop {
             let src = &data[start..len.min(start + PAGE_SIZE)];
             let dst = &mut page_table
@@ -100,11 +110,14 @@ impl Section {
     pub fn clear(&mut self, page_table: &mut PageTable) {
         assert_eq!(self.map_type, MapType::Framed);
         let mut current_vpn = self.vpn_range.get_start();
+        // println!("current_vpn: {:?}", current_vpn);
         let src = &[0; PAGE_SIZE];
+        // println!("end_vpn: {:?}", self.vpn_range.get_end());
+        if current_vpn == self.vpn_range.get_end() {
+            return;
+        }
         loop {
-            if current_vpn == self.vpn_range.get_end() {
-                break;
-            }
+            // println!("clear");
             let dst = &mut page_table
                 .translate(current_vpn)
                 .unwrap()
@@ -112,6 +125,9 @@ impl Section {
                 .get_bytes_array()[..PAGE_SIZE];
             dst.copy_from_slice(src);
             current_vpn.step();
+            if current_vpn == self.vpn_range.get_end() {
+                break;
+            }
         }
     }
 }

@@ -3,7 +3,7 @@ mod trap;
 
 pub use context::TrapContext;
 pub use trap::set_kernel_trap_entry;
-pub use trap::{user_trap_handler, user_trap_return};
+pub use trap::{user_trap_handler, trap_return};
 
 use crate::sync;
 

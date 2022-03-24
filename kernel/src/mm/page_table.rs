@@ -2,10 +2,10 @@ use super::{
     address::{PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum},
     frame::{frame_alloc, Frame},
 };
+use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::bitflags;
-use alloc::string::String;
 
 bitflags! {
     pub struct PTEFlags: u8 {
@@ -152,6 +152,7 @@ impl PageTable {
         *pte = PageTableEntry::empty();
     }
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
+        // println!("translate");
         self.find_pte(vpn).map(|pte| *pte)
     }
     pub fn translate_va(&self, va: VirtAddr) -> Option<PhysAddr> {
@@ -161,6 +162,35 @@ impl PageTable {
             let aligned_pa_usize: usize = aligned_pa.into();
             (aligned_pa_usize + offset).into()
         })
+    }
+    #[allow(unused)]
+    pub fn print_pagetable(&self) {
+        let mut ppns = [PhysPageNum(0); 3];
+        ppns[0] = self.root_ppn;
+        for i in 0..512 {
+            let pte = &mut ppns[0].get_pte_array()[i];
+            if !pte.is_valid() {
+                continue;
+            }
+            ppns[1] = pte.ppn();
+            for j in 0..512 {
+                let pte = &mut ppns[1].get_pte_array()[j];
+                if !pte.is_valid() {
+                    continue;
+                }
+                ppns[2] = pte.ppn();
+                for k in 0..512 {
+                    let pte = &mut ppns[2].get_pte_array()[k];
+                    if !pte.is_valid() {
+                        continue;
+                    }
+                    let va = ((((i << 9) + j) << 9) + k) << 12;
+                    let pa = pte.ppn().0 << 12;
+                    let flags = pte.flags();
+                    println!("va:0x{:X}  pa:0x{:X} flags:{:?}", va, pa, flags);
+                }
+            }
+        }
     }
 }
 

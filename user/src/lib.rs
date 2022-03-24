@@ -16,8 +16,8 @@ mod syscall;
 use buddy_system_allocator::LockedHeap;
 use syscall::*;
 
-/// 用户堆空间设置为 32 KB 即 8 个页面
-const USER_HEAP_SIZE: usize = 4096 * 8;
+/// 用户堆空间设置为 16 KB 即 4 个页面
+const USER_HEAP_SIZE: usize = 4096 * 4;
 
 static mut HEAP_SPACE: [u8; USER_HEAP_SIZE] = [0; USER_HEAP_SIZE];
 
