@@ -21,8 +21,9 @@ impl RoundRobinScheduler {
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) -> ! {
         interrupt_off();
+        log::debug!("start schedule");
         if let Some(task) = self.fetch_task() {
-            log::debug!("get task");
+            // log::debug!("get task");
             let mut task_inner = task.inner_exclusive_access();
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;
