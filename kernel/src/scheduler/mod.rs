@@ -1,13 +1,13 @@
 mod round_robin;
 
 use crate::fs::{open_file, OpenFlags, ROOT_INODE};
-use crate::task::{TaskControlBlock, TaskContext};
+use crate::task::{TaskContext, TaskControlBlock};
 use alloc::sync::Arc;
 use core::arch::global_asm;
 use lazy_static::*;
 use round_robin::RoundRobinScheduler;
 
-pub trait Scheduler: {
+pub trait Scheduler {
     fn schedule(&self) -> !;
     fn add_task(&self, task: Arc<TaskControlBlock>);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;
@@ -17,7 +17,7 @@ lazy_static! {
     pub static ref SCHEDULER: RoundRobinScheduler = RoundRobinScheduler::new();
 }
 
-pub fn schedule() -> !{
+pub fn schedule() -> ! {
     SCHEDULER.schedule()
 }
 
@@ -36,7 +36,6 @@ pub fn add_apps() {
 }
 
 global_asm!(include_str!("schedule.S"));
-
 extern "C" {
     pub fn __schedule_new(next_task_cx_ptr: *const TaskContext) -> !;
 }

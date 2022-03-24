@@ -183,10 +183,14 @@ impl AddrSpace {
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
+                // first section header is dummy, not match program header, so i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                 let name = sect.get_name(&elf).unwrap();
+                println!("name: {}", name);
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
+                // println!("start_va: 0x{:X}", usize::from(start_va));
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
+                // println!("end_va: 0x{:X}", usize::from(end_va));
                 let mut map_perm = Permission::U;
                 let ph_flags = ph.flags();
                 if ph_flags.is_read() {
@@ -206,12 +210,19 @@ impl AddrSpace {
                     map_perm,
                 );
                 max_end_vpn = section.vpn_range.get_end();
+                // println!("range: 0x{:X}", (usize::from(end_va) - usize::from(start_va)));
+                // println!("start_vpn: {:?} end_vpn: {:?}", section.vpn_range.get_start(), section.vpn_range.get_end());
+                // println!("ph file_size: 0x{:X}", ph.file_size());
+                // println!("ph mem_size: 0x{:X}", ph.mem_size());
+                // println!("");
                 user_space.push_section(
                     section,
                     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
                 );
             }
         }
+        // clear bss section
+        user_space.clear_bss_pages();
         // map user stack with U flags
         let max_end_va: VirtAddr = max_end_vpn.into();
         let mut user_stack_bottom: usize = max_end_va.into();

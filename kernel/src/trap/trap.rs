@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token};
+use crate::cpu::{current_trap_cx, current_user_token, take_current_task};
 use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
@@ -31,8 +31,25 @@ pub fn kernel_trap_handler() {
             set_next_trigger();
             schedule();
         }
+        Trap::Exception(Exception::StorePageFault)
+        | Trap::Exception(Exception::LoadPageFault)
+        | Trap::Exception(Exception::InstructionPageFault) => {
+            log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
+            // if let Some(a) = take_current_task() {
+            //     println!("YYYYYYYYYYYYYYYYYY");
+            // } else {
+            //     println!("NNNNNNNNNNNNNNNNNN");
+            // }
+            // unsafe {
+            //     asm!(
+            //         "sfence.vma",
+            //         "fence.i"
+            //     );
+            // }
+            panic!("a trap {:?} from kernel!", scause.cause());
+        }
         _ => {
-            println!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
+            log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
             panic!("a trap {:?} from kernel!", scause.cause());
         }
     }
@@ -57,14 +74,13 @@ pub fn user_trap_handler() -> ! {
             let mut cx = current_trap_cx();
             cx.sepc += 4;
             // get system call return value
-            // let result =
-            syscall(
+            let result = syscall(
                 cx.x[17],
                 [cx.x[10], cx.x[11], cx.x[12], cx.x[13], cx.x[14], cx.x[15]],
             );
-            // // cx is changed during sys_exec, so we have to call it again
-            // cx = current_trap_cx();
-            // cx.x[10] = result as usize;
+            // cx is changed during sys_exec, so we have to call it again
+            cx = current_trap_cx();
+            cx.x[10] = result as usize;
         }
         Trap::Exception(Exception::StoreFault)
         | Trap::Exception(Exception::StorePageFault)
@@ -99,11 +115,11 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
-    user_trap_return();
+    trap_return();
 }
 
 #[no_mangle]
-pub fn user_trap_return() -> ! {
+pub fn trap_return() -> ! {
     // log::debug!("trap return");
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;

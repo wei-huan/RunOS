@@ -11,6 +11,8 @@
     .globl __kernelvec
     .align 4
 __kernelvec:
+    // disable interrupt
+    csrci sstatus, 2
     // make room to save registers.
     addi sp, sp, -256
 
@@ -21,7 +23,11 @@ __kernelvec:
         .set n, n+1
     .endr
 
-    // call the Rust trap handler in trap.sr
+    // set SPIE to re-enable interrupts after sret
+    li s0, 1 << 5
+    csrs sstatus, s0
+
+    // call the Rust trap handler in trap.rs
     call kernel_trap_handler
 
     // restore registers.
@@ -36,12 +42,14 @@ __kernelvec:
     // return to whatever we were doing in the kernel.
     sret
 
-    .extern user_trap_handler
     .section .text.trampoline
     .globl __uservec
     .globl __restore
     .align 4
 __uservec:
+    // disable interrupt
+    csrci sstatus, 2
+    // get TrapContext sp
     csrrw sp, sscratch, sp
     # now sp->*TrapContext in user space, sscratch->user stack
     # save other general purpose registers
@@ -73,6 +81,9 @@ __uservec:
     # switch to kernel space
     csrw satp, t0
     sfence.vma
+    # set SPIE to re-enable interrupts after sret
+    li s0, 1 << 5
+    csrs sstatus, s0
     # jump to trap_handler
     jr t1
 

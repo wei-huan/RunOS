@@ -45,7 +45,6 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
         kernel_stack_top,
         user_trap_handler as usize,
     );
-    drop(kernel_stack_top);
     drop(trap_cx);
     // Clear bss section
     task_inner.addrspace.clear_bss_pages();
