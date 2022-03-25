@@ -27,7 +27,7 @@ CPU_NUM := 2
 OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
 
-kernel:
+kernel: clean
 	cp src/linker-$(PLATFORM).ld src/linker.ld
 	cargo build --$(MODE)
 	rm src/linker.ld
@@ -38,7 +38,7 @@ $(KERNEL_BIN): kernel
 build: $(KERNEL_BIN)
 
 run: build
-	qemu-system-riscv64 \
+	@qemu-system-riscv64 \
 		-m 128M \
     	-machine virt \
     	-nographic \
@@ -49,7 +49,7 @@ run: build
 		-smp $(CPU_NUM)
 
 debug:
-	qemu-system-riscv64 \
+	@qemu-system-riscv64 \
 		-m 128M \
     	-machine virt \
     	-nographic \
@@ -65,7 +65,12 @@ disassem:
 
 
 gdb:
-	riscv64-unknown-elf-gdb \
+	@riscv64-unknown-elf-gdb \
     -ex 'file target/riscv64gc-unknown-none-elf/release/os' \
     -ex 'set arch riscv:rv64' \
     -ex 'target remote localhost:1234'
+
+clean:
+	@cargo clean
+
+.PHONY: kernel build run debug disassem gdb clean

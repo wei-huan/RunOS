@@ -186,7 +186,7 @@ impl AddrSpace {
                 // first section header is dummy, not match program header, so i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                 let name = sect.get_name(&elf).unwrap();
-                println!("name: {}", name);
+                // println!("name: {}", name);
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
                 // println!("start_va: 0x{:X}", usize::from(start_va));
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();

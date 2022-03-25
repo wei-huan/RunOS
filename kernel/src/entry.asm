@@ -1,6 +1,5 @@
     .section .text.entry
     .globl _start
-    .extern CPU_NUMS
 _start:
     mv tp, a0
     add t0, a0, 1
