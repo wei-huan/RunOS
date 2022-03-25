@@ -16,6 +16,7 @@ SBI ?= opensbi
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
+# K210_BOOTLOADER_SIZE
 K210_BOOTLOADER_SIZE := 131072		# 0x20000
 
 # KERNEL ENTRY
@@ -30,7 +31,7 @@ K210-SERIALPORT	= /dev/ttyUSB0
 K210-BURNER	= ../tools/kflash.py
 
 # CPU_NUM
-CPU_NUM := 2
+CPU_NUM := 1
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
@@ -46,20 +47,19 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-
 build: switch-check $(KERNEL_BIN) fs-img
 
-$(APPS):
+sdcard: fs-img
+	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
+	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
+	@sudo dd if=$(FS_IMG) of=$(SDCARD)
 
 fs-img: $(APPS)
 	@cd ../user && make build
 	@rm -f $(FS_IMG)
 	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
 
-sdcard: fs-img
-	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
-	@sudo dd if=$(FS_IMG) of=$(SDCARD)
+$(APPS):
 
 kernel:
 	cp src/linker-$(PLATFORM).ld src/linker.ld
@@ -90,7 +90,7 @@ else
 	python3 -m serial.tools.miniterm --eol LF --dtr 0 --rts 0 --filter direct $(K210-SERIALPORT) 115200
 endif
 
-debug:
+debug: build
 	@qemu-system-riscv64 \
 		-m 128M \
     	-machine virt \
@@ -114,4 +114,4 @@ gdb:
 clean:
 	@cargo clean
 
-.PHONY: build gdb debug run clean
+.PHONY: switch-check build fs-img sdcard kernel run debug disasm gdb clean
