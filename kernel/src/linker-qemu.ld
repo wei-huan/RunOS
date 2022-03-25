@@ -29,7 +29,6 @@ SECTIONS
     erodata = .;
     sdata = .;
     .data : {
-        *(.data.stack)
         *(.data .data.*)
         *(.sdata .sdata.*)
     }
