@@ -24,4 +24,7 @@ debug:
 gdb:
 	@make gdb -C $(OS_DIR)
 
-.PHONY: user fs-img os debug gdb
+disasm:
+	@make disasm -C $(OS_DIR)
+
+.PHONY: user fs-img os debug gdb disasm

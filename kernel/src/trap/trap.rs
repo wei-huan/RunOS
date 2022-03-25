@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, take_current_task};
+use crate::cpu::{current_trap_cx, current_user_token};
 use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
@@ -35,17 +35,6 @@ pub fn kernel_trap_handler() {
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
             log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
-            // if let Some(a) = take_current_task() {
-            //     println!("YYYYYYYYYYYYYYYYYY");
-            // } else {
-            //     println!("NNNNNNNNNNNNNNNNNN");
-            // }
-            // unsafe {
-            //     asm!(
-            //         "sfence.vma",
-            //         "fence.i"
-            //     );
-            // }
             panic!("a trap {:?} from kernel!", scause.cause());
         }
         _ => {
