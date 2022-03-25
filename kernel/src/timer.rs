@@ -1,7 +1,10 @@
 use crate::dt::TIMER_FREQ;
-use crate::opensbi::set_timer;
 use core::sync::atomic::Ordering;
 use riscv::register::{sie, time};
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::set_timer;
+#[cfg(not(any(feature = "rustsbi")))]
+use crate::opensbi::set_timer;
 
 const MSEC_PER_SEC: usize = 1000;
 const TICKS_PER_SEC: usize = 100;

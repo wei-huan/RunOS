@@ -25,3 +25,5 @@ fdt = "0.1.3"
 [features]
 platform-k210 = []
 platform-qemu = []
+opensbi = []
+rustsbi = []

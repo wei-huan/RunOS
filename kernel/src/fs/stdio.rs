@@ -1,5 +1,8 @@
 use super::File;
 use crate::mm::UserBuffer;
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::console_getchar;
+#[cfg(not(any(feature = "rustsbi")))]
 use crate::opensbi::console_getchar;
 use crate::task::suspend_current_and_run_next;
 

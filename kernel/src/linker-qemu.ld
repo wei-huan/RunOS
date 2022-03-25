@@ -27,9 +27,9 @@ SECTIONS
 
     . = ALIGN(4K);
     erodata = .;
-    sdata = .;
     .data : {
         *(.data.stack)
+        sdata = .;
         *(.data .data.*)
         *(.sdata .sdata.*)
     }

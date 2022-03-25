@@ -3,15 +3,20 @@ TARGET := riscv64gc-unknown-none-elf
 MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 KERNEL_BIN := $(KERNEL_ELF).bin
-SDCARD := /dev/sdb
+SDCARD := /dev/sda
 APPS := ../user/src/bin/*
 
 # FS
 FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 # PLATFORM
 PLATFORM ?= qemu
-#SBI
-SBI := ../bootloader/opensbi-img/fw_jump.bin
+# SBI
+SBI ?= opensbi
+# SBI_IMG
+SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
+# BOOTLOADER
+BOOTLOADER := $(SBI_IMG)
+K210_BOOTLOADER_SIZE := 131072		# 0x20000
 
 # KERNEL ENTRY
 ifeq ($(PLATFORM), qemu)
@@ -41,12 +46,15 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
+
+build: switch-check $(KERNEL_BIN) fs-img
+
 $(APPS):
 
 fs-img: $(APPS)
 	@cd ../user && make build
 	@rm -f $(FS_IMG)
-	@cd ../myfs-fuse && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
+	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
 
 sdcard: fs-img
 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -55,13 +63,11 @@ sdcard: fs-img
 
 kernel:
 	cp src/linker-$(PLATFORM).ld src/linker.ld
-	cargo build --$(MODE)
+	cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
 	rm src/linker.ld
 
 $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
-
-build: switch-check $(KERNEL_BIN)
 
 run: build
 ifeq ($(PLATFORM),qemu)
@@ -69,7 +75,7 @@ ifeq ($(PLATFORM),qemu)
 		-m 128M \
     	-machine virt \
     	-nographic \
-    	-bios $(SBI) \
+    	-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
 		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
@@ -89,7 +95,7 @@ debug:
 		-m 128M \
     	-machine virt \
     	-nographic \
-    	-bios $(SBI) \
+    	-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
 		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
@@ -98,7 +104,6 @@ debug:
 
 disasm: kernel
 	@$(OBJDUMP) $(DISASM) $(KERNEL_ELF) | less >> ../disasm.txt
-
 
 gdb:
 	riscv64-unknown-elf-gdb \

@@ -8,8 +8,14 @@ OS_DIR := $(DIR)/kernel
 
 FS_IMG := $(IMG_DIR)/fs.img
 
+build:
+	@make build -C $(OS_DIR)
+
+sdcard:
+	@make sdcard -C $(OS_DIR)
+
 user:
-	make build -C $(USER_DIR)
+	@make build -C $(USER_DIR)
 
 fs-img: user
 	rm -f $(FS_IMG)
@@ -27,4 +33,4 @@ gdb:
 disasm:
 	@make disasm -C $(OS_DIR)
 
-.PHONY: user fs-img os debug gdb disasm
+.PHONY: build sdcard user fs-img run debug gdb disasm

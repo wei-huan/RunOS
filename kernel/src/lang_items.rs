@@ -1,4 +1,7 @@
+#[cfg(not(any(feature = "rustsbi")))]
 use crate::opensbi::shutdown;
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::shutdown;
 use core::panic::PanicInfo;
 
 #[panic_handler]
