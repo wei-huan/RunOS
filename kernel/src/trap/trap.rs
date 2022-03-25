@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, take_current_task};
+use crate::cpu::{current_trap_cx, current_user_token};
 use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};

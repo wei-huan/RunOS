@@ -1,6 +1,5 @@
     .section .text.entry
     .globl _start
-    .extern CPU_NUMS
 _start:
     mv tp, a0
     add t0, a0, 1
@@ -9,7 +8,7 @@ _start:
     add sp, sp, t0
     call os_main
 
-    .section .data.stack
+    .section .bss.stack
 boot_stack:
     # 16K 启动栈大小 * CPU_NUMS
     .space 4096 * 8 * 8
