@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Mar 25 13:36:26 2022
+# Make data base, printed on Fri Mar 25 20:31:07 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2663
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-b5b68507-a745-4070-80a9-02ccc5153f82.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-ec9af4e1-f000-40d6-bb8f-6f00cf40f83e.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -185,7 +185,7 @@ USER = weihuan
 # environment
 LC_MONETARY = zh_CN.UTF-8
 # makefile
-.DEFAULT_GOAL := user
+.DEFAULT_GOAL := build
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # makefile (from 'Makefile', line 4)
@@ -279,9 +279,9 @@ LANG = C
 
 # Directories
 
-# . (device 66310, inode 3414746): 16 files, no impossibilities.
+# . (device 66310, inode 3414746): 17 files, no impossibilities.
 
-# 16 files, no impossibilities in 1 directories.
+# 17 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -291,28 +291,36 @@ LANG = C
 
 user:
 #  Phony target (prerequisite of .PHONY).
- 
 #  Implicit rule search has not been done.
 #  File does not exist.
+ 
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 12):
-	make build -C $(USER_DIR)
+#  recipe to execute (from 'Makefile', line 18):
+	@make build -C $(USER_DIR)
 
 fs-img: user
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 15):
+#  recipe to execute (from 'Makefile', line 21):
 	rm -f $(FS_IMG)
 	cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)
+
+sdcard:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 15):
+	@make sdcard -C $(OS_DIR)
 
 gdb:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 25):
+#  recipe to execute (from 'Makefile', line 31):
 	@make gdb -C $(OS_DIR)
 
 # Not a target:
@@ -322,7 +330,7 @@ all:
 #  File does not exist.
 #  File has not been updated.
 
-.PHONY: user fs-img os debug gdb
+.PHONY: build sdcard user fs-img run debug gdb disasm
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -330,7 +338,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-03-22 20:28:52.326115344
+#  Last modified 2022-03-25 20:30:43.224755893
 #  File has been updated.
 #  Successfully updated.
 
@@ -339,8 +347,16 @@ debug:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 22):
+#  recipe to execute (from 'Makefile', line 28):
 	@make debug -C $(OS_DIR)
+
+build:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 12):
+	@make build -C $(OS_DIR)
 
 # Not a target:
 .DEFAULT:
@@ -349,32 +365,35 @@ debug:
 #  File has not been updated.
 
 run: fs-img
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 19):
-	@make run -C $(OS_DIR)
-
-os:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+#  recipe to execute (from 'Makefile', line 25):
+	@make run -C $(OS_DIR)
+
+disasm:
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 34):
+	@make disasm -C $(OS_DIR)
 
 # files hash-table stats:
-# Load=11/1024=1%, Rehash=0, Collisions=0/28=0%
+# Load=13/1024=1%, Rehash=0, Collisions=0/33=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 27 / storage = 207 B / avg = 7 B
-# current buf: size = 8162 B / used = 207 B / count = 27 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 30 / storage = 235 B / avg = 7 B
+# current buf: size = 8162 B / used = 235 B / count = 30 / avg = 7 B
 
-# strcache performance: lookups = 44 / hit rate = 38%
+# strcache performance: lookups = 54 / hit rate = 44%
 # hash-table stats:
-# Load=27/8192=0%, Rehash=0, Collisions=1/44=2%
-# Finished Make data base on Fri Mar 25 13:36:27 2022
+# Load=30/8192=0%, Rehash=0, Collisions=1/54=2%
+# Finished Make data base on Fri Mar 25 20:31:07 2022
 
  
