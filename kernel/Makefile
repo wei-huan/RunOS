@@ -21,7 +21,7 @@ FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 SBI := ../bootloader/opensbi-img/fw_jump.bin
 
 # CPU_NUM
-CPU_NUM := 4
+CPU_NUM := 2
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
