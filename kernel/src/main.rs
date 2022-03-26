@@ -16,9 +16,9 @@ mod fs;
 mod lang_items;
 mod logging;
 mod mm;
-mod platform;
 #[cfg(not(any(feature = "rustsbi")))]
 mod opensbi;
+mod platform;
 #[cfg(feature = "rustsbi")]
 mod rustsbi;
 mod scheduler;
@@ -49,7 +49,7 @@ fn clear_bss() {
 
 #[cfg(feature = "qemu")]
 #[no_mangle]
-fn os_main(_hartid: usize, fdt: *mut u8) {
+fn os_main(hartid: usize, fdt: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         println!("fdt: 0x{:X}", fdt as usize);
@@ -90,7 +90,7 @@ fn os_main(_hartid: usize, fdt: *mut u8) {
         timer::init();
         // SMP_START will turn to true in this function
         #[cfg(not(any(feature = "rustsbi")))]
-        cpu::boot_all_harts(_hartid);
+        cpu::boot_all_harts(hartid);
         scheduler::schedule();
     } else {
         trap::init();
@@ -103,43 +103,53 @@ fn os_main(_hartid: usize, fdt: *mut u8) {
 // k210
 #[cfg(not(any(feature = "qemu")))]
 #[no_mangle]
-fn os_main() {
-    clear_bss();
-    dt::init();
-    logging::init();
-    println!("here 0");
-    mm::boot_init();
-    println!("here 1");
-    let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
-    let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
-    println!("here 2");
-    info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
-    info!("=== Machine Info ===");
-    info!(" Total CPUs: {}", n_cpus);
-    info!(" Timer Clock: {}Hz", timebase_frequency);
-    #[cfg(not(any(feature = "rustsbi")))]
-    {
-        info!("=== SBI Implementation ===");
-        let (impl_major, impl_minor) = {
-            let version = impl_version();
-            (version >> 16, version & 0xFFFF)
-        };
-        let (spec_major, spec_minor) = {
-            let version = spec_version();
-            (version.major, version.minor)
-        };
-        info!(
-            " Implementor: {:?} (version: {}.{})",
-            impl_id(),
-            impl_major,
-            impl_minor
-        );
-        info!(" Spec Version: {}.{}", spec_major, spec_minor);
-    }
-    info!("=== MyOS Info ===");
+fn os_main(hartid: usize) {
+    if !SMP_START.load(Ordering::Acquire) {
+        clear_bss();
+        // dt::init();
+        logging::init();
+        println!("here 0");
+        mm::boot_init();
+        println!("here 1");
+        let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
+        let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+        println!("here 2");
+        info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+        info!("=== Machine Info ===");
+        info!(" Total CPUs: {}", n_cpus);
+        info!(" Timer Clock: {}Hz", timebase_frequency);
+        #[cfg(not(any(feature = "rustsbi")))]
+        {
+            info!("=== SBI Implementation ===");
+            let (impl_major, impl_minor) = {
+                let version = impl_version();
+                (version >> 16, version & 0xFFFF)
+            };
+            let (spec_major, spec_minor) = {
+                let version = spec_version();
+                (version.major, version.minor)
+            };
+            info!(
+                " Implementor: {:?} (version: {}.{})",
+                impl_id(),
+                impl_major,
+                impl_minor
+            );
+            info!(" Spec Version: {}.{}", spec_major, spec_minor);
+        }
+        info!("=== MyOS Info ===");
 
-    scheduler::add_apps();
-    trap::init();
-    timer::init();
-    scheduler::schedule();
+        // scheduler::add_apps();
+        trap::init();
+        timer::init();
+        println!("here 3");
+        // #[cfg(not(any(feature = "rustsbi")))] // opensbi
+        // SMP_START will turn to true in this function
+        // cpu::boot_all_harts(hartid);
+        // println!("here 4");
+        // loop{}
+    } else {
+        // println!("boot success");
+        loop{}
+    }
 }
