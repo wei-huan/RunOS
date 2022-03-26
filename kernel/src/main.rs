@@ -32,7 +32,6 @@ mod utils;
 use crate::cpu::SMP_START;
 use core::arch::global_asm;
 use core::sync::atomic::Ordering;
-use log::*;
 
 global_asm!(include_str!("entry.asm"));
 
@@ -61,11 +60,14 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
+        log::info!("here 0");
         scheduler::schedule();
     } else {
         trap::init();
+        log::info!("here 0");
         mm::init();
         timer::init();
+        log::info!("here 1");
         scheduler::schedule();
     }
 }

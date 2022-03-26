@@ -12,6 +12,7 @@ use core::sync::atomic::{AtomicBool, Ordering};
 use crate::rustsbi::hart_start;
 #[cfg(feature = "opensbi")]
 use crate::opensbi::hart_start;
+
 pub static SMP_START: AtomicBool = AtomicBool::new(false);
 
 #[cfg(feature = "rustsbi")]
