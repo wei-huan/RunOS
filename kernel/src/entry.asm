@@ -8,7 +8,7 @@ _start:
     add sp, sp, t0
     call os_main
 
-    .section .data.stack
+    .section .bss.stack
 boot_stack:
     # 64K 启动栈大小 * CPU_NUMS
     .space 4096 * 16 * 4

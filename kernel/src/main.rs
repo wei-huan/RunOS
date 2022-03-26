@@ -104,7 +104,7 @@ fn os_main(hartid: usize, fdt: *mut u8) {
 #[cfg(not(any(feature = "qemu")))]
 #[no_mangle]
 fn os_main(hartid: usize) {
-    if !SMP_START.load(Ordering::Acquire) {
+    // if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         // dt::init();
         logging::init();
@@ -143,13 +143,13 @@ fn os_main(hartid: usize) {
         trap::init();
         timer::init();
         println!("here 3");
-        // #[cfg(not(any(feature = "rustsbi")))] // opensbi
+        #[cfg(not(any(feature = "rustsbi")))] // opensbi
         // SMP_START will turn to true in this function
-        // cpu::boot_all_harts(hartid);
-        // println!("here 4");
-        // loop{}
-    } else {
-        // println!("boot success");
+        cpu::boot_all_harts(hartid);
+        println!("here 4");
         loop{}
-    }
+    // } else {
+    //     // println!("boot success");
+    //     loop{}
+    // }
 }
