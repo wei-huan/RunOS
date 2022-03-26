@@ -30,14 +30,14 @@ fn fdt_get_timerfreq(fdt_ptr: *mut u8) {
     let hart_id = cpu_id();
     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
     let timebase_frequency = current_cpu.timebase_frequency();
-    TIMER_FREQ.store(403000000 / 62, Ordering::Relaxed);
+    TIMER_FREQ.store(timebase_frequency, Ordering::Relaxed);
     // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
 
 fn fdt_get_ncpu(fdt_ptr: *mut u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let n_cpus = fdt.cpus().count();
-    CPU_NUMS.store(2, Ordering::Release);
+    CPU_NUMS.store(n_cpus, Ordering::Release);
     // println!("n_cpus: {}", n_cpus as u64);
 }
 
@@ -59,9 +59,6 @@ pub fn init(dts_ptr: *const u8) {
     TIMER_FREQ.store(100000000, Ordering::Relaxed);
     CPU_NUMS.store(2, Ordering::Relaxed);
     FDT.store(dts_ptr as *mut u8, Ordering::Release);
-    // fdt_get_timerfreq(dts_ptr);
-    // fdt_get_ncpu(dts_ptr);
-    // fdt_get_model(fdt_ptr);
 }
 
 // qemu opensbi
