@@ -49,7 +49,6 @@ fn clear_bss() {
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
-        println!("fdt: 0x{:X}", dtb_ptr as usize);
         dt::init(dtb_ptr);
         logging::init();
         mm::boot_init();
