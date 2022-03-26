@@ -31,6 +31,9 @@ pub fn kernel_trap_handler() {
             set_next_trigger();
             schedule();
         }
+        Trap::Interrupt(Interrupt::SupervisorSoft) => {
+            log::debug!("boot hart");
+        }
         Trap::Exception(Exception::StorePageFault)
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {

@@ -16,8 +16,9 @@ pub fn boot_init() {
     heap::init_heap();
     frame::init_frame_allocator();
     // KERNEL_SPACE.lock().activate();
+    println!("mm init finish");
 }
 
 pub fn init() {
-    KERNEL_SPACE.lock().activate();
+    KERNEL_SPACE.lock();//.activate();
 }

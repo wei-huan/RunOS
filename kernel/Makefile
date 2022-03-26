@@ -12,19 +12,19 @@ FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 # PLATFORM
 PLATFORM ?= qemu
 # SBI
-SBI ?= opensbi
+SBI ?= rustsbi
 # SBI_IMG
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
 # K210_BOOTLOADER_SIZE
-K210_BOOTLOADER_SIZE := 262144		# kernel offset = 0x50000
+K210_BOOTLOADER_SIZE := 131072		# kernel offset = 0x20000 opensbi / rustsbi
 
 # KERNEL ENTRY
 ifeq ($(PLATFORM), qemu)
 	KERNEL_ENTRY_PA := 0x80200000
 else ifeq ($(PLATFORM), k210)
-	KERNEL_ENTRY_PA := 0x80040000
+	KERNEL_ENTRY_PA := 0x80020000
 endif
 
 # Run K210
@@ -32,7 +32,7 @@ K210-SERIALPORT	= /dev/ttyUSB0
 K210-BURNER	= ../tools/kflash.py
 
 # CPU_NUM
-CPU_NUM := 1
+CPU_NUM := 2
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
@@ -48,7 +48,7 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-build: $(KERNEL_BIN) fs-img
+build: switch-check $(KERNEL_BIN) fs-img
 
 sdcard: fs-img
 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -72,15 +72,24 @@ $(KERNEL_BIN): kernel
 
 run: build
 ifeq ($(PLATFORM),qemu)
+ifeq ($(SBI),opensbi)
 	@qemu-system-riscv64 \
-		-m 128M \
-    	-machine virt \
-    	-nographic \
-    	-bios $(SBI_IMG) \
+		-m 512M \
+		-machine virt \
+		-nographic \
+		-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
 		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPU_NUM)
+else
+	@qemu-system-riscv64 \
+		-machine virt \
+		-nographic \
+		-bios $(SBI_IMG) \
+		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
+		-smp $(CPU_NUM)
+endif
 else
 	(which $(K210-BURNER)) || (cd .. && git clone https://github.com/sipeed/kflash.py.git && mv kflash.py tools)
 	@cp $(BOOTLOADER) $(BOOTLOADER).copy

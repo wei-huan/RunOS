@@ -8,13 +8,18 @@ pub use cpus::{cpu_id, current_task, take_current_task, take_my_cpu, CPUS};
 
 use crate::dt::CPU_NUMS;
 use core::sync::atomic::{AtomicBool, Ordering};
-
-#[cfg(not(any(feature = "rustsbi")))]
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::hart_start;
+#[cfg(feature = "opensbi")]
 use crate::opensbi::hart_start;
-
 pub static SMP_START: AtomicBool = AtomicBool::new(false);
 
-#[cfg(not(any(feature = "rustsbi")))]
+#[cfg(feature = "rustsbi")]
+pub fn boot_all_harts() {
+    SMP_START.store(true, Ordering::Relaxed);
+}
+
+#[cfg(feature = "opensbi")]
 pub fn boot_all_harts(my_hartid: usize) {
     extern "C" {
         fn _start();
