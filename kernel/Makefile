@@ -1,4 +1,5 @@
 # Building
+# target toolchain
 TARGET := riscv64gc-unknown-none-elf
 MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
@@ -17,13 +18,13 @@ SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
 # K210_BOOTLOADER_SIZE
-K210_BOOTLOADER_SIZE := 131072		# 0x20000
+K210_BOOTLOADER_SIZE := 262144		# kernel offset = 0x50000
 
 # KERNEL ENTRY
 ifeq ($(PLATFORM), qemu)
 	KERNEL_ENTRY_PA := 0x80200000
 else ifeq ($(PLATFORM), k210)
-	KERNEL_ENTRY_PA := 0x80020000
+	KERNEL_ENTRY_PA := 0x80040000
 endif
 
 # Run K210
