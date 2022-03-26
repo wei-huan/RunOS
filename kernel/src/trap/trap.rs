@@ -4,12 +4,18 @@ use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
+use crate::BOOT_HARTID;
 use core::arch::{asm, global_asm};
+use core::sync::atomic::Ordering;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
     sepc, stval, stvec,
 };
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::shutdown;
+#[cfg(feature = "opensbi")]
+use crate::opensbi::shutdown;
 
 global_asm!(include_str!("trap.S"));
 
@@ -51,7 +57,7 @@ fn where_is_stval(stval: usize) {
 }
 
 fn where_is_sepc(sepc: usize) {
-    log::error!("sepc = 0x{:X}", sepc);
+    println!("sepc = 0x{:X}", sepc);
     if sepc >= stext as usize && sepc < etext as usize {
         println!("sepc is in .text");
     } else if sepc >= srodata as usize && sepc < erodata as usize {
@@ -68,6 +74,8 @@ fn where_is_sepc(sepc: usize) {
 #[no_mangle]
 pub fn kernel_trap_handler() {
     let scause = scause::read();
+    let boot_id = BOOT_HARTID.load(Ordering::Acquire);
+    println!("boot_id: {}", boot_id);
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             // log::debug!("Supervisor Timer");
@@ -84,7 +92,8 @@ pub fn kernel_trap_handler() {
             let sepc = sepc::read();
             where_is_stval(stval);
             where_is_sepc(sepc);
-            panic!("a trap {:?} from kernel!", scause.cause());
+            shutdown();
+            // panic!("a trap {:?} from kernel!", scause.cause());
         }
         _ => {
             log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());

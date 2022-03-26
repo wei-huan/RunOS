@@ -31,7 +31,9 @@ mod utils;
 
 use crate::cpu::SMP_START;
 use core::arch::global_asm;
-use core::sync::atomic::Ordering;
+use core::sync::atomic::{AtomicUsize, Ordering};
+
+pub static BOOT_HARTID: AtomicUsize = AtomicUsize::new(0);
 
 global_asm!(include_str!("entry.asm"));
 
@@ -57,6 +59,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         trap::init();
         timer::init();
         // SMP_START will turn to true in this function
+        BOOT_HARTID.store(hartid, Ordering::Relaxed);
         cpu::boot_all_harts(hartid);
         scheduler::schedule();
     } else {
