@@ -22,6 +22,49 @@ pub fn set_kernel_trap_entry() {
     }
 }
 
+extern "C" {
+    fn stext();
+    fn etext();
+    fn srodata();
+    fn erodata();
+    fn sdata();
+    fn edata();
+    fn sbss();
+    fn ebss();
+    fn ekernel();
+    fn strampoline();
+}
+
+fn where_is_stval(stval: usize) {
+    println!("stval = 0x{:X}", stval);
+    if stval >= stext as usize && stval < etext as usize {
+        println!("stval is in .text");
+    } else if stval >= srodata as usize && stval < erodata as usize {
+        println!("stval is in .rodata");
+    } else if stval >= sdata as usize && stval < edata as usize {
+        println!("stval is in .data");
+    } else if stval >= sbss as usize && stval < ebss as usize {
+        println!("stval is in .bss");
+    } else {
+        println!("stval either");
+    }
+}
+
+fn where_is_sepc(sepc: usize) {
+    log::error!("sepc = 0x{:X}", sepc);
+    if sepc >= stext as usize && sepc < etext as usize {
+        println!("sepc is in .text");
+    } else if sepc >= srodata as usize && sepc < erodata as usize {
+        println!("sepc is in .rodata");
+    } else if sepc >= sdata as usize && sepc < edata as usize {
+        println!("sepc is in .data");
+    } else if sepc >= sbss as usize && sepc < ebss as usize {
+        println!("sepc is in .bss");
+    } else {
+        println!("sepc either");
+    }
+}
+
 #[no_mangle]
 pub fn kernel_trap_handler() {
     let scause = scause::read();
@@ -37,7 +80,10 @@ pub fn kernel_trap_handler() {
         Trap::Exception(Exception::StorePageFault)
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
-            log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
+            let stval = stval::read();
+            let sepc = sepc::read();
+            where_is_stval(stval);
+            where_is_sepc(sepc);
             panic!("a trap {:?} from kernel!", scause.cause());
         }
         _ => {

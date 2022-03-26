@@ -9,10 +9,10 @@ APPS := ../user/src/bin/*
 
 # FS
 FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
-# PLATFORM
+# PLATFORM qemu or k210
 PLATFORM ?= qemu
-# SBI
-SBI ?= rustsbi
+# SBI opensbi or rustsbi
+SBI ?= opensbi
 # SBI_IMG
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
