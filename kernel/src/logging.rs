@@ -97,10 +97,6 @@ impl log::Log for MyLogger {
     fn flush(&self) {}
 }
 
-// lazy_static! {
-//     pub static ref MYLOGGER: Mutex<MyLogger> = Mutex::new(log::create());
-// }
-
 pub fn init() {
     set_hart_filter(8);
     log::set_logger(&MyLogger).expect("failed to init logging");
@@ -118,24 +114,21 @@ pub fn show_machine_sbi_os_info() {
     info!("=== Machine Info ===");
     info!(" Total CPUs: {}", n_cpus);
     info!(" Timer Clock: {}Hz", timebase_frequency);
-    #[cfg(not(any(feature = "rustsbi")))]
-    {
-        info!("=== SBI Implementation ===");
-        let (impl_major, impl_minor) = {
-            let version = impl_version();
-            (version >> 16, version & 0xFFFF)
-        };
-        let (spec_major, spec_minor) = {
-            let version = spec_version();
-            (version.major, version.minor)
-        };
-        info!(
-            " Implementor: {:?} (version: {}.{})",
-            impl_id(),
-            impl_major,
-            impl_minor
-        );
-        info!(" Spec Version: {}.{}", spec_major, spec_minor);
-    }
+    info!("=== SBI Implementation ===");
+    let (impl_major, impl_minor) = {
+        let version = impl_version();
+        (version >> 16, version & 0xFFFF)
+    };
+    let (spec_major, spec_minor) = {
+        let version = spec_version();
+        (version.major, version.minor)
+    };
+    info!(
+        " Implementor: {:?} (version: {}.{})",
+        impl_id(),
+        impl_major,
+        impl_minor
+    );
+    info!(" Spec Version: {}.{}", spec_major, spec_minor);
     info!("=== MyOS Info ===");
 }
