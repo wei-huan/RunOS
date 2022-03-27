@@ -18,9 +18,9 @@ fn panic(info: &PanicInfo) -> ! {
     } else {
         log::error!("Panicked: {}", info.message().unwrap());
     }
-    unsafe {
-        backtrace();
-    }
+    // unsafe {
+    //     backtrace();
+    // }
     shutdown()
 }
 

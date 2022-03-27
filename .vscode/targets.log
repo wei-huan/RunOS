@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Mar 27 11:52:19 2022
+# Make data base, printed on Sun Mar 27 14:16:36 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2872
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-402da74a-baa5-448e-86f7-75b03719583e.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-a0065d89-4d75-41f8-82e9-e36e2620b3f6.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -279,11 +279,10 @@ LANG = C
 
 # Directories
 
-# . (device 66310, inode 3414746): 17 files, no impossibilities.
+# . (device 66310, inode 3414746): 18 files, no impossibilities.
 
-# 17 files, no impossibilities in 1 directories.
+# 18 files, no impossibilities in 1 directories.
 
- 
 # Implicit Rules
 
 # No implicit rules.
@@ -305,6 +304,7 @@ fs-img: user
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 21):
 	rm -f $(FS_IMG)
+ 
 	cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)
 
 sdcard:
@@ -388,12 +388,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 30 / storage = 228 B / avg = 7 B
-# current buf: size = 8162 B / used = 228 B / count = 30 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 31 / storage = 239 B / avg = 7 B
+# current buf: size = 8162 B / used = 239 B / count = 31 / avg = 7 B
 
-# strcache performance: lookups = 54 / hit rate = 44%
+# strcache performance: lookups = 55 / hit rate = 43%
 # hash-table stats:
-# Load=30/8192=0%, Rehash=0, Collisions=1/54=2%
-# Finished Make data base on Sun Mar 27 11:52:19 2022
+# Load=31/8192=0%, Rehash=0, Collisions=1/55=2%
+# Finished Make data base on Sun Mar 27 14:16:36 2022
 
  

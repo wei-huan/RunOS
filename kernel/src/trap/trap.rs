@@ -1,11 +1,11 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, BOOT_HARTID};
+use crate::cpu::{current_trap_cx, current_user_token};
 use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
-use core::sync::atomic::Ordering;
+// use core::sync::atomic::Ordering;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
@@ -51,6 +51,7 @@ fn print_kernel_layout() {
     );
 }
 
+#[allow(unused)]
 fn where_is_stval(stval: usize) {
     log::info!("stval = 0x{:X}", stval);
     if stval >= stext as usize && stval < etext as usize {
@@ -66,6 +67,7 @@ fn where_is_stval(stval: usize) {
     }
 }
 
+#[allow(unused)]
 fn where_is_sepc(sepc: usize) {
     log::info!("sepc = 0x{:X}", sepc);
     if sepc >= stext as usize && sepc < etext as usize {
@@ -84,8 +86,6 @@ fn where_is_sepc(sepc: usize) {
 #[no_mangle]
 pub fn kernel_trap_handler() {
     let scause = scause::read();
-    let boot_id = BOOT_HARTID.load(Ordering::Acquire);
-    println!("boot_id: {}", boot_id);
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             // log::debug!("Supervisor Timer");
@@ -95,18 +95,43 @@ pub fn kernel_trap_handler() {
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
             log::debug!("boot hart");
         }
-        Trap::Exception(Exception::StorePageFault)
-        | Trap::Exception(Exception::LoadPageFault)
-        | Trap::Exception(Exception::InstructionPageFault) => {
-            let stval = stval::read();
-            let sepc = sepc::read();
+        Trap::Exception(Exception::StorePageFault) => {
             let mut sp: usize;
             unsafe {
                 asm!("mv {}, x2", out(reg) sp);
             }
+            // TODO: page_fault_handler
+            panic!(
+                "a trap {:?} from kernel! the sp is 0x{:X}",
+                scause.cause(),
+                sp
+            );
+        }
+        | Trap::Exception(Exception::LoadPageFault) => {
+            let mut sp: usize;
+            unsafe {
+                asm!("mv {}, x2", out(reg) sp);
+            }
+            // TODO: page_fault_handler
+            panic!(
+                "a trap {:?} from kernel! the sp is 0x{:X}",
+                scause.cause(),
+                sp
+            );
+        }
+        | Trap::Exception(Exception::InstructionPageFault) => {
+            // let boot_id = BOOT_HARTID.load(Ordering::Acquire);
+            // println!("boot_id: {}", boot_id);
+            // let stval = stval::read();
+            // let sepc = sepc::read();
             // print_kernel_layout();
-            where_is_stval(stval);
-            where_is_sepc(sepc);
+            // where_is_stval(stval);
+            // where_is_sepc(sepc);
+            let mut sp: usize;
+            unsafe {
+                asm!("mv {}, x2", out(reg) sp);
+            }
+            // TODO: page_fault_handler
             panic!(
                 "a trap {:?} from kernel! the sp is 0x{:X}",
                 scause.cause(),
