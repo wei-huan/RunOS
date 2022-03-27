@@ -1,11 +1,15 @@
+#[cfg(feature = "opensbi")]
+use crate::opensbi::{impl_id, impl_version, spec_version};
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
     cpu::cpu_id,
-    dt::TIMER_FREQ,
+    dt::{CPU_NUMS, TIMER_FREQ},
     timer::get_time,
     utils::{micros, time_parts},
 };
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use log::{max_level, Level, LevelFilter};
+use log::*;
 
 pub struct ColorEscape(pub &'static str);
 
@@ -93,10 +97,6 @@ impl log::Log for MyLogger {
     fn flush(&self) {}
 }
 
-// lazy_static! {
-//     pub static ref MYLOGGER: Mutex<MyLogger> = Mutex::new(log::create());
-// }
-
 pub fn init() {
     set_hart_filter(8);
     log::set_logger(&MyLogger).expect("failed to init logging");
@@ -107,3 +107,28 @@ fn set_hart_filter(hart_id: usize) {
     HART_FILTER.store(hart_id, Ordering::Relaxed);
 }
 
+pub fn show_machine_sbi_os_info() {
+    let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
+    let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+    info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+    info!("=== Machine Info ===");
+    info!(" Total CPUs: {}", n_cpus);
+    info!(" Timer Clock: {}Hz", timebase_frequency);
+    info!("=== SBI Implementation ===");
+    let (impl_major, impl_minor) = {
+        let version = impl_version();
+        (version >> 16, version & 0xFFFF)
+    };
+    let (spec_major, spec_minor) = {
+        let version = spec_version();
+        (version.major, version.minor)
+    };
+    info!(
+        " Implementor: {:?} (version: {}.{})",
+        impl_id(),
+        impl_major,
+        impl_minor
+    );
+    info!(" Spec Version: {}.{}", spec_major, spec_minor);
+    info!("=== MyOS Info ===");
+}

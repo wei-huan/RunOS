@@ -1,5 +1,5 @@
 use crate::trap::trap_return;
-use riscv::register::sstatus::{self, SPP};
+use riscv::register::sstatus::{self, set_spp, SPP};
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
@@ -21,12 +21,14 @@ impl TaskContext {
     //     }
     // }
     #[allow(unused)]
-    pub fn get_sp(&self) -> usize{
+    pub fn get_sp(&self) -> usize {
         self.sp
     }
     pub fn goto_trap_return(kstack_ptr: usize) -> Self {
-        let mut sstatus = sstatus::read();
-        sstatus.set_spp(SPP::User);
+        unsafe {
+            set_spp(SPP::User);
+        }
+        let sstatus = sstatus::read();
         let sstatus = sstatus.bits();
         Self {
             ra: trap_return as usize,

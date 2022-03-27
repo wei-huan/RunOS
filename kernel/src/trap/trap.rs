@@ -5,6 +5,7 @@ use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
+// use core::sync::atomic::Ordering;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
@@ -22,31 +23,116 @@ pub fn set_kernel_trap_entry() {
     }
 }
 
+extern "C" {
+    fn stext();
+    fn etext();
+    fn srodata();
+    fn erodata();
+    fn sdata();
+    fn edata();
+    fn sbss_with_stack();
+    fn ebss();
+    // fn ekernel();
+    // fn strampoline();
+}
+
+#[allow(unused)]
+fn print_kernel_layout() {
+    println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+    println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+    println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+    println!(
+        ".bss [{:#x}, {:#x})",
+        sbss_with_stack as usize, ebss as usize
+    );
+}
+
+#[allow(unused)]
+fn where_is_stval(stval: usize) {
+    log::info!("stval = 0x{:X}", stval);
+    if stval >= stext as usize && stval < etext as usize {
+        println!("stval is in .text");
+    } else if stval >= srodata as usize && stval < erodata as usize {
+        println!("stval is in .rodata");
+    } else if stval >= sdata as usize && stval < edata as usize {
+        println!("stval is in .data");
+    } else if stval >= sbss_with_stack as usize && stval < ebss as usize {
+        println!("stval is in .bss");
+    } else {
+        println!("stval either");
+    }
+}
+
+#[allow(unused)]
+fn where_is_sepc(sepc: usize) {
+    log::info!("sepc = 0x{:X}", sepc);
+    if sepc >= stext as usize && sepc < etext as usize {
+        println!("sepc is in .text");
+    } else if sepc >= srodata as usize && sepc < erodata as usize {
+        println!("sepc is in .rodata");
+    } else if sepc >= sdata as usize && sepc < edata as usize {
+        println!("sepc is in .data");
+    } else if sepc >= sbss_with_stack as usize && sepc < ebss as usize {
+        println!("sepc is in .bss");
+    } else {
+        println!("sepc either");
+    }
+}
+
 #[no_mangle]
 pub fn kernel_trap_handler() {
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            log::debug!("Supervisor Timer");
+            // log::debug!("Supervisor Timer");
             set_next_trigger();
             schedule();
         }
-        Trap::Exception(Exception::StorePageFault)
-        | Trap::Exception(Exception::LoadPageFault)
+        Trap::Interrupt(Interrupt::SupervisorSoft) => {
+            log::debug!("boot hart");
+        }
+        Trap::Exception(Exception::StorePageFault) => {
+            let mut sp: usize;
+            unsafe {
+                asm!("mv {}, x2", out(reg) sp);
+            }
+            // TODO: page_fault_handler
+            panic!(
+                "a trap {:?} from kernel! the sp is 0x{:X}",
+                scause.cause(),
+                sp
+            );
+        }
+        | Trap::Exception(Exception::LoadPageFault) => {
+            let mut sp: usize;
+            unsafe {
+                asm!("mv {}, x2", out(reg) sp);
+            }
+            // TODO: page_fault_handler
+            panic!(
+                "a trap {:?} from kernel! the sp is 0x{:X}",
+                scause.cause(),
+                sp
+            );
+        }
         | Trap::Exception(Exception::InstructionPageFault) => {
-            log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
-            // if let Some(a) = take_current_task() {
-            //     println!("YYYYYYYYYYYYYYYYYY");
-            // } else {
-            //     println!("NNNNNNNNNNNNNNNNNN");
-            // }
-            // unsafe {
-            //     asm!(
-            //         "sfence.vma",
-            //         "fence.i"
-            //     );
-            // }
-            panic!("a trap {:?} from kernel!", scause.cause());
+            // let boot_id = BOOT_HARTID.load(Ordering::Acquire);
+            // println!("boot_id: {}", boot_id);
+            // let stval = stval::read();
+            // let sepc = sepc::read();
+            // print_kernel_layout();
+            // where_is_stval(stval);
+            // where_is_sepc(sepc);
+            let mut sp: usize;
+            unsafe {
+                asm!("mv {}, x2", out(reg) sp);
+            }
+            // TODO: page_fault_handler
+            panic!(
+                "a trap {:?} from kernel! the sp is 0x{:X}",
+                scause.cause(),
+                sp
+            );
         }
         _ => {
             log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
@@ -141,16 +227,3 @@ pub fn trap_return() -> ! {
         );
     }
 }
-
-// #[no_mangle]
-// pub fn kernel_trap_goto_schedule() -> ! {
-//     unsafe {
-//         asm!(
-//             "jr {restore_va}",
-//             restore_va = in(reg) restore_va,
-//             in("a0") trap_cx_ptr,
-//             in("a1") user_satp,
-//             options(noreturn)
-//         );
-//     }
-// }

@@ -12,6 +12,9 @@ pub use heap::{heap_test, init_heap, whereis_heap};
 pub use section::Permission;
 pub use page_table::{PageTable, PageTableEntry, UserBuffer, translated_byte_buffer, translated_str};
 
+use riscv::register::satp;
+use core::arch::asm;
+
 pub fn boot_init() {
     heap::init_heap();
     frame::init_frame_allocator();
@@ -19,5 +22,10 @@ pub fn boot_init() {
 }
 
 pub fn init() {
-    KERNEL_SPACE.lock().activate();
+    // KERNEL_SPACE.lock().activate();
+    let satp = kernel_token();
+    unsafe {
+        satp::write(satp);
+        asm!("sfence.vma");
+    }
 }
