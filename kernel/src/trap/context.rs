@@ -25,7 +25,7 @@ impl TrapContext {
         unsafe {
             set_spp(SPP::User);
         }
-        let mut sstatus = sstatus::read();
+        let sstatus = sstatus::read();
         // set CPU privilege to User after trapping back
         let mut cx = Self {
             x: [0; 32],

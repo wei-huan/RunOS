@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sat Mar 26 16:59:12 2022
+# Make data base, printed on Sun Mar 27 11:52:19 2022
 
 # Variables
 
@@ -43,7 +43,7 @@ GDMSESSION = ubuntu
 # environment
 XMODIFIERS = @im=fcitx
 # makefile
-CURDIR := /home/weihuan/WorkSpace/MyOS
+CURDIR := /home/weihuan/WorkSpace/OS/MyOS
 # makefile
 SHELL = /bin/sh
 # environment
@@ -51,7 +51,7 @@ VSCODE_NLS_CONFIG = {"locale":"zh-cn","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:63507
+JOURNAL_STREAM = 8:112703
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 2627
+MANAGERPID = 2872
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-69ceeb97-ed7a-4e82-84d6-8b88af7c178a.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-402da74a-baa5-448e-86f7-75b03719583e.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/3222,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/3222
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/3533,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/3533
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -103,11 +103,11 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 902bcb030b5340839414caa92cbfa0a8
+INVOCATION_ID = 8a93fe0757d74f8ba97703e75876debf
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
-DIR := /home/weihuan/WorkSpace/MyOS
+DIR := /home/weihuan/WorkSpace/OS/MyOS
 # environment
 LS_COLORS = 
 # environment
@@ -115,7 +115,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 4575
+GIO_LAUNCHED_DESKTOP_FILE_PID = 7131
 # automatic
 %F = $(notdir $%)
 # environment
@@ -127,25 +127,25 @@ GTK_IM_MODULE = fcitx
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
-PWD = /home/weihuan/WorkSpace/MyOS
+PWD = /home/weihuan/WorkSpace/OS/MyOS
 # makefile (from 'Makefile', line 2)
 MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 3181
+SSH_AGENT_PID = 3492
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
 GTK_MODULES = gail:atk-bridge
 # makefile (from 'Makefile', line 7)
-OS_DIR := /home/weihuan/WorkSpace/MyOS/kernel
+OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/kernel
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
 HOME = /home/weihuan
 # makefile (from 'Makefile', line 6)
-IMG_DIR := /home/weihuan/WorkSpace/MyOS/user/target/riscv64gc-unknown-none-elf/release/
+IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release/
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
@@ -189,7 +189,7 @@ LC_MONETARY = zh_CN.UTF-8
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # makefile (from 'Makefile', line 4)
-PACK_IMG_DIR := /home/weihuan/WorkSpace/MyOS/myfs-pack
+PACK_IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/myfs-pack
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
 # environment
@@ -215,7 +215,7 @@ MFLAGS = -pqrR
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
 # makefile (from 'Makefile', line 9)
-FS_IMG := /home/weihuan/WorkSpace/MyOS/user/target/riscv64gc-unknown-none-elf/release//fs.img
+FS_IMG := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release//fs.img
 # environment
 GDK_BACKEND = x11
 # environment
@@ -243,7 +243,7 @@ QT4_IM_MODULE = fcitx
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'Makefile', line 5)
-USER_DIR := /home/weihuan/WorkSpace/MyOS/user
+USER_DIR := /home/weihuan/WorkSpace/OS/MyOS/user
 # default
 SUFFIXES := 
 # environment
@@ -265,7 +265,7 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 4575
+VSCODE_PID = 7131
 # environment
 _CE_CONDA = 
 # environment
@@ -279,11 +279,11 @@ LANG = C
 
 # Directories
 
-# . (device 66310, inode 3414746): 18 files, no impossibilities.
+# . (device 66310, inode 3414746): 17 files, no impossibilities.
+
+# 17 files, no impossibilities in 1 directories.
+
  
-
-# 18 files, no impossibilities in 1 directories.
-
 # Implicit Rules
 
 # No implicit rules.
@@ -338,7 +338,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-03-25 21:23:43.654670232
+#  Last modified 2022-03-26 21:00:31.815022693
 #  File has been updated.
 #  Successfully updated.
 
@@ -388,12 +388,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 31 / storage = 239 B / avg = 7 B
-# current buf: size = 8162 B / used = 239 B / count = 31 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 30 / storage = 228 B / avg = 7 B
+# current buf: size = 8162 B / used = 228 B / count = 30 / avg = 7 B
 
-# strcache performance: lookups = 55 / hit rate = 43%
+# strcache performance: lookups = 54 / hit rate = 44%
 # hash-table stats:
-# Load=31/8192=0%, Rehash=0, Collisions=1/55=2%
-# Finished Make data base on Sat Mar 26 16:59:12 2022
+# Load=30/8192=0%, Rehash=0, Collisions=1/54=2%
+# Finished Make data base on Sun Mar 27 11:52:19 2022
 
  

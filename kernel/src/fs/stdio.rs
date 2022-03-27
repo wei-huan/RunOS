@@ -1,10 +1,10 @@
 use super::File;
 use crate::mm::UserBuffer;
+use crate::task::suspend_current_and_run_next;
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::console_getchar;
-#[cfg(not(any(feature = "rustsbi")))]
+#[cfg(feature = "opensbi")]
 use crate::opensbi::console_getchar;
-use crate::task::suspend_current_and_run_next;
 
 pub struct Stdin;
 pub struct Stdout;

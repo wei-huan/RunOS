@@ -24,7 +24,11 @@ K210_BOOTLOADER_SIZE := 131072		# kernel offset = 0x20000 opensbi / rustsbi
 ifeq ($(PLATFORM), qemu)
 	KERNEL_ENTRY_PA := 0x80200000
 else ifeq ($(PLATFORM), k210)
+ifeq ($(SBI), rustsbi)
 	KERNEL_ENTRY_PA := 0x80020000
+else
+	KERNEL_ENTRY_PA := 0x80040000
+endif
 endif
 
 # Run K210
@@ -39,7 +43,7 @@ OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
 
 # Disassembly
-DISASM ?= -all
+DISASM ?= -all -S
 
 switch-check:
 ifeq ($(PLATFORM), qemu)

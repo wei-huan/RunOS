@@ -1,6 +1,5 @@
 make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/weihuan/WorkSpace/MyOS'
- 
-make build -C /home/weihuan/WorkSpace/MyOS/kernel
-make: Leaving directory '/home/weihuan/WorkSpace/MyOS'
+make: Entering directory '/home/weihuan/WorkSpace/OS/MyOS'
+make build -C /home/weihuan/WorkSpace/OS/MyOS/kernel
+make: Leaving directory '/home/weihuan/WorkSpace/OS/MyOS'
  

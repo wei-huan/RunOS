@@ -19,7 +19,7 @@ extern "C" {
     fn erodata();
     fn sdata();
     fn edata();
-    fn sbss();
+    fn sbss_with_stack();
     fn ebss();
     fn ekernel();
     fn strampoline();
@@ -95,7 +95,7 @@ impl AddrSpace {
         println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
         println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
         println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(".bss [{:#x}, {:#x})", sbss as usize, ebss as usize);
+        println!(".bss [{:#x}, {:#x})", sbss_with_stack as usize, ebss as usize);
         println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
@@ -133,7 +133,7 @@ impl AddrSpace {
         kernel_space.push_section(
             Section::new(
                 ".bss".to_string(),
-                (sbss as usize).into(),
+                (sbss_with_stack as usize).into(),
                 (ebss as usize).into(),
                 MapType::Identical,
                 Permission::R | Permission::W,

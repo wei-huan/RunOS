@@ -28,7 +28,7 @@ impl TaskContext {
         unsafe {
             set_spp(SPP::User);
         }
-        let mut sstatus = sstatus::read();
+        let sstatus = sstatus::read();
         let sstatus = sstatus.bits();
         Self {
             ra: trap_return as usize,

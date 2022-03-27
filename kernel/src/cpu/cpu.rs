@@ -58,3 +58,7 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
         .inner_exclusive_access()
         .get_trap_cx()
 }
+
+pub fn current_kstack_top() -> usize {
+    current_task().unwrap().kernel_stack.get_top()
+}

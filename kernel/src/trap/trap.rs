@@ -1,10 +1,9 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token};
+use crate::cpu::{current_trap_cx, current_user_token, BOOT_HARTID};
 use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
-use crate::BOOT_HARTID;
 use core::arch::{asm, global_asm};
 use core::sync::atomic::Ordering;
 use riscv::register::{
@@ -12,10 +11,10 @@ use riscv::register::{
     scause::{self, Exception, Interrupt, Trap},
     sepc, stval, stvec,
 };
-#[cfg(feature = "rustsbi")]
-use crate::rustsbi::shutdown;
-#[cfg(feature = "opensbi")]
-use crate::opensbi::shutdown;
+// #[cfg(feature = "rustsbi")]
+// use crate::rustsbi::shutdown;
+// #[cfg(feature = "opensbi")]
+// use crate::opensbi::shutdown;
 
 global_asm!(include_str!("trap.S"));
 
@@ -35,21 +34,32 @@ extern "C" {
     fn erodata();
     fn sdata();
     fn edata();
-    fn sbss();
+    fn sbss_with_stack();
     fn ebss();
-    fn ekernel();
-    fn strampoline();
+    // fn ekernel();
+    // fn strampoline();
+}
+
+#[allow(unused)]
+fn print_kernel_layout() {
+    println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+    println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+    println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+    println!(
+        ".bss [{:#x}, {:#x})",
+        sbss_with_stack as usize, ebss as usize
+    );
 }
 
 fn where_is_stval(stval: usize) {
-    println!("stval = 0x{:X}", stval);
+    log::info!("stval = 0x{:X}", stval);
     if stval >= stext as usize && stval < etext as usize {
         println!("stval is in .text");
     } else if stval >= srodata as usize && stval < erodata as usize {
         println!("stval is in .rodata");
     } else if stval >= sdata as usize && stval < edata as usize {
         println!("stval is in .data");
-    } else if stval >= sbss as usize && stval < ebss as usize {
+    } else if stval >= sbss_with_stack as usize && stval < ebss as usize {
         println!("stval is in .bss");
     } else {
         println!("stval either");
@@ -57,14 +67,14 @@ fn where_is_stval(stval: usize) {
 }
 
 fn where_is_sepc(sepc: usize) {
-    println!("sepc = 0x{:X}", sepc);
+    log::info!("sepc = 0x{:X}", sepc);
     if sepc >= stext as usize && sepc < etext as usize {
         println!("sepc is in .text");
     } else if sepc >= srodata as usize && sepc < erodata as usize {
         println!("sepc is in .rodata");
     } else if sepc >= sdata as usize && sepc < edata as usize {
         println!("sepc is in .data");
-    } else if sepc >= sbss as usize && sepc < ebss as usize {
+    } else if sepc >= sbss_with_stack as usize && sepc < ebss as usize {
         println!("sepc is in .bss");
     } else {
         println!("sepc either");
@@ -90,10 +100,18 @@ pub fn kernel_trap_handler() {
         | Trap::Exception(Exception::InstructionPageFault) => {
             let stval = stval::read();
             let sepc = sepc::read();
+            let mut sp: usize;
+            unsafe {
+                asm!("mv {}, x2", out(reg) sp);
+            }
+            // print_kernel_layout();
             where_is_stval(stval);
             where_is_sepc(sepc);
-            shutdown();
-            // panic!("a trap {:?} from kernel!", scause.cause());
+            panic!(
+                "a trap {:?} from kernel! the sp is 0x{:X}",
+                scause.cause(),
+                sp
+            );
         }
         _ => {
             log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
