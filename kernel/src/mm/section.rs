@@ -117,7 +117,7 @@ impl Section {
             return;
         }
         loop {
-            // println!("clear");
+            println!("clear");
             let dst = &mut page_table
                 .translate(current_vpn)
                 .unwrap()

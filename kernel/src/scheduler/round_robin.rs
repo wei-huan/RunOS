@@ -20,7 +20,6 @@ impl RoundRobinScheduler {
 
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) -> ! {
-        interrupt_off();
         // log::debug!("start schedule");
         if let Some(task) = self.fetch_task() {
             // log::debug!("get task");

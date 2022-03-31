@@ -3,9 +3,7 @@ use super::{
     page_table::{PTEFlags, PageTable, PageTableEntry},
     section::{MapType, Permission, Section},
 };
-use crate::config::{
-    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE,
-};
+use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -40,9 +38,9 @@ pub fn kernel_translate(vpn: VirtPageNum) -> Option<PageTableEntry> {
     KERNEL_SPACE.lock().page_table.translate(vpn)
 }
 
-// pub fn kernel_map_trampoline() {
-//     KERNEL_SPACE.lock().map_trampoline()
-// }
+pub fn kernel_remap_trampoline() {
+    KERNEL_SPACE.lock().remap_trampoline();
+}
 
 pub struct AddrSpace {
     pub page_table: PageTable,
@@ -111,20 +109,9 @@ impl AddrSpace {
             ".bss [{:#x}, {:#x})",
             sbss_with_stack as usize, ebss as usize
         );
-
-        // println!("mapping .trampoline section");
-        // kernel_space.map_trampoline();
-        kernel_space.push_section(
-            Section::new(
-                ".trampoline".to_string(),
-                (strampoline as usize).into(),
-                (etrampoline as usize).into(),
-                MapType::Identical,
-                Permission::R | Permission::X,
-            ),
-            None,
-        );
-        // println!("mapping .text section");
+        println!("mapping .trampoline section");
+        kernel_space.map_trampoline();
+        println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
                 ".text".to_string(),
@@ -135,7 +122,7 @@ impl AddrSpace {
             ),
             None,
         );
-        // println!("mapping .rodata section");
+        println!("mapping .rodata section");
         kernel_space.push_section(
             Section::new(
                 ".rodata".to_string(),
@@ -146,7 +133,7 @@ impl AddrSpace {
             ),
             None,
         );
-        // println!("mapping .data section");
+        println!("mapping .data section");
         kernel_space.push_section(
             Section::new(
                 ".data".to_string(),
@@ -157,7 +144,7 @@ impl AddrSpace {
             ),
             None,
         );
-        // println!("mapping .bss section");
+        println!("mapping .bss section");
         kernel_space.push_section(
             Section::new(
                 ".bss".to_string(),
@@ -168,7 +155,7 @@ impl AddrSpace {
             ),
             None,
         );
-        // println!("mapping physical memory");
+        println!("mapping physical memory");
         kernel_space.push_section(
             Section::new(
                 ".phys_mm".to_string(),
@@ -179,7 +166,7 @@ impl AddrSpace {
             ),
             None,
         );
-        // println!("mapping memory-mapped registers");
+        println!("mapping memory-mapped registers");
         for pair in MMIO {
             kernel_space.push_section(
                 Section::new(
@@ -192,12 +179,13 @@ impl AddrSpace {
                 None,
             );
         }
-        // println!("mapping kernel finish");
+        println!("mapping kernel finish");
         kernel_space
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
+        println!("create user space");
         let mut user_space = Self::new_empty();
         // map trampoline
         user_space.map_trampoline();
@@ -238,19 +226,12 @@ impl AddrSpace {
                     map_perm,
                 );
                 max_end_vpn = section.vpn_range.get_end();
-                // println!("range: 0x{:X}", (usize::from(end_va) - usize::from(start_va)));
-                // println!("start_vpn: {:?} end_vpn: {:?}", section.vpn_range.get_start(), section.vpn_range.get_end());
-                // println!("ph file_size: 0x{:X}", ph.file_size());
-                // println!("ph mem_size: 0x{:X}", ph.mem_size());
-                // println!("");
                 user_space.push_section(
                     section,
                     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
                 );
             }
         }
-        // clear bss section
-        user_space.clear_bss_pages();
         // map user stack with U flags
         let max_end_va: VirtAddr = max_end_vpn.into();
         let mut user_stack_bottom: usize = max_end_va.into();
@@ -295,9 +276,14 @@ impl AddrSpace {
             }
         }
     }
-    #[allow(unused)]
-    pub fn recycle_data_pages(&mut self) {
-        self.sections.clear();
+    pub fn remap_trampoline(&mut self) {
+        let sect_iterator = self.sections.iter_mut();
+        for sect in sect_iterator {
+            if sect.name == ".trampoline" {
+                sect.unmap(&mut self.page_table);
+                sect.map(&mut self.page_table);
+            }
+        }
     }
     pub fn activate(&mut self) {
         let satp = self.page_table.get_token();

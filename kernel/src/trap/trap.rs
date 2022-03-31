@@ -1,6 +1,6 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_token, current_trap_cx, current_user_token};
-use crate::mm::{kernel_token, kernel_translate};
+use crate::mm::{kernel_remap_trampoline, kernel_token, kernel_translate};
 use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
@@ -96,6 +96,7 @@ pub fn kernel_trap_handler() {
         | Trap::Exception(Exception::InstructionPageFault) => {
             let token = current_token();
             let kernel_token = kernel_token();
+            log::error!("stval = {:#X} sepc = {:#X}", stval::read(), sepc::read());
             if token != kernel_token {
                 println!("not kernel token");
                 unsafe {
@@ -109,7 +110,8 @@ pub fn kernel_trap_handler() {
                     panic!("a trap {:?} from kernel!", scause.cause());
                 } else {
                     println!("No pte");
-                    panic!("a trap {:?} from kernel!", scause.cause());
+                    kernel_remap_trampoline();
+                    // panic!("a trap {:?} from kernel!", scause.cause());
                 }
             }
         }
