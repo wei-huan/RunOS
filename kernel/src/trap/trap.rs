@@ -4,8 +4,8 @@ use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
+use crate::mm::kernel_translate;
 use core::arch::{asm, global_asm};
-// use core::sync::atomic::Ordering;
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
@@ -98,24 +98,24 @@ pub fn kernel_trap_handler() {
         Trap::Exception(Exception::StorePageFault)
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
-            // let token = current_token();
-            // let kernel_token = kernel_token();
-            // if token != kernel_token {
-            //     println!("not kernel token");
-            //     unsafe {
-            //         satp::write(kernel_token);
-            //         asm!("sfence.vma");
-            //     }
-            // } else {
-            //     let stval = stval::read();
-            //     if let Some(pte) = kernel_translate(stval.into()) {
-            //         println!("pte: {:#?}", pte);
-            //         panic!("a trap {:?} from kernel!", scause.cause());
-            //     } else {
-            //         println!("No pte");
-            //         panic!("a trap {:?} from kernel!", scause.cause());
-            //     }
-            // }
+            let token = current_token();
+            let kernel_token = kernel_token();
+            if token != kernel_token {
+                println!("not kernel token");
+                unsafe {
+                    satp::write(kernel_token);
+                    asm!("sfence.vma");
+                }
+            } else {
+                let stval = stval::read();
+                if let Some(pte) = kernel_translate(stval.into()) {
+                    println!("pte: {:#?}", pte);
+                    panic!("a trap {:?} from kernel!", scause.cause());
+                } else {
+                    println!("No pte");
+                    panic!("a trap {:?} from kernel!", scause.cause());
+                }
+            }
             panic!("a trap {:?} from kernel!", scause.cause());
         }
         _ => {

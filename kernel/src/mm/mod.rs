@@ -5,7 +5,7 @@ mod heap;
 mod page_table;
 mod section;
 
-pub use address_space::{kernel_token, remap_test, AddrSpace, KERNEL_SPACE};
+pub use address_space::{kernel_token, kernel_translate, remap_test, AddrSpace, KERNEL_SPACE};
 pub use address::{addr_test, PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum};
 pub use frame::{frame_alloc, frame_allocator_test, frame_dealloc, frame_test, Frame};
 pub use heap::{heap_test, init_heap, whereis_heap};
