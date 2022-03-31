@@ -2,6 +2,7 @@ use super::current_task;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::task::TaskControlBlock;
 use crate::trap::TrapContext;
+use crate::mm::kernel_token;
 use alloc::sync::Arc;
 
 // Per-CPU state
