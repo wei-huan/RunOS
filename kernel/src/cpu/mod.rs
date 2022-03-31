@@ -3,15 +3,15 @@
 mod cpu;
 mod cpus;
 
-pub use cpu::{current_trap_cx, current_user_token, current_kstack_top, Cpu};
+pub use cpu::{current_kstack_top, current_token, current_trap_cx, current_user_token, Cpu};
 pub use cpus::{cpu_id, current_task, take_current_task, take_my_cpu, CPUS};
 
 use crate::dt::CPU_NUMS;
-use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-#[cfg(feature = "rustsbi")]
-use crate::rustsbi::hart_start;
 #[cfg(feature = "opensbi")]
 use crate::opensbi::hart_start;
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::hart_start;
+use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 
 pub static SMP_START: AtomicBool = AtomicBool::new(false);
 pub static BOOT_HARTID: AtomicUsize = AtomicUsize::new(0);

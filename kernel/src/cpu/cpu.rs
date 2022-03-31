@@ -52,6 +52,15 @@ pub fn current_user_token() -> usize {
     token
 }
 
+pub fn current_token() -> usize {
+    if let Some(task) = current_task() {
+        let token = task.inner_exclusive_access().get_user_token();
+        return token;
+    } else {
+        return kernel_token();
+    }
+}
+
 pub fn current_trap_cx() -> &'static mut TrapContext {
     current_task()
         .unwrap()
