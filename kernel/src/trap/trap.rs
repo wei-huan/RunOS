@@ -109,7 +109,7 @@ pub fn kernel_trap_handler() {
             } else {
                 let stval = stval::read();
                 if let Some(pte) = kernel_translate(stval.into()) {
-                    println!("pte: {:#?}", pte);
+                    println!("ppn: {:#?}", pte.ppn());
                     panic!("a trap {:?} from kernel!", scause.cause());
                 } else {
                     println!("No pte");
