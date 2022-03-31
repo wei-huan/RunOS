@@ -19,10 +19,14 @@ use crate::mm::kernel_token;
 use crate::trap::{user_trap_handler, TrapContext};
 // use alloc::sync::Arc;
 use crate::scheduler::{add_task, schedule};
+use riscv::register::sstatus::{SPP, set_spp};
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32) -> ! {
-    // log::debug!("exit");
+    // Set SPP as Supervisor
+    unsafe {
+        set_spp(SPP::Supervisor);
+    }
     // take from Processor
     let task = take_current_task().unwrap();
     // **** access current TCB exclusively
@@ -33,6 +37,8 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     task_inner.exit_code = exit_code;
     // Delete children task
     task_inner.children.clear();
+    // Clear bss section
+    task_inner.addrspace.clear_bss_pages();
     // Reset Task context
     let kernel_stack_top = task.kernel_stack.get_top();
     task_inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
@@ -45,9 +51,8 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
         kernel_stack_top,
         user_trap_handler as usize,
     );
+    // drop trap_cx
     drop(trap_cx);
-    // Clear bss section
-    task_inner.addrspace.clear_bss_pages();
     // drop inner
     drop(task_inner);
     // Push back to ready queue.

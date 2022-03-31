@@ -3,7 +3,9 @@ use super::{
     page_table::{PTEFlags, PageTable, PageTableEntry},
     section::{MapType, Permission, Section},
 };
-use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
+use crate::config::{
+    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE,
+};
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -23,6 +25,7 @@ extern "C" {
     fn ebss();
     fn ekernel();
     fn strampoline();
+    fn etrampoline();
 }
 
 lazy_static! {
@@ -32,6 +35,14 @@ lazy_static! {
 pub fn kernel_token() -> usize {
     KERNEL_SPACE.lock().get_token()
 }
+
+pub fn kernel_translate(vpn: VirtPageNum) -> Option<PageTableEntry> {
+    KERNEL_SPACE.lock().page_table.translate(vpn)
+}
+
+// pub fn kernel_map_trampoline() {
+//     KERNEL_SPACE.lock().map_trampoline()
+// }
 
 pub struct AddrSpace {
     pub page_table: PageTable,
@@ -89,14 +100,31 @@ impl AddrSpace {
     }
     pub fn create_kernel_space() -> Self {
         let mut kernel_space = Self::new_empty();
-        // map trampoline
-        kernel_space.map_trampoline();
-        // map kernel sections
         println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        println!(
+            ".trampoline [{:#x}, {:#x})",
+            strampoline as usize, etrampoline as usize
+        );
         println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
         println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(".bss [{:#x}, {:#x})", sbss_with_stack as usize, ebss as usize);
-        println!("mapping .text section");
+        println!(
+            ".bss [{:#x}, {:#x})",
+            sbss_with_stack as usize, ebss as usize
+        );
+
+        // println!("mapping .trampoline section");
+        // kernel_space.map_trampoline();
+        kernel_space.push_section(
+            Section::new(
+                ".trampoline".to_string(),
+                (strampoline as usize).into(),
+                (etrampoline as usize).into(),
+                MapType::Identical,
+                Permission::R | Permission::X,
+            ),
+            None,
+        );
+        // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
                 ".text".to_string(),
@@ -107,7 +135,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .rodata section");
+        // println!("mapping .rodata section");
         kernel_space.push_section(
             Section::new(
                 ".rodata".to_string(),
@@ -118,7 +146,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .data section");
+        // println!("mapping .data section");
         kernel_space.push_section(
             Section::new(
                 ".data".to_string(),
@@ -129,7 +157,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .bss section");
+        // println!("mapping .bss section");
         kernel_space.push_section(
             Section::new(
                 ".bss".to_string(),
@@ -140,7 +168,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping physical memory");
+        // println!("mapping physical memory");
         kernel_space.push_section(
             Section::new(
                 ".phys_mm".to_string(),
@@ -151,7 +179,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping memory-mapped registers");
+        // println!("mapping memory-mapped registers");
         for pair in MMIO {
             kernel_space.push_section(
                 Section::new(
@@ -164,7 +192,7 @@ impl AddrSpace {
                 None,
             );
         }
-        println!("mapping kernel finish");
+        // println!("mapping kernel finish");
         kernel_space
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,

@@ -7,5 +7,6 @@ pub const KERNEL_HEAP_SIZE: usize = 0x20_0000;
 pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;
 pub const USER_STACK_SIZE: usize = PAGE_SIZE * 2;
 pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
-pub const TRAP_CONTEXT: usize = TRAMPOLINE - PAGE_SIZE;
+// 预留 guard page
+pub const TRAP_CONTEXT: usize = TRAMPOLINE - PAGE_SIZE * 2;
 pub const TRAMPOLINE: usize = usize::MAX - PAGE_SIZE + 1;

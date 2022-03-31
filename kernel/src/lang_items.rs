@@ -24,6 +24,7 @@ fn panic(info: &PanicInfo) -> ! {
     shutdown()
 }
 
+#[allow(unused)]
 unsafe fn backtrace() {
     let mut fp: usize;
     let stop = current_kstack_top();

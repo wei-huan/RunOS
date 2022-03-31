@@ -1,0 +1,84 @@
+make[1]: 进入目录“/home/weihuan/WorkSpace/OS/MyOS/user”
+make[1]: 离开目录“/home/weihuan/WorkSpace/OS/MyOS/user”
+rm -f /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release//fs.img
+cd /home/weihuan/WorkSpace/OS/MyOS/myfs-pack && cargo run --release -- -s /home/weihuan/WorkSpace/OS/MyOS/user/src/bin/ -t /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release/
+src_path = /home/weihuan/WorkSpace/OS/MyOS/user/src/bin/
+target_path = /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release/
+00power_3
+make[1]: 进入目录“/home/weihuan/WorkSpace/OS/MyOS/kernel”
+(which last-qemu) || (rm -f last-k210 && touch last-qemu && make clean)
+make[2]: 进入目录“/home/weihuan/WorkSpace/OS/MyOS/kernel”
+make[2]: 离开目录“/home/weihuan/WorkSpace/OS/MyOS/kernel”
+cp src/linker-qemu.ld src/linker.ld
+cargo build --release --features "platform-qemu" --features "opensbi"
+rm src/linker.ld
+make[2]: 进入目录“/home/weihuan/WorkSpace/OS/MyOS/user”
+make[2]: 离开目录“/home/weihuan/WorkSpace/OS/MyOS/user”
+src_path = ../user/src/bin/
+target_path = ../user/target/riscv64gc-unknown-none-elf/release/
+00power_3
+
+OpenSBI v1.0-26-gf2ccf2f
+   ____                    _____ ____ _____
+  / __ \                  / ____|  _ \_   _|
+ | |  | |_ __   ___ _ __ | (___ | |_) || |
+ | |  | | '_ \ / _ \ '_ \ \___ \|  _ < | |
+ | |__| | |_) |  __/ | | |____) | |_) || |_
+  \____/| .__/ \___|_| |_|_____/|____/_____|
+        | |
+        |_|
+
+Platform Name             : riscv-virtio,qemu
+Platform Features         : medeleg
+Platform HART Count       : 2
+Platform IPI Device       : aclint-mswi
+Platform Timer Device     : aclint-mtimer @ 10000000Hz
+Platform Console Device   : uart8250
+Platform HSM Device       : ---
+Platform Reboot Device    : sifive_test
+Platform Shutdown Device  : sifive_test
+Firmware Base             : 0x80000000
+Firmware Size             : 276 KB
+Runtime SBI Version       : 0.3
+
+Domain0 Name              : root
+Domain0 Boot HART         : 1
+Domain0 HARTs             : 0*,1*
+Domain0 Region00          : 0x0000000002000000-0x000000000200ffff (I)
+Domain0 Region01          : 0x0000000080000000-0x000000008007ffff ()
+Domain0 Region02          : 0x0000000000000000-0xffffffffffffffff (R,W,X)
+Domain0 Next Address      : 0x0000000080200000
+Domain0 Next Arg1         : 0x0000000082200000
+Domain0 Next Mode         : S-mode
+Domain0 SysReset          : yes
+
+Boot HART ID              : 1
+Boot HART Domain          : root
+Boot HART ISA             : rv64imafdcsu
+Boot HART Features        : scounteren,mcounteren,time
+Boot HART PMP Count       : 16
+Boot HART PMP Granularity : 4
+Boot HART PMP Address Bits: 54
+Boot HART MHPM Count      : 0
+Boot HART MIDELEG         : 0x0000000000000222
+Boot HART MEDELEG         : 0x000000000000b109
+[    0.037][ [34m INFO[0m ][HART 1][os::logging] MyOS version 0.1.0
+[    0.039][ [34m INFO[0m ][HART 1][os::logging] === Machine Info ===
+[    0.040][ [34m INFO[0m ][HART 1][os::logging]  Total CPUs: 2
+[    0.040][ [34m INFO[0m ][HART 1][os::logging]  Timer Clock: 10000000Hz
+[    0.041][ [34m INFO[0m ][HART 1][os::logging] === SBI Implementation ===
+[    0.042][ [34m INFO[0m ][HART 1][os::logging]  Implementor: OpenSbi (version: 1.0)
+[    0.043][ [34m INFO[0m ][HART 1][os::logging]  Spec Version: 0.3
+[    0.043][ [34m INFO[0m ][HART 1][os::logging] === MyOS Info ===
+.text [0x80200000, 0x8021a000)
+.rodata [0x8021a000, 0x80221000)
+.data [0x80221000, 0x80222000)
+.bss [0x80222000, 0x80463000)
+[    0.047][ [34m INFO[0m ][HART 1][virtio_drivers::blk] device features: SEG_MAX | GEOMETRY | BLK_SIZE | SCSI | FLUSH | TOPOLOGY | CONFIG_WCE | DISCARD | WRITE_ZEROES | NOTIFY_ON_EMPTY | RING_INDIRECT_DESC | RING_EVENT_IDX
+[    0.049][ [34m INFO[0m ][HART 1][virtio_drivers::blk] config: BlkConfig { capacity: Volatile(32768), size_max: Volatile(0), seg_max: Volatile(254), cylinders: Volatile(32), heads: Volatile(16), sectors: Volatile(63), blk_size: Volatile(512), physical_block_exp: Volatile(0), alignment_offset: Volatile(0), min_io_size: Volatile(0), opt_io_size: Volatile(0) }
+[    0.053][ [34m INFO[0m ][HART 1][virtio_drivers::blk] found a block device of size 16384KB
+No pte
+[    3.968][ [31mERROR[0m ][HART 0][os::lang_items] Panicked at src/trap/trap.rs:112 a trap No pte
+[    3.970][ [31mERROR[0m ][HART 0][os::lang_items] Panicked at src/trap/trap.rs:112 a trap Exception(InstructionPageFault) from kernel!
+I am dead
+make[1]: 离开目录“/home/weihuan/WorkSpace/OS/MyOS/kernel”

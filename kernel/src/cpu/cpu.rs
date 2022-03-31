@@ -2,6 +2,7 @@ use super::current_task;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::task::TaskControlBlock;
 use crate::trap::TrapContext;
+use crate::mm::kernel_token;
 use alloc::sync::Arc;
 
 // Per-CPU state
@@ -61,4 +62,13 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
 
 pub fn current_kstack_top() -> usize {
     current_task().unwrap().kernel_stack.get_top()
+}
+
+pub fn current_token() -> usize {
+    if let Some(task) = current_task() {
+        let token = task.inner_exclusive_access().get_user_token();
+        return token;
+    } else {
+        return kernel_token();
+    }
 }
