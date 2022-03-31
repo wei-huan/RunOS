@@ -95,51 +95,31 @@ pub fn kernel_trap_handler() {
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
             log::debug!("boot hart");
         }
-        Trap::Exception(Exception::StorePageFault) => {
-            let mut sp: usize;
-            unsafe {
-                asm!("mv {}, x2", out(reg) sp);
-            }
-            // TODO: page_fault_handler
-            panic!(
-                "a trap {:?} from kernel! the sp is 0x{:X}",
-                scause.cause(),
-                sp
-            );
-        }
-        | Trap::Exception(Exception::LoadPageFault) => {
-            let mut sp: usize;
-            unsafe {
-                asm!("mv {}, x2", out(reg) sp);
-            }
-            // TODO: page_fault_handler
-            panic!(
-                "a trap {:?} from kernel! the sp is 0x{:X}",
-                scause.cause(),
-                sp
-            );
-        }
+        Trap::Exception(Exception::StorePageFault)
+        | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
-            // let boot_id = BOOT_HARTID.load(Ordering::Acquire);
-            // println!("boot_id: {}", boot_id);
-            // let stval = stval::read();
-            // let sepc = sepc::read();
-            // print_kernel_layout();
-            // where_is_stval(stval);
-            // where_is_sepc(sepc);
-            let mut sp: usize;
-            unsafe {
-                asm!("mv {}, x2", out(reg) sp);
-            }
-            // TODO: page_fault_handler
-            panic!(
-                "a trap {:?} from kernel! the sp is 0x{:X}",
-                scause.cause(),
-                sp
-            );
+            // let token = current_token();
+            // let kernel_token = kernel_token();
+            // if token != kernel_token {
+            //     println!("not kernel token");
+            //     unsafe {
+            //         satp::write(kernel_token);
+            //         asm!("sfence.vma");
+            //     }
+            // } else {
+            //     let stval = stval::read();
+            //     if let Some(pte) = kernel_translate(stval.into()) {
+            //         println!("pte: {:#?}", pte);
+            //         panic!("a trap {:?} from kernel!", scause.cause());
+            //     } else {
+            //         println!("No pte");
+            //         panic!("a trap {:?} from kernel!", scause.cause());
+            //     }
+            // }
+            panic!("a trap {:?} from kernel!", scause.cause());
         }
         _ => {
-            log::error!("stval = 0x{:X}, sepc = 0x{:X}", stval::read(), sepc::read());
+            log::error!("stval = {:#X} sepc = {:#X}", stval::read(), sepc::read());
             panic!("a trap {:?} from kernel!", scause.cause());
         }
     }
