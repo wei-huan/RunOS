@@ -27,6 +27,7 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
 
 pub fn add_apps() {
     for app in ROOT_INODE.ls() {
+        println!("app: {}", app);
         if let Some(app_inode) = open_file(app.as_str(), OpenFlags::RDONLY) {
             let elf_data = app_inode.read_all();
             let new_task = TaskControlBlock::new(elf_data.as_slice());

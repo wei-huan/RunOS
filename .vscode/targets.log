@@ -1,6 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 make: *** No rule to make target 'all'.  Stop.
- 
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Mar 31 09:45:30 2022
+# Make data base, printed on Thu Mar 31 15:08:20 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2720
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-aa25994f-6fb1-4e3c-a540-0795f248097b.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-b7c967e8-bc79-4f82-9f7d-28c57fea191d.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -280,7 +280,6 @@ LANG = C
 # Directories
 
 # . (device 66310, inode 3414746): 18 files, no impossibilities.
- 
 
 # 18 files, no impossibilities in 1 directories.
 
@@ -293,6 +292,7 @@ LANG = C
 user:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
+ 
 #  File does not exist.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 18):
@@ -388,12 +388,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 31 / storage = 239 B / avg = 7 B
-# current buf: size = 8162 B / used = 239 B / count = 31 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 31 / storage = 237 B / avg = 7 B
+# current buf: size = 8162 B / used = 237 B / count = 31 / avg = 7 B
 
 # strcache performance: lookups = 55 / hit rate = 43%
 # hash-table stats:
 # Load=31/8192=0%, Rehash=0, Collisions=1/55=2%
-# Finished Make data base on Thu Mar 31 09:45:30 2022
+# Finished Make data base on Thu Mar 31 15:08:20 2022
 
  
