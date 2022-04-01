@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, current_token};
+use crate::cpu::{current_token, current_trap_cx, current_user_token};
 use crate::mm::{kernel_token, kernel_translate};
 use crate::scheduler::schedule;
 use crate::syscall::syscall;
@@ -8,8 +8,9 @@ use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use riscv::register::{
     mtvec::TrapMode,
+    satp,
     scause::{self, Exception, Interrupt, Trap},
-    sepc, stval, stvec, satp
+    sepc, stval, stvec,
 };
 // #[cfg(feature = "rustsbi")]
 // use crate::rustsbi::shutdown;
@@ -92,12 +93,13 @@ pub fn kernel_trap_handler() {
             set_next_trigger();
             schedule();
         }
-        Trap::Interrupt(Interrupt::SupervisorSoft) => {
-            log::debug!("boot hart");
-        }
+        // Trap::Interrupt(Interrupt::SupervisorSoft) => {
+        //     log::debug!("boot hart");
+        // }
         Trap::Exception(Exception::StorePageFault)
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
+            println!("stval = {:#X} sepc = {:#X}!", stval::read(), sepc::read());
             let token = current_token();
             let kernel_token = kernel_token();
             if token != kernel_token {
@@ -110,17 +112,19 @@ pub fn kernel_trap_handler() {
                 let stval = stval::read();
                 if let Some(pte) = kernel_translate(stval.into()) {
                     println!("ppn: {:#?}", pte.ppn());
-                    panic!("a trap {:?} from kernel!", scause.cause());
                 } else {
                     println!("No pte");
-                    panic!("a trap {:?} from kernel!", scause.cause());
                 }
             }
-            panic!("a trap {:?} from kernel!", scause.cause());
+            panic!("a trap {:?} from kernel", scause.cause());
         }
         _ => {
-            log::error!("stval = {:#X} sepc = {:#X}", stval::read(), sepc::read());
-            panic!("a trap {:?} from kernel!", scause.cause());
+            panic!(
+                "a trap {:?} from kernel with stval = {:#X} sepc = {:#X}!",
+                scause.cause(),
+                stval::read(),
+                sepc::read()
+            );
         }
     }
 }

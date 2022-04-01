@@ -24,6 +24,6 @@ unsafe fn main() -> i32 {
         }
     }
     // println!("{}^{} = {}(MOD {})", p, iter, S[cur], m);
-    // println!("Test power_3 OK!");
+    println!("Test power_3 OK!");
     0
 }

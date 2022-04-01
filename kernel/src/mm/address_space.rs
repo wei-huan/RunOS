@@ -23,6 +23,7 @@ extern "C" {
     fn ebss();
     fn ekernel();
     fn strampoline();
+    fn etrampoline();
 }
 
 lazy_static! {
@@ -97,10 +98,11 @@ impl AddrSpace {
         kernel_space.map_trampoline();
         // map kernel sections
         println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        println!(".trampoline [{:#x}, {:#x})", strampoline as usize, etrampoline as usize);
         println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
         println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
         println!(".bss [{:#x}, {:#x})", sbss_with_stack as usize, ebss as usize);
-        println!("mapping .text section");
+        // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
                 ".text".to_string(),
@@ -111,7 +113,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .rodata section");
+        // println!("mapping .rodata section");
         kernel_space.push_section(
             Section::new(
                 ".rodata".to_string(),
@@ -122,7 +124,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .data section");
+        // println!("mapping .data section");
         kernel_space.push_section(
             Section::new(
                 ".data".to_string(),
@@ -133,7 +135,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping .bss section");
+        // println!("mapping .bss section");
         kernel_space.push_section(
             Section::new(
                 ".bss".to_string(),
@@ -144,7 +146,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping physical memory");
+        // println!("mapping physical memory");
         kernel_space.push_section(
             Section::new(
                 ".phys_mm".to_string(),
@@ -155,7 +157,7 @@ impl AddrSpace {
             ),
             None,
         );
-        println!("mapping memory-mapped registers");
+        // println!("mapping memory-mapped registers");
         for pair in MMIO {
             kernel_space.push_section(
                 Section::new(
@@ -168,12 +170,14 @@ impl AddrSpace {
                 None,
             );
         }
-        println!("mapping kernel finish");
+        unsafe { asm!("fence.i") }
+        // println!("mapping kernel finish");
         kernel_space
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
+        // println!("create_user_space");
         let mut user_space = Self::new_empty();
         // map trampoline
         user_space.map_trampoline();
@@ -254,6 +258,7 @@ impl AddrSpace {
             ),
             None,
         );
+        unsafe { asm!("fence.i") }
         (
             user_space,
             user_stack_high,
@@ -267,6 +272,7 @@ impl AddrSpace {
         let sect_iterator = self.sections.iter_mut();
         for sect in sect_iterator {
             if sect.name == ".bss" {
+                // println!("clear bss");
                 sect.clear(&mut self.page_table);
             }
         }

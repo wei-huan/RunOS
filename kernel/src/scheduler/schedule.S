@@ -22,4 +22,5 @@ __schedule_new:
     .endr
     # restore kernel stack of next task
     ld sp, 8(a0)
+    fence.i
     ret

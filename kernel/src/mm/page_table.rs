@@ -80,10 +80,10 @@ pub struct PageTable {
 
 impl PageTable {
     pub fn new() -> Self {
-        let root_pagetable_frame = frame_alloc().unwrap();
+        let root_frame = frame_alloc().unwrap();
         Self {
-            root_ppn: root_pagetable_frame.ppn,
-            pte_frames: vec![root_pagetable_frame],
+            root_ppn: root_frame.ppn,
+            pte_frames: vec![root_frame],
         }
     }
     /// Temporarily used to get arguments from user space.
@@ -102,6 +102,7 @@ impl PageTable {
         let mut result: Option<&mut PageTableEntry> = None;
         for (i, idx) in idxs.iter().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
+            // println!("{:?}", pte.ppn());
             if i == 2 {
                 result = Some(pte);
                 break;

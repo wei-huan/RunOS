@@ -20,7 +20,7 @@ pub fn cpu_id() -> usize {
 
 lazy_static! {
     pub static ref CPUS: [UPSafeCell<Cpu>; CPU_NUM] =
-        array![_ => UPSafeCell::new(Cpu::new()); CPU_NUM];
+        array![_ => unsafe {UPSafeCell::new(Cpu::new())}; CPU_NUM];
 }
 
 pub fn take_my_cpu() -> RefMut<'static, Cpu> {
