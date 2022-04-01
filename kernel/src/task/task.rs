@@ -85,24 +85,26 @@ impl TaskControlBlock {
             pid: pid_handle,
             kernel_stack,
             entry_point,
-            inner: UPSafeCell::new(TaskControlBlockInner {
-                trap_cx_ppn,
-                ustack_bottom: ustack_base,
-                task_cx: TaskContext::goto_trap_return(kernel_stack_top),
-                task_status: TaskStatus::Ready,
-                addrspace,
-                parent: None,
-                children: Vec::new(),
-                exit_code: 0,
-                fd_table: vec![
-                    // 0 -> stdin
-                    Some(Arc::new(Stdin)),
-                    // 1 -> stdout
-                    Some(Arc::new(Stdout)),
-                    // 2 -> stderr
-                    Some(Arc::new(Stdout)),
-                ],
-            }),
+            inner: unsafe {
+                UPSafeCell::new(TaskControlBlockInner {
+                    trap_cx_ppn,
+                    ustack_bottom: ustack_base,
+                    task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+                    task_status: TaskStatus::Ready,
+                    addrspace,
+                    parent: None,
+                    children: Vec::new(),
+                    exit_code: 0,
+                    fd_table: vec![
+                        // 0 -> stdin
+                        Some(Arc::new(Stdin)),
+                        // 1 -> stdout
+                        Some(Arc::new(Stdout)),
+                        // 2 -> stderr
+                        Some(Arc::new(Stdout)),
+                    ],
+                })
+            },
         };
         // prepare TrapContext in user space
         let trap_cx = task.inner_exclusive_access().get_trap_cx();

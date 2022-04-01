@@ -102,6 +102,7 @@ impl PageTable {
         let mut result: Option<&mut PageTableEntry> = None;
         for (i, idx) in idxs.iter().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
+            // println!("{:?}", pte.ppn());
             if i == 2 {
                 result = Some(pte);
                 break;

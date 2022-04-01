@@ -6,10 +6,9 @@ use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
-use riscv::register::satp;
-// use core::sync::atomic::Ordering;
 use riscv::register::{
     mtvec::TrapMode,
+    satp,
     scause::{self, Exception, Interrupt, Trap},
     sepc, stval, stvec,
 };
@@ -88,12 +87,13 @@ pub fn kernel_trap_handler() {
             set_next_trigger();
             schedule();
         }
-        Trap::Interrupt(Interrupt::SupervisorSoft) => {
-            log::debug!("boot hart");
-        }
+        // Trap::Interrupt(Interrupt::SupervisorSoft) => {
+        //     log::debug!("boot hart");
+        // }
         Trap::Exception(Exception::StorePageFault)
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
+            println!("stval = {:#X} sepc = {:#X}!", stval::read(), sepc::read());
             let token = current_token();
             let kernel_token = kernel_token();
             if token != kernel_token {
@@ -105,17 +105,20 @@ pub fn kernel_trap_handler() {
             } else {
                 let stval = stval::read();
                 if let Some(pte) = kernel_translate(stval.into()) {
-                    println!("pte: {:#?}", pte);
-                    panic!("a trap {:?} from kernel!", scause.cause());
+                    println!("ppn: {:#?}", pte.ppn());
                 } else {
                     println!("No pte");
-                    panic!("a trap {:?} from kernel!", scause.cause());
                 }
             }
+            panic!("a trap {:?} from kernel", scause.cause());
         }
         _ => {
-            log::error!("stval = {:#X} sepc = {:#X}", stval::read(), sepc::read());
-            panic!("a trap {:?} from kernel!", scause.cause());
+            panic!(
+                "a trap {:?} from kernel with stval = {:#X} sepc = {:#X}!",
+                scause.cause(),
+                stval::read(),
+                sepc::read()
+            );
         }
     }
 }

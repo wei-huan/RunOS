@@ -3,7 +3,6 @@ mod kernel_stack;
 mod kernel_task;
 mod pid;
 mod recycle_allocator;
-mod signal;
 mod switch;
 mod task;
 
@@ -14,10 +13,8 @@ pub use switch::__switch;
 pub use task::{TaskControlBlock, TaskStatus};
 
 use crate::cpu::take_current_task;
-// use crate::fs::{open_file, OpenFlags, ROOT_INODE};
 use crate::mm::kernel_token;
 use crate::trap::{user_trap_handler, TrapContext};
-// use alloc::sync::Arc;
 use crate::scheduler::{add_task, schedule};
 use riscv::register::sstatus::{SPP, set_spp};
 

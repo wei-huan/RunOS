@@ -40,10 +40,6 @@ pub fn kernel_translate(vpn: VirtPageNum) -> Option<PageTableEntry> {
     KERNEL_SPACE.lock().page_table.translate(vpn)
 }
 
-// pub fn kernel_map_trampoline() {
-//     KERNEL_SPACE.lock().map_trampoline()
-// }
-
 pub struct AddrSpace {
     pub page_table: PageTable,
     sections: Vec<Section>,
@@ -101,29 +97,10 @@ impl AddrSpace {
     pub fn create_kernel_space() -> Self {
         let mut kernel_space = Self::new_empty();
         println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        println!(
-            ".trampoline [{:#x}, {:#x})",
-            strampoline as usize, etrampoline as usize
-        );
+        println!(".trampoline [{:#x}, {:#x})", strampoline as usize, etrampoline as usize);
         println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
         println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(
-            ".bss [{:#x}, {:#x})",
-            sbss_with_stack as usize, ebss as usize
-        );
-
-        // println!("mapping .trampoline section");
-        // kernel_space.map_trampoline();
-        kernel_space.push_section(
-            Section::new(
-                ".trampoline".to_string(),
-                (strampoline as usize).into(),
-                (etrampoline as usize).into(),
-                MapType::Identical,
-                Permission::R | Permission::X,
-            ),
-            None,
-        );
+        println!(".bss [{:#x}, {:#x})", sbss_with_stack as usize, ebss as usize);
         // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
@@ -192,12 +169,14 @@ impl AddrSpace {
                 None,
             );
         }
+        unsafe { asm!("fence.i") }
         // println!("mapping kernel finish");
         kernel_space
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
+        // println!("create_user_space");
         let mut user_space = Self::new_empty();
         // map trampoline
         user_space.map_trampoline();
@@ -278,6 +257,7 @@ impl AddrSpace {
             ),
             None,
         );
+        unsafe { asm!("fence.i") }
         (
             user_space,
             user_stack_high,
@@ -291,6 +271,7 @@ impl AddrSpace {
         let sect_iterator = self.sections.iter_mut();
         for sect in sect_iterator {
             if sect.name == ".bss" {
+                // println!("clear bss");
                 sect.clear(&mut self.page_table);
             }
         }

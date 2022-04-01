@@ -50,10 +50,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         dt::init(dtb_ptr);
-        logging::init();
-        logging::show_machine_sbi_os_info();
         mm::boot_init();
         scheduler::add_apps();
+        logging::init();
+        logging::show_machine_sbi_os_info();
         trap::init();
         timer::init();
         // SMP_START will turn to true in this function
