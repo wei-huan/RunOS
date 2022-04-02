@@ -39,7 +39,6 @@ impl Scheduler for RoundRobinScheduler {
             // schedule new task
             unsafe { __schedule_new(next_task_cx_ptr) }
         } else {
-            sfence(None, None);
             let stop = current_stack_top();
             log::debug!("stop: {:#X}", stop);
             let mut sp: usize;
