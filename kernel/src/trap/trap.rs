@@ -8,7 +8,6 @@ use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use riscv::register::{
     mtvec::TrapMode,
-    satp,
     scause::{self, Exception, Interrupt, Trap},
     sepc, stval, stvec,
 };
@@ -99,21 +98,18 @@ pub fn kernel_trap_handler() {
         Trap::Exception(Exception::StorePageFault)
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
-            println!("stval = {:#X} sepc = {:#X}!", stval::read(), sepc::read());
+            log::error!("stval = {:#X} sepc = {:#X}", stval::read(), sepc::read());
             let token = current_token();
             let kernel_token = kernel_token();
             if token != kernel_token {
                 println!("not kernel token");
-                unsafe {
-                    satp::write(kernel_token);
-                    asm!("sfence.vma");
-                }
             } else {
                 let stval = stval::read();
                 if let Some(pte) = kernel_translate(stval.into()) {
                     println!("ppn: {:#?}", pte.ppn());
                 } else {
-                    println!("No pte");
+                    // log::error!("No pte");
+                    // sfence(Some(stval.into()), None);
                 }
             }
             panic!("a trap {:?} from kernel", scause.cause());
@@ -215,16 +211,3 @@ pub fn trap_return() -> ! {
         );
     }
 }
-
-// #[no_mangle]
-// pub fn kernel_trap_goto_schedule() -> ! {
-//     unsafe {
-//         asm!(
-//             "jr {restore_va}",
-//             restore_va = in(reg) restore_va,
-//             in("a0") trap_cx_ptr,
-//             in("a1") user_satp,
-//             options(noreturn)
-//         );
-//     }
-// }

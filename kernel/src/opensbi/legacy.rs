@@ -87,11 +87,11 @@ pub fn send_ipi(cpu_id: usize) -> SBIResult<usize> {
 }
 
 #[allow(unused)]
-pub fn remote_fence_i(cpu_id: usize) -> SBIResult<usize> {
+pub fn remote_fence_i(hartid: usize) -> SBIResult<usize> {
     opensbi_call(
         SBI_REMOTE_FENCE_I_EID,
         SBI_REMOTE_FENCE_I_FID,
-        cpu_id,
+        hartid,
         0,
         0,
         0,

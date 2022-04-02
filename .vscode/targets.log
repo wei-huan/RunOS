@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Apr  1 13:32:01 2022
+# Make data base, printed on Sat Apr  2 13:20:19 2022
 
 # Variables
 
@@ -51,11 +51,7 @@ VSCODE_NLS_CONFIG = {"locale":"zh-cn","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-<<<<<<< HEAD
-JOURNAL_STREAM = 8:58918
-=======
-JOURNAL_STREAM = 8:65927
->>>>>>> k210-scheduler-smp
+JOURNAL_STREAM = 8:50093
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -79,19 +75,11 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-<<<<<<< HEAD
-MANAGERPID = 2720
+MANAGERPID = 2924
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-b7c967e8-bc79-4f82-9f7d-28c57fea191d.sock
-=======
-MANAGERPID = 2654
-# environment
-CLUTTER_IM_MODULE = fcitx
-# environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-af022f2f-366b-4395-907a-ff46424e3264.sock
->>>>>>> k210-scheduler-smp
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-3126cb6f-1600-481d-b331-b6abe103df67.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -105,11 +93,7 @@ PATH = /home/weihuan/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-<<<<<<< HEAD
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2943,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2943
-=======
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2887,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2887
->>>>>>> k210-scheduler-smp
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/3622,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/3622
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -119,11 +103,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-<<<<<<< HEAD
-INVOCATION_ID = 7237295fbb09401b8235f53f7a4b312c
-=======
-INVOCATION_ID = d112d3454284441c8b537f417191a73e
->>>>>>> k210-scheduler-smp
+INVOCATION_ID = 4ac67fae55f24bfa8d0437589066aa72
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -135,11 +115,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-<<<<<<< HEAD
-GIO_LAUNCHED_DESKTOP_FILE_PID = 4387
-=======
-GIO_LAUNCHED_DESKTOP_FILE_PID = 3358
->>>>>>> k210-scheduler-smp
+GIO_LAUNCHED_DESKTOP_FILE_PID = 5193
 # automatic
 %F = $(notdir $%)
 # environment
@@ -157,11 +133,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-<<<<<<< HEAD
-SSH_AGENT_PID = 2901
-=======
-SSH_AGENT_PID = 2846
->>>>>>> k210-scheduler-smp
+SSH_AGENT_PID = 3581
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -293,11 +265,7 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-<<<<<<< HEAD
-VSCODE_PID = 4387
-=======
-VSCODE_PID = 3358
->>>>>>> k210-scheduler-smp
+VSCODE_PID = 5193
 # environment
 _CE_CONDA = 
 # environment
@@ -311,9 +279,10 @@ LANG = C
 
 # Directories
 
-# . (device 66310, inode 3414746): 18 files, no impossibilities.
+# . (device 66310, inode 3414746): 16 files, no impossibilities.
+ 
 
-# 18 files, no impossibilities in 1 directories.
+# 16 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -324,7 +293,6 @@ LANG = C
 user:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
- 
 #  File does not exist.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 18):
@@ -334,7 +302,6 @@ fs-img: user
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
- 
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 21):
 	rm -f $(FS_IMG)
@@ -371,7 +338,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-03-27 15:01:37.580587761
+#  Last modified 2022-04-01 14:28:36.277775
 #  File has been updated.
 #  Successfully updated.
 
@@ -421,21 +388,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-<<<<<<< HEAD
-# strcache buffers: 1 (0) / strings = 31 / storage = 237 B / avg = 7 B
-# current buf: size = 8162 B / used = 237 B / count = 31 / avg = 7 B
-=======
-# strcache buffers: 1 (0) / strings = 31 / storage = 236 B / avg = 7 B
-# current buf: size = 8162 B / used = 236 B / count = 31 / avg = 7 B
->>>>>>> k210-scheduler-smp
+# strcache buffers: 1 (0) / strings = 29 / storage = 222 B / avg = 7 B
+# current buf: size = 8162 B / used = 222 B / count = 29 / avg = 7 B
 
-# strcache performance: lookups = 55 / hit rate = 43%
+# strcache performance: lookups = 53 / hit rate = 45%
 # hash-table stats:
-# Load=31/8192=0%, Rehash=0, Collisions=1/55=2%
-<<<<<<< HEAD
-# Finished Make data base on Thu Mar 31 15:08:20 2022
-=======
-# Finished Make data base on Fri Apr  1 13:32:01 2022
->>>>>>> k210-scheduler-smp
+# Load=29/8192=0%, Rehash=0, Collisions=1/53=2%
+# Finished Make data base on Sat Apr  2 13:20:19 2022
 
  

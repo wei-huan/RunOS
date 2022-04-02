@@ -10,6 +10,8 @@ _start:
 
     .section .bss.stack
 boot_stack:
+    .globl boot_stack
     # 64K 启动栈大小 * CPU_NUMS
     .space 4096 * 16 * 4
 boot_stack_top:
+    .globl boot_stack_top

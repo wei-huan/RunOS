@@ -1,3 +1,5 @@
+use crate::config::BOOT_STACK_SIZE;
+
 pub fn time_parts(micros: usize) -> (usize, usize, usize) {
     let seconds = micros / (1000 * 1000);
     let micros_left = micros % (1000 * 1000);
@@ -11,4 +13,11 @@ pub fn micros(ticks: usize, hz: usize) -> usize {
     // ticks / (hz / 1000) -> millisecond
     // ticks / (hz / 1000 / 1000) -> microsecond
     ticks / (hz / 1000 / 1000)
+}
+
+pub fn get_boot_stack_top(hart_id: usize) -> usize {
+    extern "C" {
+        fn boot_stack();
+    }
+    boot_stack as usize + BOOT_STACK_SIZE * hart_id
 }

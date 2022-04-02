@@ -14,7 +14,7 @@ mod drivers;
 mod dt;
 mod fs;
 mod lang_items;
-mod logging;
+mod logger;
 mod mm;
 #[cfg(feature = "opensbi")]
 mod opensbi;
@@ -52,8 +52,8 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         scheduler::add_apps();
-        logging::init();
-        logging::show_machine_sbi_os_info();
+        logger::init();
+        logger::show_machine_sbi_os_info();
         trap::init();
         timer::init();
         // SMP_START will turn to true in this function
@@ -75,7 +75,7 @@ fn os_main(hartid: usize, dtb_ptr: *const u8) {
         clear_bss();
         println!("dtb_ptr {}", dtb_ptr as usize);
         dt::init(dtb_ptr);
-        logging::init();
+        logger::init();
         mm::boot_init();
         // logging::show_machine_sbi_os_info();
         // scheduler::add_apps();
@@ -103,9 +103,9 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         clear_bss();
         println!("here 0");
         dt::init(dtb_ptr);
-        logging::init();
+        logger::init();
         mm::boot_init();
-        logging::show_machine_sbi_os_info();
+        logger::show_machine_sbi_os_info();
         // scheduler::add_apps();
         trap::init();
         // timer::init();
@@ -129,9 +129,9 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         clear_bss();
         println!("here 0");
         dt::init(dtb_ptr);
-        logging::init();
+        logger::init();
         mm::boot_init();
-        logging::show_machine_sbi_os_info();
+        logger::show_machine_sbi_os_info();
         // scheduler::add_apps();
         trap::init();
         // timer::init();

@@ -11,8 +11,8 @@
     .globl __kernelvec
     .align 4
 __kernelvec:
-    // Disable interrupts
-    csrci sstatus, 2
+    # // Disable interrupts
+    # csrci sstatus, 2
 
     // make room to save registers.
     addi sp, sp, -256
@@ -88,7 +88,6 @@ __kernelvec:
 
     // give back room.
     addi sp, sp, 256
-
     // return to whatever we were doing in the kernel.
     sret
 

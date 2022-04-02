@@ -5,7 +5,6 @@ PACK_IMG_DIR := $(DIR)/myfs-pack
 USER_DIR := $(DIR)/user
 IMG_DIR := $(USER_DIR)/target/$(TARGET)/$(MODE)/
 OS_DIR := $(DIR)/kernel
-
 FS_IMG := $(IMG_DIR)/fs.img
 
 build:

@@ -1,10 +1,10 @@
+use crate::cpu::current_stack_top;
 #[cfg(feature = "opensbi")]
 use crate::opensbi::shutdown;
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::shutdown;
-use core::panic::PanicInfo;
-use crate::cpu::current_kstack_top;
 use core::arch::asm;
+use core::panic::PanicInfo;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -18,18 +18,22 @@ fn panic(info: &PanicInfo) -> ! {
     } else {
         log::error!("Panicked: {}", info.message().unwrap());
     }
-    // unsafe {
-    //     backtrace();
-    // }
+    unsafe {
+        backtrace();
+    }
     shutdown()
 }
 
 unsafe fn backtrace() {
     let mut fp: usize;
-    let stop = current_kstack_top();
+    let stop = current_stack_top();
+    println!("stop: {:#X}", stop);
     asm!("mv {}, s0", out(reg) fp);
+    let mut sp: usize;
+    asm!("mv {}, sp", out(reg) sp);
+    println!("sp: {:#X}", sp);
     println!("---START BACKTRACE---");
-    for i in 0..10 {
+    for i in 0..15 {
         if fp == stop {
             break;
         }
@@ -38,4 +42,3 @@ unsafe fn backtrace() {
     }
     println!("---END   BACKTRACE---");
 }
-

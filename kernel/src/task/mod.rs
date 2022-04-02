@@ -49,7 +49,7 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     drop(task_inner);
     // Push back to ready queue.
     add_task(task);
-    // 回到调度程序
+    // jump to schedule cycle
     schedule();
 }
 
@@ -68,6 +68,6 @@ pub fn suspend_current_and_run_next() -> ! {
     drop(task_inner);
     // Push back to ready queue.
     add_task(task);
-    // jump to scheduling cycle
+    // jump to schedule cycle
     schedule()
 }

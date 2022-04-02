@@ -1,8 +1,10 @@
 use super::current_task;
+use crate::cpu::cpu_id;
+use crate::mm::kernel_token;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::task::TaskControlBlock;
 use crate::trap::TrapContext;
-use crate::mm::kernel_token;
+use crate::utils::get_boot_stack_top;
 use alloc::sync::Arc;
 
 // Per-CPU state
@@ -71,4 +73,14 @@ pub fn current_trap_cx() -> &'static mut TrapContext {
 
 pub fn current_kstack_top() -> usize {
     current_task().unwrap().kernel_stack.get_top()
+}
+
+pub fn current_stack_top() -> usize {
+    if let Some(task) = current_task() {
+        // task kernel stack
+        current_task().unwrap().kernel_stack.get_top()
+    } else {
+        // boot stack
+        get_boot_stack_top(cpu_id())
+    }
 }

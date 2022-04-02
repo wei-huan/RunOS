@@ -29,3 +29,22 @@ pub fn init() {
         asm!("sfence.vma");
     }
 }
+
+#[inline(always)]
+pub fn sfence(vaddr: Option<VirtAddr>, asid: Option<u16>) {
+    unsafe {
+        match (vaddr, asid) {
+            (Some(vaddr), Some(asid)) => {
+                let vaddr: usize = vaddr.into();
+                asm!("sfence.vma {}, {}", in(reg) vaddr, in(reg) asid);
+            }
+            (Some(vaddr), None) => {
+                let vaddr: usize = vaddr.into();
+                asm!("sfence.vma {}, zero", in(reg) vaddr);
+            }
+            (None, Some(asid)) => asm!("sfence.vma zero, {}", in(reg) asid),
+            (None, None) => asm!("sfence.vma zero, zero"),
+        }
+    }
+}
+
