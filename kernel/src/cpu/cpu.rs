@@ -4,7 +4,7 @@ use crate::mm::kernel_token;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::task::TaskControlBlock;
 use crate::trap::TrapContext;
-use crate::utils::get_boot_stack_top;
+use crate::utils::get_boot_stack;
 use alloc::sync::Arc;
 
 // Per-CPU state
@@ -81,6 +81,7 @@ pub fn current_stack_top() -> usize {
         current_task().unwrap().kernel_stack.get_top()
     } else {
         // boot stack
-        get_boot_stack_top(cpu_id())
+        let (_, top) = get_boot_stack(cpu_id());
+        top
     }
 }

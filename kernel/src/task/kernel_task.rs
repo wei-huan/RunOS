@@ -3,10 +3,7 @@ use core::arch::asm;
 
 pub fn idle_task() -> ! {
     interrupt_on();
-    // log::debug!("No Process");
-    // unsafe {
-    //     asm!("fence.i");
-    // }
+    log::debug!("No Process");
     loop {
         unsafe { asm!("wfi") };
     }

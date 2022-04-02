@@ -15,9 +15,11 @@ pub fn micros(ticks: usize, hz: usize) -> usize {
     ticks / (hz / 1000 / 1000)
 }
 
-pub fn get_boot_stack_top(hart_id: usize) -> usize {
+pub fn get_boot_stack(hart_id: usize) -> (usize, usize) {
     extern "C" {
         fn boot_stack();
     }
-    boot_stack as usize + BOOT_STACK_SIZE * hart_id
+    let low = boot_stack as usize + BOOT_STACK_SIZE * hart_id;
+    let high = low + BOOT_STACK_SIZE;
+    (low, high)
 }

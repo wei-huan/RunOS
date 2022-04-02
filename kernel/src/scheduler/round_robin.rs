@@ -1,9 +1,9 @@
 use super::Scheduler;
 use super::__schedule_new;
-use crate::cpu::{current_stack_top, take_my_cpu};
-use crate::mm::sfence;
+use crate::cpu::{cpu_id, current_stack_top, take_my_cpu};
 use crate::sync::interrupt_off;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
+use crate::utils::get_boot_stack;
 use alloc::{collections::VecDeque, sync::Arc};
 use core::arch::asm;
 use spin::Mutex;
@@ -39,14 +39,18 @@ impl Scheduler for RoundRobinScheduler {
             // schedule new task
             unsafe { __schedule_new(next_task_cx_ptr) }
         } else {
-            let stop = current_stack_top();
-            log::debug!("stop: {:#X}", stop);
-            let mut sp: usize;
+            let top = current_stack_top();
             unsafe {
-                asm!("mv {}, sp", out(reg) sp);
+                asm!("mv sp, {}", in(reg) top);
             }
-            log::debug!("sp: {:#X}", sp);
             idle_task();
+            // push stack incase overwhelm in schedule -> supervisor_time -> scheduler loop
+            // log::debug!("stop: {:#X}", stop);
+            // let mut sp: usize;
+            // unsafe {
+            //     asm!("mv {}, sp", out(reg) sp);
+            // }
+            // log::debug!("sp: {:#X}", sp);
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {

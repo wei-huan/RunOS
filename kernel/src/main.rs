@@ -29,6 +29,7 @@ mod timer;
 mod trap;
 mod utils;
 
+use crate::cpu::current_stack_top;
 use crate::cpu::SMP_START;
 use core::arch::global_asm;
 use core::sync::atomic::Ordering;
@@ -63,6 +64,18 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         trap::init();
         mm::init();
         timer::init();
+        // let stop = current_stack_top();
+        // log::debug!("stop: {:#X}", stop);
+        // let mut sp: usize;
+        // unsafe {
+        //     asm!("mv {}, sp", out(reg) sp);
+        // }
+        // log::debug!("sp: {:#X}", sp);
+        // let mut fp: usize;
+        // unsafe {
+        //     asm!("mv {}, fp", out(reg) fp);
+        // }
+        // log::debug!("fp: {:#X}", fp);
         scheduler::schedule();
     }
 }
