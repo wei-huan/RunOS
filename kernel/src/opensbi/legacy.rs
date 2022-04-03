@@ -82,8 +82,8 @@ pub fn clear_ipi() -> SBIResult<usize> {
 }
 
 #[allow(unused)]
-pub fn send_ipi(cpu_id: usize) -> SBIResult<usize> {
-    opensbi_call(SBI_SEND_IPI_EID, SBI_SEND_IPI_FID, cpu_id, 0, 0, 0, 0, 0)
+pub fn send_ipi(hart_id: usize) -> SBIResult<usize> {
+    opensbi_call(SBI_SEND_IPI_EID, SBI_SEND_IPI_FID, hart_id, 0, 0, 0, 0, 0)
 }
 
 #[allow(unused)]

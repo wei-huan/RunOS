@@ -86,11 +86,11 @@ pub fn send_ipi(ptr: usize) -> SBIResult<usize> {
 }
 
 #[allow(unused)]
-pub fn remote_fence_i(cpu_id: usize) -> SBIResult<usize> {
+pub fn remote_fence_i(hart_id: usize) -> SBIResult<usize> {
     rustsbi_call(
         SBI_REMOTE_FENCE_I_EID,
         SBI_REMOTE_FENCE_I_FID,
-        cpu_id,
+        hart_id,
         0,
         0,
         0,

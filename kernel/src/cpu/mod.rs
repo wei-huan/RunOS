@@ -4,9 +4,9 @@ mod cpu;
 mod cpus;
 
 pub use cpu::{
-    current_kstack_top, current_stack_top, current_token, current_trap_cx, current_user_token, Cpu,
+    current_kstack_top, current_hstack_top, current_stack_top, current_token, current_trap_cx, current_user_token, Cpu,
 };
-pub use cpus::{cpu_id, current_task, take_current_task, take_my_cpu, CPUS};
+pub use cpus::{hart_id, current_task, take_current_task, take_my_cpu, CPUS};
 
 use crate::dt::CPU_NUMS;
 #[cfg(feature = "opensbi")]

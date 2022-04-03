@@ -181,7 +181,6 @@ pub fn user_trap_handler() -> ! {
             // log::debug!("User Timer");
             set_next_trigger();
             suspend_current_and_run_next();
-            // log::debug!("User Timer Interrupt");
         }
         _ => {
             panic!(

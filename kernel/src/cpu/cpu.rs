@@ -1,5 +1,5 @@
 use super::current_task;
-use crate::cpu::cpu_id;
+use crate::cpu::hart_id;
 use crate::mm::kernel_token;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::task::TaskControlBlock;
@@ -75,13 +75,17 @@ pub fn current_kstack_top() -> usize {
     current_task().unwrap().kernel_stack.get_top()
 }
 
+pub fn current_hstack_top() -> usize {
+    let (_, top) = get_boot_stack(hart_id());
+    top
+}
+
 pub fn current_stack_top() -> usize {
     if let Some(task) = current_task() {
         // task kernel stack
         current_task().unwrap().kernel_stack.get_top()
     } else {
         // boot stack
-        let (_, top) = get_boot_stack(cpu_id());
-        top
+        current_hstack_top()
     }
 }

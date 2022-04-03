@@ -1,3 +1,5 @@
+use crate::cpu::current_hstack_top;
+use crate::scheduler::schedule;
 use crate::trap::trap_return;
 use riscv::register::sstatus::{self, set_spp, SPP};
 
@@ -11,15 +13,16 @@ pub struct TaskContext {
 }
 
 impl TaskContext {
-    // pub fn zero_init() -> Self {
-    //     let sstatus = sstatus::read();
-    //     Self {
-    //         ra: 0,
-    //         sp: 0,
-    //         sstatus,
-    //         s: [0; 12],
-    //     }
-    // }
+    pub fn zero_init() -> Self {
+        let sstatus = sstatus::read();
+        let sstatus = sstatus.bits();
+        Self {
+            ra: schedule as usize,
+            sp: current_hstack_top(),
+            sstatus,
+            s: [0; 12],
+        }
+    }
     #[allow(unused)]
     pub fn get_sp(&self) -> usize {
         self.sp

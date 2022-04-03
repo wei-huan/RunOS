@@ -1,6 +1,6 @@
 // DEVICE TREE mod
 
-use crate::cpu::cpu_id;
+use crate::cpu::hart_id;
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use fdt::node::FdtNode;
@@ -27,7 +27,7 @@ pub fn fdt_print(fdt: *mut u8) {
 
 fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
-    let hart_id = cpu_id();
+    let hart_id = hart_id();
     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
     let timebase_frequency = current_cpu.timebase_frequency();
     TIMER_FREQ.store(timebase_frequency, Ordering::Relaxed);

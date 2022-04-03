@@ -18,7 +18,7 @@ user:
 
 fs-img: user
 	rm -f $(FS_IMG)
-	cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)
+	cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
 run: fs-img
 	@make run -C $(OS_DIR)

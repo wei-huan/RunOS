@@ -12,7 +12,7 @@ const CPU_NUM: usize = 4;
 // to prevent race with task being moved
 // to a different CPU.
 #[inline]
-pub fn cpu_id() -> usize {
+pub fn hart_id() -> usize {
     let id;
     unsafe { asm!("mv {0}, tp", out(reg) id) };
     id
@@ -24,7 +24,7 @@ lazy_static! {
 }
 
 pub fn take_my_cpu() -> RefMut<'static, Cpu> {
-    CPUS[cpu_id()].exclusive_access()
+    CPUS[hart_id()].exclusive_access()
 }
 
 pub fn take_current_task() -> Option<Arc<TaskControlBlock>> {

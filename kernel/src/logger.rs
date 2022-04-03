@@ -3,7 +3,7 @@ use crate::opensbi::{impl_id, impl_version, spec_version};
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
-    cpu::cpu_id,
+    cpu::hart_id,
     dt::{CPU_NUMS, TIMER_FREQ},
     timer::get_time,
     utils::{micros, time_parts},
@@ -32,7 +32,7 @@ struct MyLogger;
 
 impl log::Log for MyLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        let hart_id = cpu_id();
+        let hart_id = hart_id();
         let max_hart = HART_FILTER.load(Ordering::Relaxed);
         if max_hart < hart_id {
             return false;
@@ -67,7 +67,7 @@ impl log::Log for MyLogger {
         } else {
             mod_path.trim_start_matches("MyOS::")
         };
-        let cpu_id = cpu_id();
+        let hart_id = hart_id();
         let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
         let curr_time = get_time();
         let (secs, ms, _) = time_parts(micros(curr_time, freq));
@@ -86,7 +86,7 @@ impl log::Log for MyLogger {
             color,
             record.level(),
             clear,
-            cpu_id,
+            hart_id,
             mod_path,
             record.args(),
         );

@@ -14,8 +14,8 @@ pub use task::{TaskControlBlock, TaskStatus};
 
 use crate::cpu::take_current_task;
 use crate::mm::kernel_token;
+use crate::scheduler::{__schedule_new, add_task};
 use crate::trap::{user_trap_handler, TrapContext};
-use crate::scheduler::{add_task, schedule};
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32) -> ! {
@@ -50,7 +50,8 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     // Push back to ready queue.
     add_task(task);
     // jump to schedule cycle
-    schedule();
+    let mut schedule_task = TaskContext::zero_init();
+    unsafe { __schedule_new(&mut schedule_task as *const _) };
 }
 
 pub fn suspend_current_and_run_next() -> ! {
@@ -69,5 +70,6 @@ pub fn suspend_current_and_run_next() -> ! {
     // Push back to ready queue.
     add_task(task);
     // jump to schedule cycle
-    schedule()
+    let mut schedule_task = TaskContext::zero_init();
+    unsafe { __schedule_new(&mut schedule_task as *const _) };
 }
