@@ -31,6 +31,7 @@ pub fn init() {
 }
 
 #[inline(always)]
+#[allow(unused)]
 pub fn sfence(vaddr: Option<VirtAddr>, asid: Option<u16>) {
     unsafe {
         match (vaddr, asid) {

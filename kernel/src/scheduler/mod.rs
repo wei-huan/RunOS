@@ -39,3 +39,16 @@ global_asm!(include_str!("schedule.S"));
 extern "C" {
     pub fn __schedule_new(next_task_cx_ptr: *const TaskContext) -> !;
 }
+
+lazy_static! {
+    pub static ref INITPROC: Arc<TaskControlBlock> = Arc::new({
+        let inode = open_file("initproc", OpenFlags::RDONLY).unwrap();
+        let v = inode.read_all();
+        TaskControlBlock::new(v.as_slice())
+    });
+}
+
+pub fn add_initproc() {
+    add_task(INITPROC.clone());
+}
+

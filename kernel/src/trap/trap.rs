@@ -116,8 +116,8 @@ pub fn kernel_trap_handler() {
                     println!("No pte");
                     // sfence(Some(stval.into()), None);
                 }
-                panic!("a trap {:?} from kernel", scause.cause());
             }
+            panic!("a trap {:?} from kernel", scause.cause());
         }
         _ => {
             panic!(
