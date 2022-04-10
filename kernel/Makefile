@@ -27,7 +27,7 @@ else ifeq ($(PLATFORM), k210)
 ifeq ($(SBI), rustsbi)
 	KERNEL_ENTRY_PA := 0x80020000
 else
-	KERNEL_ENTRY_PA := 0x80040000
+	KERNEL_ENTRY_PA := 0x80060000
 endif
 endif
 

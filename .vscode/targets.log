@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Apr 10 15:01:41 2022
+# Make data base, printed on Sun Apr 10 15:53:32 2022
 
 # Variables
 
@@ -45,6 +47,8 @@ CURDIR := /home/weihuan/WorkSpace/OS/MyOS
 # makefile
 SHELL = /bin/sh
 # environment
+VTE_VERSION = 6003
+# environment
 VSCODE_NLS_CONFIG = {"locale":"zh-cn","availableLanguages":{},"_languagePackSupport":true}
 # environment
 _ = /usr/bin/make
@@ -69,7 +73,7 @@ MANDATORY_PATH = /usr/share/gconf/ubuntu.mandatory.path
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=e92a89b35f91bf1dca7464e662528096
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
@@ -77,17 +81,15 @@ MANAGERPID = 4092
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-c75cf681-8872-4c35-9f6d-54067baf4073.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-208762c7-f256-43fc-870d-787bce319203.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
-VSCODE_CWD = /home/weihuan
-# environment
-GSETTINGS_SCHEMA_DIR = /home/weihuan/data
+VSCODE_CWD = /home/weihuan/Tools/opensbi
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
-PATH = /home/weihuan/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14/bin:/home/weihuan/anaconda3/bin:/home/weihuan/anaconda3/condabin:/home/weihuan/.cargo/bin:/home/weihuan/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/weihuan/bin:/home/weihuan/bin
+PATH = /home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14/bin:/home/weihuan/anaconda3/bin:/home/weihuan/anaconda3/condabin:/home/weihuan/.cargo/bin:/home/weihuan/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/weihuan/bin
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
@@ -107,13 +109,13 @@ INVOCATION_ID = 9d733ec73c5a4fe2b1fa558a031caf6b
 # makefile (from 'Makefile', line 3)
 DIR := /home/weihuan/WorkSpace/OS/MyOS
 # environment
-LS_COLORS = 
+LS_COLORS = rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:
 # environment
 XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
-# environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 7278
+# makefile (from 'Makefile', line 5)
+USER_DIR := /home/weihuan/WorkSpace/OS/MyOS/user
 # automatic
 %F = $(notdir $%)
 # environment
@@ -147,7 +149,9 @@ IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-el
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/e18005f0f1b33c29e81d732535d8c0e47cafb0b5
+VSCODE_CLI = 1
+# environment
+VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/8dfae7a5cd50421d10cd99cb873990460525a898
 # environment
 LOGNAME = weihuan
 # environment
@@ -156,6 +160,8 @@ APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 CONDA_PROMPT_MODIFIER = (base) 
 # automatic
 +F = $(notdir $+)
+# environment
+ELECTRON_NO_ATTACH_CONSOLE = 1
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # environment
@@ -166,6 +172,8 @@ GNOME_DESKTOP_SESSION_ID = this-is-deprecated
 LC_TIME = zh_CN.UTF-8
 # environment
 CONDA_DEFAULT_ENV = base
+# environment
+COLORTERM = truecolor
 # default
 MAKE = $(MAKE_COMMAND)
 # default
@@ -173,7 +181,7 @@ MAKECMDGOALS := all
 # environment
 QT_IM_MODULE = fcitx
 # environment
-SHLVL = 0
+SHLVL = 2
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # default
@@ -203,7 +211,7 @@ MAKE_COMMAND := make
 # environment
 LANGUAGE = zh_CN:en_US:en
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.66.0-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.66.1-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -218,8 +226,6 @@ FS_IMG := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf
 GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
-# environment
-NO_AT_BRIDGE = 1
 # environment
 QT_ACCESSIBILITY = 1
 # environment
@@ -237,13 +243,17 @@ LC_MEASUREMENT = zh_CN.UTF-8
 # environment
 LC_ALL = C
 # environment
+DBUS_STARTER_BUS_TYPE = session
+# environment
 CONDA_PYTHON_EXE = /home/weihuan/anaconda3/bin/python
 # environment
 QT4_IM_MODULE = fcitx
+# environment
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/8bfba21f_5989_4353_a17a_8ee84b79deb4
 # automatic
 ^F = $(notdir $^)
-# makefile (from 'Makefile', line 5)
-USER_DIR := /home/weihuan/WorkSpace/OS/MyOS/user
+# environment
+GNOME_TERMINAL_SERVICE = :1.274
 # default
 SUFFIXES := 
 # environment
@@ -261,17 +271,19 @@ LC_IDENTIFICATION = zh_CN.UTF-8
 # environment
 LC_ADDRESS = zh_CN.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
-# environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 7278
+TERM = xterm-256color
+# environment
+VSCODE_PID = 45643
+# environment
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=e92a89b35f91bf1dca7464e662528096
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=130/1024=13%, Rehash=0, Collisions=21/165=13%
+# Load=135/1024=13%, Rehash=0, Collisions=19/170=11%
 
 # Pattern-specific Variable Values
 
@@ -279,12 +291,9 @@ LANG = C
 
 # Directories
 
- 
-make: *** No rule to make target 'all'.  Stop.
+# . (device 66310, inode 3414746): 17 files, no impossibilities.
 
-# . (device 66310, inode 3414746): 16 files, no impossibilities.
-
-# 16 files, no impossibilities in 1 directories.
+# 17 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -319,6 +328,7 @@ sdcard:
 
 gdb:
 #  Phony target (prerequisite of .PHONY).
+ 
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
@@ -340,7 +350,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-03 10:15:17.968266851
+#  Last modified 2022-04-10 15:03:43.03678931
 #  File has been updated.
 #  Successfully updated.
 
@@ -390,12 +400,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 29 / storage = 222 B / avg = 7 B
-# current buf: size = 8162 B / used = 222 B / count = 29 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 30 / storage = 228 B / avg = 7 B
+# current buf: size = 8162 B / used = 228 B / count = 30 / avg = 7 B
 
-# strcache performance: lookups = 53 / hit rate = 45%
+# strcache performance: lookups = 54 / hit rate = 44%
 # hash-table stats:
-# Load=29/8192=0%, Rehash=0, Collisions=1/53=2%
-# Finished Make data base on Sun Apr 10 15:01:41 2022
+# Load=30/8192=0%, Rehash=0, Collisions=1/54=2%
+# Finished Make data base on Sun Apr 10 15:53:32 2022
 
  
