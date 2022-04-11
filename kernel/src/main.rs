@@ -142,12 +142,12 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
-        // log::info!("here 4");
+        // log::debug!("here 4");
         scheduler::schedule();
     } else {
         trap::init();
         mm::init();
-        log::info!("here 5");
+        log::debug!("here 5");
         timer::init();
         scheduler::schedule();
     }
