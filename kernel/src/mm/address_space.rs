@@ -277,13 +277,31 @@ impl AddrSpace {
             }
         }
     }
+    pub fn from_existed_user(user_space: &AddrSpace) -> AddrSpace {
+        let mut addr_space = Self::new_empty();
+        // map trampoline
+        addr_space.map_trampoline();
+        // copy data sections/trap_context/user_stack
+        for area in user_space.sections.iter() {
+            let new_area = Section::from_another(area);
+            addr_space.push_section(new_area, None);
+            // copy data from another space
+            for vpn in area.vpn_range {
+                let src_ppn = user_space.translate(vpn).unwrap().ppn();
+                let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
+                dst_ppn
+                    .get_bytes_array()
+                    .copy_from_slice(src_ppn.get_bytes_array());
+            }
+        }
+        addr_space
+    }
     #[allow(unused)]
     pub fn recycle_data_pages(&mut self) {
         self.sections.clear();
     }
     pub fn activate(&mut self) {
         let satp = self.page_table.get_token();
-        println!("here 11");
         unsafe {
             satp::write(satp);
             asm!("sfence.vma");

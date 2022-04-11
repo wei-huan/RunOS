@@ -83,7 +83,7 @@ pub fn current_hstack_top() -> usize {
 pub fn current_stack_top() -> usize {
     if let Some(task) = current_task() {
         // task kernel stack
-        current_task().unwrap().kernel_stack.get_top()
+        task.kernel_stack.get_top()
     } else {
         // boot stack
         current_hstack_top()

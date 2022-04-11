@@ -7,6 +7,7 @@ use super::{
 use crate::config::PAGE_SIZE;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
+use core::str::FromStr;
 use bitflags::bitflags;
 
 bitflags! {
@@ -46,6 +47,15 @@ impl Section {
             map_type,
             data_frames: BTreeMap::new(),
             vpn_range: VPNRange::new(start_va.floor(), end_va.ceil()),
+        }
+    }
+    pub fn from_another(another: &Section) -> Self {
+        Self {
+            name: String::from_str(another.name.into()).unwrap(),
+            vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
+            data_frames: BTreeMap::new(),
+            map_type: another.map_type,
+            perm: another.perm,
         }
     }
     pub fn map_one_page(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {

@@ -128,7 +128,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 
 // k210 rustsbi
 #[no_mangle]
-// #[cfg(all(feature = "k210", feature = "rustsbi"))]
+#[cfg(all(feature = "k210", feature = "rustsbi"))]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if hartid == 0 {
         clear_bss();

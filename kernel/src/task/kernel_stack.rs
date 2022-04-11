@@ -43,19 +43,18 @@ impl Drop for KernelStack {
 }
 
 impl KernelStack {
-    // #[allow(unused)]
-    // pub fn push_on_top<T>(&self, value: T) -> *mut T
-    // where
-    //     T: Sized,
-    // {
-    //     let kernel_stack_top = self.get_top();
-    //     let ptr_mut = (kernel_stack_top - core::mem::size_of::<T>()) as *mut T;
-    //     unsafe {
-    //         *ptr_mut = value;
-    //     }
-    //     ptr_mut
-    // }
-
+    #[allow(unused)]
+    pub fn push_on_top<T>(&self, value: T) -> *mut T
+    where
+        T: Sized,
+    {
+        let kernel_stack_top = self.get_top();
+        let ptr_mut = (kernel_stack_top - core::mem::size_of::<T>()) as *mut T;
+        unsafe {
+            *ptr_mut = value;
+        }
+        ptr_mut
+    }
     /// 栈高地址，其实是栈底
     pub fn get_top(&self) -> usize {
         let (_, kernel_stack_top) = kernel_stack_position(self.0);
