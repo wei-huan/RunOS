@@ -170,8 +170,8 @@ impl AddrSpace {
                 None,
             );
         }
-        unsafe { asm!("fence.i") }
-        // println!("mapping kernel finish");
+        // unsafe { asm!("fence.i") }
+        println!("mapping kernel finish");
         kernel_space
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
@@ -283,6 +283,7 @@ impl AddrSpace {
     }
     pub fn activate(&mut self) {
         let satp = self.page_table.get_token();
+        println!("here 11");
         unsafe {
             satp::write(satp);
             asm!("sfence.vma");

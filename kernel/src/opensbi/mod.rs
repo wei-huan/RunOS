@@ -9,7 +9,7 @@ mod timer;
 pub use base::{impl_id, impl_version, spec_version};
 use core::arch::asm;
 pub use hsm::{hart_start, hart_status, hart_stop};
-pub use legacy::{console_getchar, console_putchar, set_timer, shutdown};
+pub use legacy::{console_getchar, console_putchar, set_timer, shutdown, remote_fence_i};
 #[derive(Debug, Clone, Copy)]
 pub enum SbiError {
     /// The SBI call failed
