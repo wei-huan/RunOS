@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Apr 10 15:01:41 2022
+# Make data base, printed on Mon Apr 11 13:26:20 2022
 
 # Variables
 
@@ -49,7 +51,7 @@ VSCODE_NLS_CONFIG = {"locale":"zh-cn","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:69805
+JOURNAL_STREAM = 8:29658
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -73,11 +75,11 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 4092
+MANAGERPID = 2550
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-c75cf681-8872-4c35-9f6d-54067baf4073.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-cfc25a44-cf1d-4a87-a656-a07aef55a9c2.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -91,7 +93,7 @@ PATH = /home/weihuan/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/4315,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/4315
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2778,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2778
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -101,7 +103,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 9d733ec73c5a4fe2b1fa558a031caf6b
+INVOCATION_ID = d54d7fd6085343328bfe389d53064c8d
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -113,7 +115,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 7278
+GIO_LAUNCHED_DESKTOP_FILE_PID = 4200
 # automatic
 %F = $(notdir $%)
 # environment
@@ -131,7 +133,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 4274
+SSH_AGENT_PID = 2737
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -147,7 +149,7 @@ IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-el
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/e18005f0f1b33c29e81d732535d8c0e47cafb0b5
+VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/8dfae7a5cd50421d10cd99cb873990460525a898
 # environment
 LOGNAME = weihuan
 # environment
@@ -203,7 +205,7 @@ MAKE_COMMAND := make
 # environment
 LANGUAGE = zh_CN:en_US:en
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.66.0-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.66.1-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -218,8 +220,6 @@ FS_IMG := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf
 GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
-# environment
-NO_AT_BRIDGE = 1
 # environment
 QT_ACCESSIBILITY = 1
 # environment
@@ -265,13 +265,13 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 7278
+VSCODE_PID = 4200
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=130/1024=13%, Rehash=0, Collisions=21/165=13%
+# Load=129/1024=13%, Rehash=0, Collisions=21/164=13%
 
 # Pattern-specific Variable Values
 
@@ -279,12 +279,9 @@ LANG = C
 
 # Directories
 
- 
-make: *** No rule to make target 'all'.  Stop.
+# . (device 66310, inode 3414746): 18 files, no impossibilities.
 
-# . (device 66310, inode 3414746): 16 files, no impossibilities.
-
-# 16 files, no impossibilities in 1 directories.
+# 18 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -306,6 +303,7 @@ fs-img: user
 #  File does not exist.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 20):
+ 
 	rm -f $(FS_IMG)
 	cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
@@ -340,7 +338,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-03 10:15:17.968266851
+#  Last modified 2022-04-10 15:03:43.03678931
 #  File has been updated.
 #  Successfully updated.
 
@@ -390,12 +388,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 29 / storage = 222 B / avg = 7 B
-# current buf: size = 8162 B / used = 222 B / count = 29 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 31 / storage = 239 B / avg = 7 B
+# current buf: size = 8162 B / used = 239 B / count = 31 / avg = 7 B
 
-# strcache performance: lookups = 53 / hit rate = 45%
+# strcache performance: lookups = 55 / hit rate = 43%
 # hash-table stats:
-# Load=29/8192=0%, Rehash=0, Collisions=1/53=2%
-# Finished Make data base on Sun Apr 10 15:01:41 2022
+# Load=31/8192=0%, Rehash=0, Collisions=1/55=2%
+# Finished Make data base on Mon Apr 11 13:26:20 2022
 
  

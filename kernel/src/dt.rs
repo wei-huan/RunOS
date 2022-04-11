@@ -29,16 +29,16 @@ fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let hart_id = hart_id();
     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
-    let timebase_frequency = current_cpu.timebase_frequency();
+    let timebase_frequency = current_cpu.clock_frequency() / 60;
     TIMER_FREQ.store(timebase_frequency, Ordering::Relaxed);
-    // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
+    println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
 
 fn fdt_get_ncpu(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let n_cpus = fdt.cpus().count();
     CPU_NUMS.store(n_cpus, Ordering::Release);
-    // println!("n_cpus: {}", n_cpus as u64);
+    // println!("n_cpus: {}", n_cpus);
 }
 
 #[allow(unused)]
@@ -49,7 +49,7 @@ pub fn fdt_get_model(fdt_ptr: *const u8) {
         .property("model")
         .and_then(|p| p.as_str())
         .unwrap();
-    // println!("device_model: {}", model);
+    println!("device_model: {}", model);
     // MODEL.store(model as *const _ as *mut &'static str, Ordering::Release);
 }
 
@@ -63,9 +63,9 @@ pub fn init(dts_ptr: *const u8) {
 
 // qemu opensbi
 // #[cfg(all(feature = "qemu", feature = "opensbi"))]
-pub fn init(dts_ptr: *const u8) {
-    FDT.store(dts_ptr as *mut u8, Ordering::Release);
-    fdt_get_timerfreq(dts_ptr);
-    fdt_get_ncpu(dts_ptr);
-    // fdt_get_model(fdt_ptr);
+pub fn init(dtb_ptr: *const u8) {
+    FDT.store(dtb_ptr as *mut u8, Ordering::Release);
+    fdt_get_ncpu(dtb_ptr);
+    fdt_get_timerfreq(dtb_ptr);
+    // fdt_get_model(dtb_ptr);
 }

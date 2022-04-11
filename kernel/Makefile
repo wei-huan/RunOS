@@ -17,8 +17,6 @@ SBI ?= opensbi
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
-# K210_BOOTLOADER_SIZE
-K210_BOOTLOADER_SIZE := 131072		# kernel offset = 0x20000 opensbi / rustsbi
 
 # KERNEL ENTRY
 ifeq ($(PLATFORM), qemu)
@@ -26,8 +24,10 @@ ifeq ($(PLATFORM), qemu)
 else ifeq ($(PLATFORM), k210)
 ifeq ($(SBI), rustsbi)
 	KERNEL_ENTRY_PA := 0x80020000
+	K210_BOOTLOADER_SIZE := 131072
 else
-	KERNEL_ENTRY_PA := 0x80040000
+	KERNEL_ENTRY_PA := 0x80080000
+	K210_BOOTLOADER_SIZE := 524288
 endif
 endif
 
