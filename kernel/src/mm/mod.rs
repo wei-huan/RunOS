@@ -17,12 +17,12 @@ use core::arch::asm;
 pub fn boot_init() {
     heap::init_heap();
     frame::init_frame_allocator();
-    #[cfg(any(feature = "qemu", feature = "rustsbi"))]
+    // #[cfg(any(feature = "qemu", feature = "rustsbi"))]
     KERNEL_SPACE.lock().activate();
 }
 
 pub fn init() {
-    #[cfg(any(feature = "qemu", feature = "rustsbi"))]
+    // #[cfg(any(feature = "qemu", feature = "rustsbi"))]
     KERNEL_SPACE.lock().activate();
 }
 

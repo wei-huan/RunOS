@@ -29,10 +29,10 @@ mod timer;
 mod trap;
 mod utils;
 
-#[cfg(feature = "qemu")]
-use crate::cpu::SMP_START;
 use core::arch::global_asm;
-#[cfg(feature = "qemu")]
+#[cfg(not(feature = "k210"))]
+use crate::cpu::SMP_START;
+#[cfg(not(feature = "k210"))]
 use core::sync::atomic::Ordering;
 
 global_asm!(include_str!("entry.asm"));
@@ -47,16 +47,16 @@ fn clear_bss() {
 
 // qemu opensbi
 #[no_mangle]
-#[cfg(all(feature = "qemu", feature = "opensbi"))]
+// #[cfg(all(feature = "qemu", feature = "opensbi"))]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
+        trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
         logger::init();
         logger::show_machine_sbi_os_info();
         scheduler::add_initproc();
-        trap::init();
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);

@@ -25,6 +25,7 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
+#[allow(unused)]
 pub fn add_apps() {
     for app in ROOT_INODE.ls() {
         log::debug!("app name: {}", app);

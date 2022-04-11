@@ -7,7 +7,6 @@ use super::{
 use crate::config::PAGE_SIZE;
 use alloc::collections::BTreeMap;
 use alloc::string::String;
-use core::str::FromStr;
 use bitflags::bitflags;
 
 bitflags! {
@@ -51,7 +50,7 @@ impl Section {
     }
     pub fn from_another(another: &Section) -> Self {
         Self {
-            name: String::from_str(another.name.into()).unwrap(),
+            name: String::from(&another.name),
             vpn_range: VPNRange::new(another.vpn_range.get_start(), another.vpn_range.get_end()),
             data_frames: BTreeMap::new(),
             map_type: another.map_type,
