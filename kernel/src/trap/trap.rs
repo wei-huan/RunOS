@@ -195,7 +195,6 @@ pub fn user_trap_handler() -> ! {
 
 #[no_mangle]
 pub fn trap_return() -> ! {
-    // log::debug!("trap return");
     set_user_trap_entry();
     let trap_cx_ptr = TRAP_CONTEXT;
     let user_satp = current_user_token();

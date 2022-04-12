@@ -1,7 +1,5 @@
 mod fs;
-mod sync;
 mod process;
-mod thread;
 
 use fs::*;
 use process::*;
@@ -16,6 +14,8 @@ const SYSCALL_EXIT: usize = 93;
 const SYSCALL_YIELD: usize = 124;
 const SYSCALL_GET_TIME: usize = 169;
 const SYSCALL_FORK: usize = 220;
+const SYSCALL_EXEC: usize = 221;
+const SYSCALL_WAITPID: usize = 260;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     match syscall_id {
@@ -24,9 +24,11 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_READ => sys_read(args[0], args[1] as *const u8, args[2]),
         SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
         SYSCALL_EXIT => sys_exit(args[0] as i32),
-        SYSCALL_FORK => sys_fork(),
         SYSCALL_YIELD => sys_yield(),
         SYSCALL_GET_TIME => sys_get_time(),
+        SYSCALL_FORK => sys_fork(),
+        SYSCALL_EXEC => sys_exec(args[0] as *const u8),
+        SYSCALL_WAITPID => sys_waitpid(args[0] as isize, args[1] as *mut i32),
         _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }
 }

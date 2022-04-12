@@ -6,7 +6,7 @@ use crate::config::TRAP_CONTEXT;
 use crate::fs::{File, Stdin, Stdout};
 use crate::trap::{user_trap_handler, TrapContext};
 use crate::{
-    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr},
+    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE},
     sync::UPSafeCell,
 };
 use alloc::sync::{Arc, Weak};
@@ -18,7 +18,6 @@ use core::cell::RefMut;
 pub enum TaskStatus {
     Ready,
     Running,
-    #[allow(unused)]
     Zombie,
 }
 
@@ -26,12 +25,12 @@ pub struct TaskControlBlock {
     // immutable
     pub pid: PidHandle,
     pub kernel_stack: KernelStack,
-    pub entry_point: usize, // 用户程序入口点
     // mutable
     inner: UPSafeCell<TaskControlBlockInner>,
 }
 
 pub struct TaskControlBlockInner {
+    pub entry_point: usize, // 用户程序入口点 exec会改变
     pub trap_cx_ppn: PhysPageNum,
     pub ustack_bottom: usize,
     pub task_cx: TaskContext,
@@ -50,12 +49,12 @@ impl TaskControlBlockInner {
     pub fn get_user_token(&self) -> usize {
         self.addrspace.get_token()
     }
-    // fn get_status(&self) -> TaskStatus {
-    //     self.task_status
-    // }
-    // pub fn is_zombie(&self) -> bool {
-    //     self.get_status() == TaskStatus::Zombie
-    // }
+    fn get_status(&self) -> TaskStatus {
+        self.task_status
+    }
+    pub fn is_zombie(&self) -> bool {
+        self.get_status() == TaskStatus::Zombie
+    }
     pub fn alloc_fd(&mut self) -> usize {
         if let Some(fd) = (0..self.fd_table.len()).find(|fd| self.fd_table[*fd].is_none()) {
             fd
@@ -84,9 +83,9 @@ impl TaskControlBlock {
         let task = Self {
             pid: pid_handle,
             kernel_stack,
-            entry_point,
             inner: unsafe {
                 UPSafeCell::new(TaskControlBlockInner {
+                    entry_point,
                     trap_cx_ppn,
                     ustack_bottom: ustack_base,
                     task_cx: TaskContext::goto_trap_return(kernel_stack_top),
@@ -133,6 +132,32 @@ impl TaskControlBlock {
     //     let kernel_stack_top = self.kernel_stack.get_top();
     //     inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
     // }
+    pub fn exec(&self, elf_data: &[u8]) {
+        // memory_set with elf program headers/trampoline/trap context/user stack
+        let (addr_space, user_sp, entry_point) = AddrSpace::create_user_space(elf_data);
+        let trap_cx_ppn = addr_space
+            .translate(VirtAddr::from(TRAP_CONTEXT).into())
+            .unwrap()
+            .ppn();
+        // **** access current TCB exclusively
+        let mut inner = self.inner_exclusive_access();
+        // set new entry_point
+        inner.entry_point = entry_point;
+        // substitute memory_set
+        inner.addrspace = addr_space;
+        // update trap_cx ppn
+        inner.trap_cx_ppn = trap_cx_ppn;
+        // initialize trap_cx
+        let trap_cx = TrapContext::app_init_context(
+            entry_point,
+            user_sp,
+            KERNEL_SPACE.lock().get_token(),
+            self.kernel_stack.get_top(),
+            user_trap_handler as usize,
+        );
+        *inner.get_trap_cx() = trap_cx;
+        // **** release current PCB
+    }
     pub fn fork(self: &Arc<TaskControlBlock>) -> Arc<TaskControlBlock> {
         // ---- hold parent PCB lock
         let mut parent_inner = self.inner_exclusive_access();
@@ -158,9 +183,9 @@ impl TaskControlBlock {
         let task_control_block = Arc::new(TaskControlBlock {
             pid: pid_handle,
             kernel_stack,
-            entry_point: self.entry_point,
             inner: unsafe {
                 UPSafeCell::new(TaskControlBlockInner {
+                    entry_point: parent_inner.entry_point,
                     trap_cx_ppn,
                     ustack_bottom: parent_inner.ustack_bottom,
                     task_cx: TaskContext::goto_trap_return(kernel_stack_top),
