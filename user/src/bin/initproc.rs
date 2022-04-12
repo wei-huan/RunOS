@@ -13,6 +13,7 @@ fn main() -> i32 {
         // exec("user_shell\0");
     } else {
         println!("Father Ok");
+        loop{}
         // loop {
         //     let mut exit_code: i32 = 0;
         //     let pid = wait(&mut exit_code);
