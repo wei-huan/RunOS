@@ -25,7 +25,9 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
+    // log::debug!("BR");
     let inner = task.inner_exclusive_access();
+    // log::debug!("AR");
     if fd >= inner.fd_table.len() {
         return -1;
     }

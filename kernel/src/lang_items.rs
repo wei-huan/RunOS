@@ -1,5 +1,5 @@
 use crate::cpu::current_stack_top;
-#[cfg(feature = "opensbi")]
+// #[cfg(feature = "opensbi")]
 use crate::opensbi::shutdown;
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::shutdown;
@@ -18,9 +18,9 @@ fn panic(info: &PanicInfo) -> ! {
     } else {
         log::error!("Panicked: {}", info.message().unwrap());
     }
-    unsafe {
-        backtrace();
-    }
+    // unsafe {
+    //     backtrace();
+    // }
     shutdown()
 }
 

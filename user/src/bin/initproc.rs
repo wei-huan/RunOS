@@ -4,7 +4,7 @@
 #[macro_use]
 extern crate user;
 
-use user::{fork, exec, yield_, wait};
+use user::{exec, fork, wait, yield_};
 
 #[no_mangle]
 fn main() -> i32 {

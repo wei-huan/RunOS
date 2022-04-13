@@ -23,9 +23,10 @@ impl File for Stdin {
         loop {
             c = console_getchar();
             if c == 0 {
-                // log::debug!("Get char Suspend");
                 drop(user_buf);
                 suspend_current_and_run_next();
+                continue;
+                // log::debug!("Get char Suspend");
             } else {
                 break;
             }

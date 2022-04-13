@@ -36,7 +36,7 @@ K210-SERIALPORT	= /dev/ttyUSB0
 K210-BURNER	= ../tools/kflash.py
 
 # CPU_NUM
-CPU_NUM := 2
+CPU_NUM ?= 2
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
@@ -68,7 +68,7 @@ $(APPS):
 
 kernel:
 	cp src/linker-$(PLATFORM).ld src/linker.ld
-	cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
+	RUSTFLAGS="-C link-arg=-Tsrc/linker.ld -g" cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
 	rm src/linker.ld
 
 $(KERNEL_BIN): kernel
@@ -120,7 +120,7 @@ disasm: kernel
 	@$(OBJDUMP) $(DISASM) $(KERNEL_ELF) | less >> ../disasm.txt
 
 gdb:
-	riscv64-unknown-elf-gdb \
+	gdb-multiarch \
     -ex 'file target/riscv64gc-unknown-none-elf/release/os' \
     -ex 'set arch riscv:rv64' \
     -ex 'target remote localhost:1234'

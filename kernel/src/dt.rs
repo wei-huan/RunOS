@@ -34,7 +34,7 @@ fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     // #[cfg(not(feature = "k210"))]
     let timebase_frequency = current_cpu.timebase_frequency();
     TIMER_FREQ.store(timebase_frequency, Ordering::Release);
-    println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
+    // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
 
 fn fdt_get_ncpu(fdt_ptr: *const u8) {

@@ -90,8 +90,8 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             // log::debug!("Supervisor Timer");
-            set_next_trigger();
-            schedule();
+            // set_next_trigger();
+            // schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
             log::debug!("boot hart");
@@ -100,23 +100,23 @@ pub fn kernel_trap_handler() {
         | Trap::Exception(Exception::LoadPageFault)
         | Trap::Exception(Exception::InstructionPageFault) => {
             log::error!("stval = {:#X} sepc = {:#X}", stval::read(), sepc::read());
-            let token = current_token();
-            let kernel_token = kernel_token();
-            if token != kernel_token {
-                println!("not kernel token");
-                unsafe {
-                    satp::write(kernel_token);
-                    asm!("sfence.vma");
-                }
-            } else {
-                let stval = stval::read();
-                if let Some(pte) = kernel_translate(stval.into()) {
-                    println!("ppn: {:#?}", pte.ppn());
-                } else {
-                    println!("No pte");
-                    // sfence(Some(stval.into()), None);
-                }
-            }
+            // let token = current_token();
+            // let kernel_token = kernel_token();
+            // if token != kernel_token {
+            //     println!("not kernel token");
+            //     unsafe {
+            //         satp::write(kernel_token);
+            //         asm!("sfence.vma");
+            //     }
+            // } else {
+            //     let stval = stval::read();
+            //     if let Some(pte) = kernel_translate(stval.into()) {
+            //         println!("ppn: {:#?}", pte.ppn());
+            //     } else {
+            //         println!("No pte");
+            //         // sfence(Some(stval.into()), None);
+            //     }
+            // }
             panic!("a trap {:?} from kernel", scause.cause());
         }
         _ => {

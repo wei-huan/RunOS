@@ -17,6 +17,7 @@ k210的sbi还是选用rustsbi，rustsbi通过软件方式支持1.9.1版本的特
 
 下一步：
 继续丰富syscall，包括fork wait exec，思考多核如何实现，是否需要调整
+多核有问题readline?
 
 报名，完成测试
 

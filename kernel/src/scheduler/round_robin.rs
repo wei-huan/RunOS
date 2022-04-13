@@ -29,8 +29,9 @@ impl Scheduler for RoundRobinScheduler {
         }
         // log::debug!("start schedule");
         if let Some(task) = self.fetch_task() {
-            // log::debug!("get task");
+            // log::debug!("BT");
             let mut task_inner = task.inner_exclusive_access();
+            // log::debug!("AT");
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;
             // release coming task PCB manually

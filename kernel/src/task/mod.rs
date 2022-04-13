@@ -50,11 +50,12 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
 }
 
 pub fn suspend_current_and_run_next() -> ! {
-    // log::debug!("suspend");
     // There must be an application running.
     let task = take_current_task().unwrap();
     // ---- access current TCB exclusively
+    // log::debug!("BF");
     let mut task_inner = task.inner_exclusive_access();
+    // log::debug!("AF");
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
     // Reset Task context
