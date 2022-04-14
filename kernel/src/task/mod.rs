@@ -61,6 +61,7 @@ pub fn suspend_current_and_run_next() -> ! {
     // Reset Task context
     // 直接传栈底可能有bug，反正不健壮，以后要改
     let kernel_stack_top = task.kernel_stack.get_top();
+    // 应该改成上一个栈帧的位置
     task_inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
     // drop inner
     drop(task_inner);
