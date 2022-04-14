@@ -209,7 +209,6 @@ impl TaskControlBlock {
         // **** release child PCB
         // ---- release parent PCB
     }
-    #[allow(unused)]
     pub fn getpid(&self) -> usize {
         self.pid.0
     }

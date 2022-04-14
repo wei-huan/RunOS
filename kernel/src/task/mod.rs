@@ -29,7 +29,7 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     task_inner.exit_code = exit_code;
     // do not move to its parent but under initproc
     // ++++++ access initproc TCB exclusively
-    {
+    if task.pid.0 != 1 {
         let mut initproc_inner = INITPROC.inner_exclusive_access();
         for child in task_inner.children.iter() {
             child.inner_exclusive_access().parent = Some(Arc::downgrade(&INITPROC));
@@ -61,6 +61,7 @@ pub fn suspend_current_and_run_next() -> ! {
     // Reset Task context
     // 直接传栈底可能有bug，反正不健壮，以后要改
     let kernel_stack_top = task.kernel_stack.get_top();
+    // 应该改成上一个栈帧的位置
     task_inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
     // drop inner
     drop(task_inner);

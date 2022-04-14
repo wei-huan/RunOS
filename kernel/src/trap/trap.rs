@@ -1,14 +1,14 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_token, current_trap_cx, current_user_token};
-use crate::mm::{kernel_token, kernel_translate};
-use crate::scheduler::schedule;
+// use crate::mm::{kernel_token, kernel_translate};
+// use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use riscv::register::{
     mtvec::TrapMode,
-    satp,
+    // satp,
     scause::{self, Exception, Interrupt, Trap},
     sepc, stval, stvec,
 };

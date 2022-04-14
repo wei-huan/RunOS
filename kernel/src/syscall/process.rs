@@ -18,6 +18,10 @@ pub fn sys_get_time() -> isize {
     get_time_ms() as isize
 }
 
+pub fn sys_getpid() -> isize {
+    current_task().unwrap().getpid() as isize
+}
+
 pub fn sys_fork() -> isize {
     let current_task = current_task().unwrap();
     let new_task = current_task.fork();
