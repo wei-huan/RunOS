@@ -34,6 +34,7 @@ pub fn kernel_token() -> usize {
     KERNEL_SPACE.lock().get_token()
 }
 
+#[allow(unused)]
 pub fn kernel_translate(vpn: VirtPageNum) -> Option<PageTableEntry> {
     KERNEL_SPACE.lock().page_table.translate(vpn)
 }

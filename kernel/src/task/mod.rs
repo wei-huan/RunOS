@@ -29,7 +29,7 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     task_inner.exit_code = exit_code;
     // do not move to its parent but under initproc
     // ++++++ access initproc TCB exclusively
-    {
+    if task.pid.0 != 1 {
         let mut initproc_inner = INITPROC.inner_exclusive_access();
         for child in task_inner.children.iter() {
             child.inner_exclusive_access().parent = Some(Arc::downgrade(&INITPROC));

@@ -17,6 +17,12 @@ SBI ?= opensbi
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
+# FAT32
+ifeq ($(PLATFORM), k210)
+	FAT32 := $(SDCARD)
+else
+	FAT32 := fat32-pack/fat32.img
+endif
 
 # KERNEL ENTRY
 ifeq ($(PLATFORM), qemu)
@@ -35,8 +41,8 @@ endif
 K210-SERIALPORT	= /dev/ttyUSB0
 K210-BURNER	= ../tools/kflash.py
 
-# CPU_NUM
-CPU_NUM ?= 2
+# CPUS
+CPUS ?= 2
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
@@ -53,6 +59,9 @@ else ifeq ($(PLATFORM), k210)
 endif
 
 build: switch-check $(KERNEL_BIN) fs-img
+
+fat32:
+	./buildfs.sh
 
 sdcard: fs-img
 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -85,14 +94,14 @@ ifeq ($(SBI),opensbi)
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
 		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
-		-smp $(CPU_NUM)
+		-smp $(CPUS)
 else
 	@qemu-system-riscv64 \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
-		-smp $(CPU_NUM)
+		-smp $(CPUS)
 endif
 else
 	(which $(K210-BURNER)) || (cd .. && git clone https://github.com/sipeed/kflash.py.git && mv kflash.py tools)
@@ -114,7 +123,7 @@ debug: build
 		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-s -S \
-		-smp $(CPU_NUM)
+		-smp $(CPUS)
 
 disasm: kernel
 	@$(OBJDUMP) $(DISASM) $(KERNEL_ELF) | less >> ../disasm.txt

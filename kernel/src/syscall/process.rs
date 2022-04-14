@@ -19,7 +19,7 @@ pub fn sys_get_time() -> isize {
 }
 
 pub fn sys_getpid() -> isize {
-    current_task().unwrap().pid.0 as isize
+    current_task().unwrap().getpid() as isize
 }
 
 pub fn sys_fork() -> isize {

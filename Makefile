@@ -2,10 +2,13 @@ TARGET := riscv64gc-unknown-none-elf
 MODE := release
 DIR := $(shell pwd)
 PACK_IMG_DIR := $(DIR)/myfs-pack
+FAT32_PACK_DIR := $(DIR)/fat32-pack
 USER_DIR := $(DIR)/user
 IMG_DIR := $(USER_DIR)/target/$(TARGET)/$(MODE)
 OS_DIR := $(DIR)/kernel
 FS_IMG := $(IMG_DIR)/fs.img
+
+PLATFORM ?= qemu
 
 build:
 	@make build -C $(OS_DIR)
@@ -13,12 +16,16 @@ build:
 sdcard:
 	@make sdcard -C $(OS_DIR)
 
+fat32:
+	@cd $(FAT32_PACK_DIR) && ./qemu_fat32.sh
+
 user:
 	@make build -C $(USER_DIR)
 
+
 fs-img: user
-	rm -f $(FS_IMG)
-	cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
+	@rm -f $(FS_IMG)
+	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
 run: fs-img
 	@make run -C $(OS_DIR)

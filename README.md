@@ -16,14 +16,16 @@ suspend 改造完成
 k210的sbi还是选用rustsbi，rustsbi通过软件方式支持1.9.1版本的特权级架构，对k210更友好，其他功能也和Opensbi spec 1.0一样
 
 下一步：
-继续丰富syscall，包括fork wait exec，思考多核如何实现，是否需要调整
-多核有问题readline?
+继续丰富syscall，包括fork wait exec，思考多核如何实现，是否需要调整 4.12完成
+多核有问题readline? 4.12完成
 
 报名，完成测试
 
-gdb 图形化窗口支持
+gdb 图形化窗口支持  4.12完成
 
 fat32
+
+shell改造   关机    关shell
 
 slab缓存器
 
