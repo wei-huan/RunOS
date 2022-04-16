@@ -59,9 +59,9 @@ pub struct FatBS {
     pub media_type:       u8,
     pub table_size_16:    u16,// 无用
     pub sectors_per_track:u16,
-    pub head_side_count:  u16,    
-    pub hidden_sector_count: u32,  
-    pub total_sectors_32:    u32,    
+    pub head_side_count:  u16,
+    pub hidden_sector_count: u32,
+    pub total_sectors_32:    u32,
 }
 
 impl FatBS {
@@ -84,9 +84,9 @@ impl FatBS {
 #[allow(unused)]
 pub struct FatExtBS{
     table_size_32:u32,
-    extended_flags:u16,   
+    extended_flags:u16,
     fat_version:u16,
-    root_clusters:u32,   
+    root_clusters:u32,
     fat_info:u16,
     backup_bs_sector:u16,
     reserved_0:[u8;12],
@@ -142,7 +142,7 @@ impl FSInfo{
 
     /*对签名进行校验*/
     pub fn check_signature(&self, block_device: Arc<dyn BlockDevice>) -> bool {
-        return self.check_lead_signature(block_device.clone()) 
+        return self.check_lead_signature(block_device.clone())
             && self.check_another_signature(block_device.clone())
     }
 
@@ -162,7 +162,7 @@ impl FSInfo{
         .modify(488,|free_cluster_count: &mut u32|{
             *free_cluster_count = free_clusters;
         });
-    }   
+    }
 
     /*读起始空闲块*/
     pub fn first_free_cluster(&self, block_device: Arc<dyn BlockDevice>) ->  u32{
@@ -226,54 +226,54 @@ impl ShortDirEntry{
         }
     }
 
-    /* 创建文件时调用 
+    /* 创建文件时调用
     * 新建时不必分配块。写时检测初始簇是否为0，为0则需要分配。
     */
     pub fn new(
-        name_: &[u8],        
+        name_: &[u8],
         extension_: &[u8],
-        attribute: u8,       
-    ) -> Self{  
+        attribute: u8,
+    ) -> Self{
         let name:[u8;8] = clone_into_array(&name_[0..8]);
         let extension:[u8;3] = clone_into_array(&extension_[0..3]);
         Self{
-            name,        
+            name,
             extension,
-            attribute,       
+            attribute,
             winnt_reserved: 0,
-            creation_tenths: 0, 
+            creation_tenths: 0,
             creation_time: 0,
             creation_date: 0x529c,
             last_acc_date: 0,
             cluster_high:  0,
             modification_time: 0,
             modification_date: 0,
-            cluster_low: 0,   
+            cluster_low: 0,
             size: 0,
         }
     }
 
     pub fn initialize(
         &mut self,
-        name_: &[u8],        
+        name_: &[u8],
         extension_: &[u8],
-        attribute: u8,       
-    ){  
+        attribute: u8,
+    ){
         let name:[u8;8] = clone_into_array(&name_[0..8]);
         let extension:[u8;3] = clone_into_array(&extension_[0..3]);
         *self = Self{
-            name,        
+            name,
             extension,
-            attribute,       
+            attribute,
             winnt_reserved: 0,
-            creation_tenths: 0, 
+            creation_tenths: 0,
             creation_time: 0,
             creation_date: 0x529c,
             last_acc_date: 0,
             cluster_high:  0,
             modification_time: 0,
             modification_date: 0,
-            cluster_low: 0,   
+            cluster_low: 0,
             size: 0,
         };
     }
@@ -288,7 +288,7 @@ impl ShortDirEntry{
         if 0 != (self.attribute & ATTRIBUTE_DIRECTORY) {
             true
         }else{
-            false   
+            false
         }
     }
 
@@ -320,7 +320,7 @@ impl ShortDirEntry{
         if 0 != (self.attribute & ATTRIBUTE_DIRECTORY) {
             false
         }else{
-            true   
+            true
         }
     }
 
@@ -339,11 +339,11 @@ impl ShortDirEntry{
     pub fn get_creation_time(&self) -> (u32,u32,u32,u32,u32,u32,u64) {
         // year-month-day-Hour-min-sec-long_sec
         let year: u32  = ((self.creation_date & 0xFE00)>>9) as u32 + 1980;
-        let month:u32  = ((self.creation_date & 0x01E0)>>5) as u32 ;    
-        let day:u32  = (self.creation_date & 0x001F) as u32 ;    
-        let hour:u32  = ((self.creation_time & 0xF800)>>11) as u32;    
-        let min:u32  = ((self.creation_time & 0x07E0)>>5) as u32;    
-        let sec:u32  = ((self.creation_time & 0x001F)<<1) as u32; // 秒数需要*2 
+        let month:u32  = ((self.creation_date & 0x01E0)>>5) as u32 ;
+        let day:u32  = (self.creation_date & 0x001F) as u32 ;
+        let hour:u32  = ((self.creation_time & 0xF800)>>11) as u32;
+        let min:u32  = ((self.creation_time & 0x07E0)>>5) as u32;
+        let sec:u32  = ((self.creation_time & 0x001F)<<1) as u32; // 秒数需要*2
         let long_sec: u64 = ((((year - 1970) * 365 + month * 30 + day) * 24 + hour) * 3600 + min*60 + sec) as u64;
         (year,month,day,hour,min,sec,long_sec)
     }
@@ -351,11 +351,11 @@ impl ShortDirEntry{
     pub fn get_modification_time(&self) -> (u32,u32,u32,u32,u32,u32,u64) {
         // year-month-day-Hour-min-sec
         let year: u32  = ((self.modification_date & 0xFE00)>>9) as u32 + 1980;
-        let month:u32  = ((self.modification_date & 0x01E0)>>5) as u32 ;    
-        let day:u32  = (self.modification_date & 0x001F) as u32 ;    
-        let hour:u32  = ((self.modification_time & 0xF800)>>11) as u32;    
-        let min:u32  = ((self.modification_time & 0x07E0)>>5) as u32;    
-        let sec:u32  = ((self.modification_time & 0x001F)<<1) as u32; // 秒数需要*2   
+        let month:u32  = ((self.modification_date & 0x01E0)>>5) as u32 ;
+        let day:u32  = (self.modification_date & 0x001F) as u32 ;
+        let hour:u32  = ((self.modification_time & 0xF800)>>11) as u32;
+        let min:u32  = ((self.modification_time & 0x07E0)>>5) as u32;
+        let sec:u32  = ((self.modification_time & 0x001F)<<1) as u32; // 秒数需要*2
         let long_sec: u64 = ((((year - 1970) * 365 + month * 30 + day) * 24 + hour) * 3600 + min*60 + sec) as u64;
         (year,month,day,hour,min,sec,long_sec)
     }
@@ -363,11 +363,11 @@ impl ShortDirEntry{
     pub fn get_accessed_time(&self) -> (u32,u32,u32,u32,u32,u32,u64) {
         // year-month-day-Hour-min-sec
         let year: u32  = ((self.last_acc_date & 0xFE00)>>9) as u32 + 1980;
-        let month:u32  = ((self.last_acc_date & 0x01E0)>>5) as u32 ;    
-        let day:u32  = (self.last_acc_date & 0x001F) as u32 ;    
-        let hour:u32 = 0;    
-        let min:u32  = 0;    
-        let sec:u32  = 0; // 没有相关信息，默认0 
+        let month:u32  = ((self.last_acc_date & 0x01E0)>>5) as u32 ;
+        let day:u32  = (self.last_acc_date & 0x001F) as u32 ;
+        let hour:u32 = 0;
+        let min:u32  = 0;
+        let sec:u32  = 0; // 没有相关信息，默认0
         let long_sec: u64 = ((((year - 1970) * 365 + month * 30 + day) * 24 + hour) * 3600 + min*60 + sec) as u64;
         (year,month,day,hour,min,sec,long_sec)
     }
@@ -420,11 +420,11 @@ impl ShortDirEntry{
 
     /* 计算校验和 */ // DEBUG
     pub fn checksum(&self)->u8{
-        let mut name_buff:[u8;11] = [0u8;11]; 
+        let mut name_buff:[u8;11] = [0u8;11];
         let mut sum:u8 = 0;
         for i in 0..8 { name_buff[i] = self.name[i]; }
         for i in 0..3 { name_buff[i+8] = self.extension[i]; }
-        for i in 0..11{ 
+        for i in 0..11{
             if (sum & 1) != 0 {
                 sum = 0x80 + (sum>>1) + name_buff[i];
             }else{
@@ -434,11 +434,11 @@ impl ShortDirEntry{
         sum
     }
 
-    /* 设置当前文件的大小 */ 
+    /* 设置当前文件的大小 */
     // 簇的分配和回收实际要对FAT表操作
     pub fn set_size(
         &mut self,
-        size: u32, 
+        size: u32,
     ) {
         self.size = size;
     }
@@ -477,7 +477,7 @@ impl ShortDirEntry{
     pub fn get_pos(
         &self,
         offset: usize,
-        manager: &Arc<RwLock<FAT32Manager>>, 
+        manager: &Arc<RwLock<FAT32Manager>>,
         fat: &Arc<RwLock<FAT>>,
         block_device: &Arc<dyn BlockDevice>,
     )->(u32, usize, usize) {
@@ -488,22 +488,22 @@ impl ShortDirEntry{
         let cluster_index = manager_reader.cluster_of_offset(offset);
         let current_cluster = fat_reader.get_cluster_at(
             self.first_cluster(),
-            cluster_index , 
+            cluster_index ,
             Arc::clone(block_device)
         );
         //println!("*** in get pos, cluster index = {}, current cluster = {}, first_cluster = {}", cluster_index, current_cluster, self.first_cluster());
-        let current_sector = manager_reader.first_sector_of_cluster(current_cluster) 
-                                + (offset - cluster_index as usize * bytes_per_cluster) 
+        let current_sector = manager_reader.first_sector_of_cluster(current_cluster)
+                                + (offset - cluster_index as usize * bytes_per_cluster)
                                 / bytes_per_sector;
         (current_cluster, current_sector, offset % bytes_per_sector)
-    }   
+    }
 
     /* 以偏移量读取文件，这里会对fat和manager加读锁 */
     pub fn read_at(
         &self,
         offset: usize,
         buf: &mut [u8],
-        manager: &Arc<RwLock<FAT32Manager>>, 
+        manager: &Arc<RwLock<FAT32Manager>>,
         fat: &Arc<RwLock<FAT>>,
         block_device: &Arc<dyn BlockDevice>,
     ) -> usize {
@@ -530,8 +530,8 @@ impl ShortDirEntry{
         // DEBUG: 如果一开始就不在第一个簇，如果buffer不大，会多次进入函数，这里可能会有问题
         // let cluster_index = manager_reader.cluster_of_offset(offset);
         let (c_clu, c_sec, _) = self.get_pos(
-            offset, manager, 
-            &manager_reader.get_fat(), 
+            offset, manager,
+            &manager_reader.get_fat(),
             block_device
         );
         //println!("curr_clu = {} sec = {}", c_clu, c_sec);
@@ -541,7 +541,7 @@ impl ShortDirEntry{
         /*
         let mut current_cluster = fat_reader.get_cluster_at(
             self.first_cluster(),
-            manager_reader.cluster_of_offset(offset) , 
+            manager_reader.cluster_of_offset(offset) ,
             Arc::clone(block_device)
         );
         println!("in read_at, after get_cluster_at, current_cluster = {}", current_cluster);
@@ -550,7 +550,7 @@ impl ShortDirEntry{
         let mut current_sector = manager_reader.first_sector_of_cluster(current_cluster) + current_off / bytes_per_sector;
         println!("in read_at current_sector={}", current_sector);
         */
-        
+
         let mut read_size = 0usize;
         loop {
             // 将偏移量向上对齐扇区大小（一般是512
@@ -600,7 +600,7 @@ impl ShortDirEntry{
                 //std::io::stdin().read_line(&mut guess).expect("Failed to read line");
             } else {
                 current_sector += 1; //没读完一个簇，直接进入下一扇区
-            }   
+            }
         }
         read_size
     }
@@ -610,7 +610,7 @@ impl ShortDirEntry{
         &self,
         offset: usize,
         buf: & [u8],
-        manager: &Arc<RwLock<FAT32Manager>>, 
+        manager: &Arc<RwLock<FAT32Manager>>,
         fat: &Arc<RwLock<FAT>>,
         block_device: &Arc<dyn BlockDevice>,
     ) -> usize {
@@ -637,22 +637,22 @@ impl ShortDirEntry{
         /*
         let mut current_cluster = fat_reader.get_cluster_at(
             self.first_cluster(),
-            manager_reader.cluster_of_offset(offset) , 
+            manager_reader.cluster_of_offset(offset) ,
             Arc::clone(block_device)
         );
         //println!("in write_at curr_cluster:{}",current_cluster);
         let mut current_sector = manager_reader.first_sector_of_cluster(current_cluster) + current_off / bytes_per_sector;
         */
         let (c_clu, c_sec, _) = self.get_pos(
-            offset, manager, 
-            &manager_reader.get_fat(), 
+            offset, manager,
+            &manager_reader.get_fat(),
             block_device
         );
         let mut current_cluster = c_clu;
         let mut current_sector = c_sec;
         let mut write_size = 0usize;
         //println!("in write_at curr_sec:{}",current_sector);
-        
+
         loop {
             // 将偏移量向上对齐扇区大小（一般是512
             let mut end_current_block = (current_off / bytes_per_sector + 1) * bytes_per_sector;
@@ -704,7 +704,7 @@ impl ShortDirEntry{
                 //std::io::stdin().read_line(&mut guess).expect("Failed to read line");
             } else {
                 current_sector += 1; //没读完一个簇，直接进入下一扇区
-            }   
+            }
         }
         write_size
     }
@@ -738,11 +738,11 @@ pub struct LongDirEntry{
     order: u8,      // 删除时为0xE5
     name1: [u8;10], // 5characters
     attribute: u8,  // should be 0x0F
-    type_: u8,      // 
+    type_: u8,      //
     check_sum: u8,
-    name2: [u8;12], // 6characters 
-    zero:  [u8;2], 
-    name3: [u8;4],  // 2characters 
+    name2: [u8;12], // 6characters
+    zero:  [u8;2],
+    name3: [u8;4],  // 2characters
 }
 
 impl From<&[u8]> for LongDirEntry {
@@ -751,11 +751,11 @@ impl From<&[u8]> for LongDirEntry {
             order: bytes[0],
             name1:     clone_into_array(&bytes[1..11]), // 5characters
             attribute: bytes[11],      // should be 0x0F
-            type_:     bytes[12],      // 
+            type_:     bytes[12],      //
             check_sum: bytes[13],
-            name2:     clone_into_array(&bytes[14..26]), // 6characters 
-            zero:      clone_into_array(&bytes[26..28]), 
-            name3:     clone_into_array(&bytes[28..32]),  // 2characters 
+            name2:     clone_into_array(&bytes[14..26]), // 6characters
+            zero:      clone_into_array(&bytes[26..28]),
+            name3:     clone_into_array(&bytes[28..32]),  // 2characters
         }
     }
 }
@@ -766,11 +766,11 @@ impl LongDirEntry{
             order: 0,      // 删除时为0xE5
             name1: [0;10], // 5characters
             attribute: 0,  // should be 0x0F
-            type_: 0,      // 
+            type_: 0,      //
             check_sum: 0,
-            name2: [0;12], // 6characters 
-            zero:  [0;2], 
-            name3: [0;4],  // 2characters 
+            name2: [0;12], // 6characters
+            zero:  [0;2],
+            name3: [0;4],  // 2characters
         }
     }
 
@@ -807,7 +807,7 @@ impl LongDirEntry{
     pub fn initialize(&mut self, name_buffer: &[u8], order: u8, check_sum: u8){
         let ord = order;
         //println!("** initialize namebuffer = {:?}", name_buffer);
-        //if is_last { ord = ord | 0x40 } 
+        //if is_last { ord = ord | 0x40 }
         let mut name1:[u8;10] = [0;10];
         let mut name2:[u8;12] = [0;12];
         let mut name3:[u8;4] = [0;4];
@@ -846,14 +846,14 @@ impl LongDirEntry{
             }
         }
         *self = Self {
-            order: ord,      
+            order: ord,
             name1,
-            attribute: ATTRIBUTE_LFN,  
-            type_: 0,       
+            attribute: ATTRIBUTE_LFN,
+            type_: 0,
             check_sum,
-            name2,  
-            zero:  [0u8;2], 
-            name3, 
+            name2,
+            zero:  [0u8;2],
+            name3,
         }
     }
 
@@ -940,9 +940,9 @@ impl LongDirEntry{
 #[derive(Clone, Copy)]
 pub struct FAT{
     fat1_sector: u32, //FAT1和FAT2的起始扇区
-    fat2_sector: u32, 
+    fat2_sector: u32,
     n_sectors: u32,   //大小
-    n_entry: u32,     //表项数量 
+    n_entry: u32,     //表项数量
 }
 
 // TODO: 防越界处理（虽然可能这辈子都遇不到）
@@ -960,7 +960,7 @@ impl FAT{
     fn calculate_pos(&self, cluster: u32)->(u32,u32,u32){
         // 返回sector号和offset
         // 前为FAT1的扇区号，后为FAT2的扇区号，最后为offset
-        // DEBUG 
+        // DEBUG
         let fat1_sec = self.fat1_sector + cluster / FATENTRY_PER_SEC;
         let fat2_sec = self.fat2_sector + cluster / FATENTRY_PER_SEC;
         let offset = 4 * (cluster % FATENTRY_PER_SEC);
@@ -977,14 +977,14 @@ impl FAT{
             let (fat1_sec,fat2_sec,offset) = self.calculate_pos(curr_cluster);
             // 查看当前cluster的表项
             let entry_val = get_info_cache(
-                fat1_sec as usize, 
-                block_device.clone(), 
+                fat1_sec as usize,
+                block_device.clone(),
                 CacheMode::READ)
             .read()
             .read(offset as usize,|&entry_val: &u32|{
                 entry_val
             });
-            if entry_val == FREE_CLUSTER { 
+            if entry_val == FREE_CLUSTER {
                 break;
             }else{
                 curr_cluster += 1;
@@ -1029,7 +1029,7 @@ impl FAT{
     /* 设置当前簇的下一个簇 */
     pub fn set_next_cluster(&self, cluster:u32, next_cluster:u32, block_device: Arc<dyn BlockDevice>){
         // 同步修改两个FAT
-        // 注意设置末尾项为 0x0FFFFFF8 
+        // 注意设置末尾项为 0x0FFFFFF8
         //assert_ne!(next_cluster, 0);
         let (fat1_sec,fat2_sec,offset) = self.calculate_pos(cluster);
         get_info_cache( fat1_sec as usize, block_device.clone(), CacheMode::WRITE)
@@ -1066,7 +1066,7 @@ impl FAT{
         let mut curr_cluster = start_cluster;
         assert_ne!(start_cluster, 0);
         loop{
-            
+
             let next_cluster = self.get_next_cluster(curr_cluster, block_device.clone());
             //println!("in fianl cl {};{}", curr_cluster, next_cluster);
             //assert_ne!(next_cluster, 0);
@@ -1099,7 +1099,7 @@ impl FAT{
             return 0;
         }
         let mut curr_cluster = start_cluster;
-        let mut count:u32 = 0; 
+        let mut count:u32 = 0;
         loop{
             count += 1;
             let next_cluster = self.get_next_cluster(curr_cluster, block_device.clone());

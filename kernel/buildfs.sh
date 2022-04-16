@@ -1,7 +1,7 @@
 FAT32_DIR="../fat32-pack"
-FAT32_IMG="${FAT32_DIR}/fat32.img"
 
-# FAT32_IMG="/dev/sda1"
+FAT32_IMG="${FAT32_DIR}/fat32.img"
+# FAT32_IMG="/dev/sda"
 
 sudo chmod 777 ${FAT32_IMG}
 sudo umount ${FAT32_IMG}
@@ -21,10 +21,10 @@ sudo rm -rf ${FAT32_DIR}/fs/*
 
 for programname in $(ls ../user/src/bin)
 do
-    if [ $programname != "initproc.rs" ] && [ $programname != "user_shell.rs" ]
-    then
-        sudo cp ../user/target/riscv64gc-unknown-none-elf/release/${programname%.rs} ${FAT32_DIR}/fs/${programname%.rs}
-    fi
+    # if [ $programname != "initproc.rs" ] && [ $programname != "user_shell.rs" ]
+    # then
+    sudo cp ../user/target/riscv64gc-unknown-none-elf/release/${programname%.rs} ${FAT32_DIR}/fs/${programname%.rs}
+    # fi
 done
 
 sudo umount ${FAT32_DIR}/fs

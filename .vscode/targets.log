@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Wed Apr 13 21:32:47 2022
+# Make data base, printed on Sat Apr 16 14:13:31 2022
 
 # Variables
 
@@ -51,7 +51,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:65604
+JOURNAL_STREAM = 8:60197
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 2659
+MANAGERPID = 2693
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-34d79075-c73f-4cc8-940f-9f1485187315.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-73d3c1ee-3679-4ba4-9cae-03b22c62af4b.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2882,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2882
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2913,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2913
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -103,7 +103,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 137dc2c22149436dafc310506e92abf8
+INVOCATION_ID = 2bee721f0f9e4c2cb34268850af3924c
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -115,13 +115,15 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 154209
+GIO_LAUNCHED_DESKTOP_FILE_PID = 4274
 # automatic
 %F = $(notdir $%)
 # environment
 DISPLAY = :1
 # environment
 CONDA_EXE = /home/weihuan/anaconda3/bin/conda
+# makefile (from 'Makefile', line 5)
+FAT32_PACK_DIR := /home/weihuan/WorkSpace/OS/MyOS/fat32-pack
 # environment
 GTK_IM_MODULE = fcitx
 # environment
@@ -133,18 +135,18 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2841
+SSH_AGENT_PID = 2870
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
 GTK_MODULES = gail:atk-bridge
-# makefile (from 'Makefile', line 7)
+# makefile (from 'Makefile', line 8)
 OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/kernel
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
 HOME = /home/weihuan
-# makefile (from 'Makefile', line 6)
+# makefile (from 'Makefile', line 7)
 IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
@@ -214,7 +216,7 @@ MFLAGS = -pqrR
 *D = $(patsubst %/,%,$(dir $*))
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
-# makefile (from 'Makefile', line 8)
+# makefile (from 'Makefile', line 9)
 FS_IMG := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release/fs.img
 # environment
 GDK_BACKEND = x11
@@ -224,6 +226,8 @@ LC_PAPER = zh_CN.UTF-8
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
+# makefile (from 'Makefile', line 11)
+PLATFORM = qemu
 # 'override' directive
 .SHELLSTATUS := 0
 # default
@@ -242,7 +246,7 @@ CONDA_PYTHON_EXE = /home/weihuan/anaconda3/bin/python
 QT4_IM_MODULE = fcitx
 # automatic
 ^F = $(notdir $^)
-# makefile (from 'Makefile', line 5)
+# makefile (from 'Makefile', line 6)
 USER_DIR := /home/weihuan/WorkSpace/OS/MyOS/user
 # default
 SUFFIXES := 
@@ -265,23 +269,24 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 154209
+VSCODE_PID = 4274
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=129/1024=13%, Rehash=0, Collisions=21/164=13%
+# Load=131/1024=13%, Rehash=0, Collisions=23/168=14%
 
 # Pattern-specific Variable Values
 
+ 
 # No pattern-specific variable values.
 
 # Directories
 
-# . (device 66310, inode 3414746): 17 files, no impossibilities.
+# . (device 66310, inode 3414746): 19 files, no impossibilities.
 
-# 17 files, no impossibilities in 1 directories.
+# 19 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -294,25 +299,24 @@ user:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 17):
+#  recipe to execute (from 'Makefile', line 23):
 	@make build -C $(USER_DIR)
 
- 
 fs-img: user
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 20):
-	rm -f $(FS_IMG)
-	cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
+#  recipe to execute (from 'Makefile', line 27):
+	@rm -f $(FS_IMG)
+	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
 sdcard:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 14):
+#  recipe to execute (from 'Makefile', line 17):
 	@make sdcard -C $(OS_DIR)
 
 gdb:
@@ -320,7 +324,7 @@ gdb:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 30):
+#  recipe to execute (from 'Makefile', line 37):
 	@make gdb -C $(OS_DIR)
 
 # Not a target:
@@ -338,7 +342,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-11 20:42:31.287133678
+#  Last modified 2022-04-14 20:43:27.289559205
 #  File has been updated.
 #  Successfully updated.
 
@@ -347,7 +351,7 @@ debug:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 27):
+#  recipe to execute (from 'Makefile', line 34):
 	@make debug -C $(OS_DIR)
 
 build:
@@ -355,7 +359,7 @@ build:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 11):
+#  recipe to execute (from 'Makefile', line 14):
 	@make build -C $(OS_DIR)
 
 # Not a target:
@@ -369,31 +373,38 @@ run: fs-img
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 24):
+#  recipe to execute (from 'Makefile', line 31):
 	@make run -C $(OS_DIR)
+
+fat32:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 20):
+	@cd $(FAT32_PACK_DIR) && ./qemu_fat32.sh
 
 disasm:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 33):
+#  recipe to execute (from 'Makefile', line 40):
 	@make disasm -C $(OS_DIR)
 
 # files hash-table stats:
-# Load=13/1024=1%, Rehash=0, Collisions=0/33=0%
+# Load=14/1024=1%, Rehash=0, Collisions=0/34=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 30 / storage = 228 B / avg = 7 B
-# current buf: size = 8162 B / used = 228 B / count = 30 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 32 / storage = 245 B / avg = 7 B
+# current buf: size = 8162 B / used = 245 B / count = 32 / avg = 7 B
 
-# strcache performance: lookups = 54 / hit rate = 44%
+# strcache performance: lookups = 58 / hit rate = 44%
 # hash-table stats:
-# Load=30/8192=0%, Rehash=0, Collisions=1/54=2%
-# Finished Make data base on Wed Apr 13 21:32:47 2022
+# Load=32/8192=0%, Rehash=0, Collisions=1/58=2%
+# Finished Make data base on Sat Apr 16 14:13:31 2022
 
  

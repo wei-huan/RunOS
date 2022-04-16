@@ -1,5 +1,5 @@
 #[allow(unused)]
-use simple_fat32::{
+use fat32::{
     BlockDevice,
     //EasyFileSystem,
     //DiskInodeType,
@@ -17,7 +17,7 @@ use std::sync::Mutex;
 #[allow(unused)]
 use std::sync::Arc;
 #[allow(unused)]
-use clap::{Arg, App};
+use clap::{Arg, Command};
 
 const BLOCK_SZ: usize = 512;
 
@@ -54,35 +54,35 @@ fn fat32_pack() -> std::io::Result<()> {
     // -- -s ../user/src/bin/ \
     // -t ../user/target/riscv64gc-unknown-none-elf/release/
     // 因此得到的参数就是两个路径
-    let matches = App::new("EasyFileSystem packer")
-        .arg(Arg::with_name("source")
-            .short("s") // 对应输入的 -s
+    let matches = Command::new("EasyFileSystem packer")
+        .arg(Arg::new("source")
+            .short('s') // 对应输入的 -s
             .long("source")//对应输入 --source
             .takes_value(true)
             .help("Executable source dir(with backslash)")
         )
-        .arg(Arg::with_name("target")
-            .short("t")
+        .arg(Arg::new("target")
+            .short('t')
             .long("target")
             .takes_value(true)
-            .help("Executable target dir(with backslash)")    
+            .help("Executable target dir(with backslash)")
         )
         .get_matches();
     let src_path = matches.value_of("source").unwrap();
     let target_path = matches.value_of("target").unwrap();
     println!("src_path = {}\ntarget_path = {}", src_path, target_path);
-    
+
     // 打开U盘
     let block_file = Arc::new(BlockFile(Mutex::new({
         let f = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
-            .open("/dev/sdb")?;
+            .open("/dev/sda")?;
             //            .open("fat32.img")?;
         f
     })));
-    
+
     let fs_manager = FAT32Manager::open(block_file.clone());
     let fs_reader = fs_manager.read();
     //println!("{:X}",fs_reader.get_fat().read().get_next_cluster(2, block_file.clone()));
@@ -139,11 +139,11 @@ macro_rules! color_text {
 fn ufs_test() -> std::io::Result<()> {
     println!("0");
     let block_file = Arc::new(BlockFile(Mutex::new({
-        let f = OpenOptions::new()            
+        let f = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
-            .open("/dev/sdb1")?;    
+            .open("/dev/sda1")?;
         //dev/sdb1
         //f.set_len(102400*512);
         //let mut f = File::open("src/fat32c.img")?;
@@ -185,7 +185,7 @@ fn ufs_test() -> std::io::Result<()> {
         );
         println!("*** simple r/w test pass");
     };
-    
+
     let fs_manager = FAT32Manager::open(block_file.clone());
     let fs_reader = fs_manager.read();
     println!("{:X}",fs_reader.get_fat().read().get_next_cluster(2, block_file.clone()));
@@ -215,28 +215,28 @@ fn ufs_test() -> std::io::Result<()> {
     // dirtest
     println!("directory test ... start");
     let dir0 = root_vfile.create("dir0", ATTRIBUTE_DIRECTORY).unwrap();
-    
+
     println!("list root:");
     let mut flist = root_vfile.ls_lite().unwrap();
     print_flist(&mut flist);
-    
+
     println!("list dir0:");
     let mut flist = dir0.ls_lite().unwrap();
     print_flist(&mut flist);
-    
+
     dir0.create("file1", ATTRIBUTE_ARCHIVE).unwrap();
     let dir0_dir1 = dir0.create("dir1", ATTRIBUTE_DIRECTORY).unwrap();
     dir0_dir1.create("file2", ATTRIBUTE_ARCHIVE);
 
-    let file1 = root_vfile.find_vfile_bypath(vec!["dir0", "file1"]).unwrap(); 
-    let file2 = root_vfile.find_vfile_bypath(vec!["dir0", "dir1", "file2"]).unwrap(); 
+    let file1 = root_vfile.find_vfile_bypath(vec!["dir0", "file1"]).unwrap();
+    let file2 = root_vfile.find_vfile_bypath(vec!["dir0", "dir1", "file2"]).unwrap();
     simple_rwtest(&file1);
     simple_rwtest(&file2);
     fs_manager.read().cache_write_back();
 
     println!("directory test ... end");
     // random str rw test
-    
+
     println!("random str rw test ... start");
     let filea = root_vfile.create("filea", ATTRIBUTE_ARCHIVE).unwrap();
     fs_manager.read().cache_write_back();
@@ -284,15 +284,15 @@ fn ufs_test() -> std::io::Result<()> {
 
     random_str_test(4 * BLOCK_SZ);
     random_str_test(8 * BLOCK_SZ + BLOCK_SZ / 2);
-    random_str_test(33 * BLOCK_SZ);    
+    random_str_test(33 * BLOCK_SZ);
     random_str_test(70 * BLOCK_SZ + BLOCK_SZ / 7);
     random_str_test((12 + 128) * BLOCK_SZ);
     random_str_test(400 * BLOCK_SZ);
-    //Ok(()) 
+    //Ok(())
     random_str_test(1000 * BLOCK_SZ);
     random_str_test(2000 * BLOCK_SZ);
     fs_manager.read().cache_write_back();
     println!("random str rw test ... {}",color_text!("pass",92));
-    
-    Ok(()) 
+
+    Ok(())
 }

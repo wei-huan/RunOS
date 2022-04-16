@@ -9,6 +9,9 @@ APPS := ../user/src/bin/*
 
 # FS
 FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
+# FAT32
+FAT32_IMG := ../user/target/$(TARGET)/$(MODE)/fat32.img
+# FAT32
 # PLATFORM qemu or k210
 PLATFORM ?= qemu
 # SBI opensbi or rustsbi
@@ -68,6 +71,11 @@ sdcard: fs-img
 	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
 	@sudo dd if=$(FS_IMG) of=$(SDCARD)
 
+fat32-img: $(APPS)
+	@cd ../user && make build
+	@rm -f $(FAT32_IMG)
+	@cd ../fat32-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
+
 fs-img: $(APPS)
 	@cd ../user && make build
 	@rm -f $(FS_IMG)
@@ -92,7 +100,7 @@ ifeq ($(SBI),opensbi)
 		-nographic \
 		-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
-		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-drive file=$(FAT32_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPUS)
 else
@@ -101,6 +109,8 @@ else
 		-nographic \
 		-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
+		-drive file=$(FAT32_IMG),if=none,format=raw,id=x0 \
+		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPUS)
 endif
 else

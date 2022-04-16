@@ -5,6 +5,7 @@
 
 extern crate alloc;
 extern crate fdt;
+extern crate fat32;
 
 #[macro_use]
 mod console;
@@ -54,9 +55,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
-        scheduler::add_initproc();
         logger::init();
         logger::show_machine_sbi_os_info();
+        fs::init_rootfs();
+        scheduler::add_initproc();
         // timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);

@@ -1,17 +1,11 @@
 #![no_std]
-#![feature(llvm_asm)]
 extern crate alloc;
-
 
 mod block_dev;
 mod layout;
 mod fat32_manager;
 mod vfs;
 mod block_cache;
-#[macro_use]
-mod console;
-mod sbi;
-
 pub const BLOCK_SZ:usize = 512;
 pub use block_dev::BlockDevice;
 pub use vfs::VFile;
