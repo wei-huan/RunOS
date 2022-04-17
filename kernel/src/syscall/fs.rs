@@ -59,6 +59,8 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         }
         // release current task PCB manually to avoid multi-borrow
         drop(inner);
+        // release current task PCB manually to avoid Arc::strong_count grow
+        drop(task);
         let size = file.read(UserBuffer::new(translated_byte_buffer(token, buf, len)));
         size as isize
     } else {
