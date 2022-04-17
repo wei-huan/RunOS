@@ -1,0 +1,32 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/stddef.h
+
+../include/stdio.h
+
+../include/stdlib.h
+
+../include/string.h
+stddef.h
+../include/stddef.h
+
+../include/unistd.h
+stddef.h
+../include/stddef.h
+
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/close.c
+unistd.h
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/unistd.h
+stdio.h
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/stdio.h
+stdlib.h
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/stdlib.h
+string.h
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/string.h
+

@@ -1,0 +1,34 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/stddef.h
+
+../include/stdio.h
+
+../include/stdlib.h
+
+../include/string.h
+stddef.h
+../include/stddef.h
+
+../include/unistd.h
+stddef.h
+../include/stddef.h
+
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/unlink.c
+stdlib.h
+-
+string.h
+-
+unistd.h
+-
+stdio.h
+-
+stddef.h
+-
+

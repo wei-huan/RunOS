@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/stddef.h
+
+../include/stdio.h
+
+../include/unistd.h
+stddef.h
+../include/stddef.h
+
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/yield.c
+unistd.h
+-
+stdio.h
+-
+

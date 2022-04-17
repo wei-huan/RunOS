@@ -1,0 +1,26 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/stddef.h
+
+../include/stdio.h
+
+../include/stdlib.h
+
+../include/unistd.h
+stddef.h
+../include/stddef.h
+
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/getpid.c
+stdio.h
+-
+unistd.h
+-
+stdlib.h
+-
+

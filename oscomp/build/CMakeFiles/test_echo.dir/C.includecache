@@ -1,0 +1,14 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+../include/stdio.h
+
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/test_echo.c
+stdio.h
+/home/weihuan/Documents/testsuits-for-oskernel-preliminary/riscv-syscalls-testing/user/src/oscomp/stdio.h
+
