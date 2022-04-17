@@ -21,9 +21,8 @@ fat32:
 
 user:
 	@make build -C $(USER_DIR)
-# user
 
-fs-img:
+fs-img: user
 	@rm -f $(FS_IMG)
 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
