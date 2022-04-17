@@ -9,16 +9,16 @@ extern crate user;
 
 use alloc::string::String;
 use user::console::read_line;
-use user::{exec, fork, waitpid, getpid};
+use user::{exec, fork, waitpid};
 
 #[no_mangle]
 pub fn main() -> i32 {
-    println!("Rust user shell, pid: {}", getpid());
+    println!("Rust user shell");
     let mut line: String = String::new();
     loop {
         print!(">> ");
         read_line(&mut line).unwrap();
-        println!("123 {}", line);
+        // println!("123 {}", line);
         if line == "exit\0" {
             break;
         }

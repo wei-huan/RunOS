@@ -58,10 +58,8 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-build: switch-check $(KERNEL_BIN) fs-img
-
-fat32:
-	./buildfs.sh
+build: switch-check $(KERNEL_BIN)
+#fs-img
 
 sdcard: fs-img
 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]

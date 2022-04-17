@@ -1,4 +1,4 @@
-#[cfg(feature = "opensbi")]
+#[cfg(not(feature = "rustsbi"))]
 use crate::opensbi::{impl_id, impl_version, spec_version};
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::{impl_id, impl_version, spec_version};
@@ -117,7 +117,6 @@ fn set_hart_filter(hart_id: usize) {
 pub fn show_machine_sbi_os_info() {
     let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
     let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
-    info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
     info!("=== Machine Info ===");
     info!(" Total CPUs: {}", n_cpus);
     info!(" Timer Clock: {}Hz", timebase_frequency);
@@ -138,4 +137,5 @@ pub fn show_machine_sbi_os_info() {
     );
     info!(" Spec Version: {}.{}", spec_major, spec_minor);
     info!("=== MyOS Info ===");
+    info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
 }

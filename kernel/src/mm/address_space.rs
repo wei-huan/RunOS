@@ -238,6 +238,8 @@ impl AddrSpace {
         // guard page
         user_stack_bottom += PAGE_SIZE;
         let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
+        // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
+        // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
         user_space.push_section(
             Section::new(
                 ".ustack".to_string(),
