@@ -62,7 +62,7 @@ impl Dirent {
         }
     }
 
-    pub fn new(name:&str, inode:usize, offset:isize, reclen: u16, d_type: u8)->Self{
+    pub fn new(name:&str, inode:usize, offset:isize, _reclen: u16, d_type: u8)->Self{
         let mut dirent = Self{
             d_ino:inode,
             d_off:offset,
@@ -74,7 +74,7 @@ impl Dirent {
         dirent
     }
 
-    pub fn fill_info(&mut self, name:&str, inode:usize, offset:isize, reclen: u16, d_type: u8) {
+    pub fn fill_info(&mut self, name:&str, inode:usize, offset:isize, _reclen: u16, d_type: u8) {
         *self = Self {
             d_ino:inode,
             d_off:offset,

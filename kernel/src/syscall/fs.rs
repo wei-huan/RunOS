@@ -28,7 +28,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
         drop(inner);
         let size = file.write(UserBuffer::new(translated_byte_buffer(token, buf, len)));
         if fd == 2 {
-            let str = str::replace(translated_str(token, buf).as_str(), "\n", "\\n");
+            str::replace(translated_str(token, buf).as_str(), "\n", "\\n");
         }
         size as isize
     } else {
@@ -81,7 +81,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
 // }
 
 // TODO:文件所有权
-pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isize {
+pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
     // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射

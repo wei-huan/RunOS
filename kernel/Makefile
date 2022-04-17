@@ -61,32 +61,30 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-build: switch-check $(KERNEL_BIN) fs-img
+build: switch-check $(KERNEL_BIN) fat32-img
 
-fat32:
-	./buildfs.sh
+fat32-img: $(APPS)
+	@cd ../fat32-pack && ./createfs.sh
+	@./buildfs.sh
+	@cp ../fat32-pack/fat32.img ../user/target/riscv64gc-unknown-none-elf/release/
 
-sdcard: fs-img
+sdcard: fat32-img
 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
 	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
 	@sudo dd if=$(FS_IMG) of=$(SDCARD)
 
-fat32-img: $(APPS)
-	@cd ../user && make build
-	@rm -f $(FAT32_IMG)
-	@cd ../fat32-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
-
-fs-img: $(APPS)
-	@cd ../user && make build
-	@rm -f $(FS_IMG)
-	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
+# fs-img: $(APPS)
+# 	@cd ../user && make build
+# 	@rm -f $(FS_IMG)
+# 	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
 
 $(APPS):
 
 kernel:
-	cp src/linker-$(PLATFORM).ld src/linker.ld
-	RUSTFLAGS="-C link-arg=-Tsrc/linker.ld -g" cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
-	rm src/linker.ld
+	@cp src/linker-$(PLATFORM).ld src/linker.ld
+	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
+	@rm src/linker.ld
+# RUSTFLAGS="-C link-arg=-Tsrc/linker.ld -g"
 
 $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@

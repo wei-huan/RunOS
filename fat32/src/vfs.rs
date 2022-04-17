@@ -33,7 +33,7 @@ pub struct VFile {
 
 impl VFile{
     pub fn new(
-        name:String,
+        name: String,
         short_sector: usize,
         short_offset: usize,
         long_pos_vec:Vec<(usize, usize)>,

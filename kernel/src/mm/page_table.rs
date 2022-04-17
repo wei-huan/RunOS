@@ -2,10 +2,12 @@ use super::{
     address::{PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum},
     frame::{frame_alloc, Frame},
 };
+use crate::cpu::current_task;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::bitflags;
+use core::arch::asm;
 
 bitflags! {
     pub struct PTEFlags: u8 {
@@ -203,6 +205,13 @@ pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&
     while start < end {
         let start_va = VirtAddr::from(start);
         let mut vpn = start_va.floor();
+        // if page_table.translate(vpn).is_none() {
+        //     // current_task().unwrap().check_lazy(start_va, true);
+        //     unsafe {
+        //         asm!("sfence.vma");
+        //         asm!("fence.i");
+        //     }
+        // }
         let ppn = page_table.translate(vpn).unwrap().ppn();
         vpn.step();
         let mut end_va: VirtAddr = vpn.into();
@@ -246,20 +255,22 @@ pub fn translated_refmut<T>(token: usize, ptr: *mut T) -> &'static mut T {
 }
 
 /* 获取用户数组的一份拷贝 */
-pub fn translated_array_copy<T>(token: usize, ptr: *mut T, len: usize) -> Vec< T>
-    where T:Copy {
-    let page_table = PageTable::from_token(token);
-    let mut ref_array:Vec<T> = Vec::new();
+pub fn translated_array_copy<T>(token: usize, ptr: *mut T, len: usize) -> Vec<T>
+where
+    T: Copy,
+{
+    let mut ref_array: Vec<T> = Vec::new();
     let mut va = ptr as usize;
     let step = core::mem::size_of::<T>();
     //println!("step = {}, len = {}", step, len);
     for _i in 0..len {
-        let u_buf = UserBuffer::new( translated_byte_buffer(token, va as *const u8, step) );
-        let mut bytes_vec:Vec<u8> = Vec::new();
+        let u_buf = UserBuffer::new(translated_byte_buffer(token, va as *const u8, step));
+        let mut bytes_vec: Vec<u8> = Vec::new();
         u_buf.read_as_vec(&mut bytes_vec);
         //println!("loop, va = 0x{:X}, vec = {:?}", va, bytes_vec);
-        unsafe{
-            ref_array.push(  *(bytes_vec.as_slice() as *const [u8] as *const u8 as usize as *const T) );
+        unsafe {
+            ref_array
+                .push(*(bytes_vec.as_slice() as *const [u8] as *const u8 as usize as *const T));
         }
         va += step;
     }
@@ -282,13 +293,13 @@ impl UserBuffer {
         total
     }
     // TODO: 把vlen去掉
-    pub fn read_as_vec(&self, vec: &mut Vec<u8>)->usize{
+    pub fn read_as_vec(&self, vec: &mut Vec<u8>) -> usize {
         let len = self.len();
         let mut current = 0;
         for sub_buff in self.buffers.iter() {
             let sblen = (*sub_buff).len();
             for j in 0..sblen {
-                vec.push( (*sub_buff)[j] );
+                vec.push((*sub_buff)[j]);
                 current += 1;
                 if current == len {
                     return len;

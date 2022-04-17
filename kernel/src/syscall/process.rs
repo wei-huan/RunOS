@@ -41,7 +41,7 @@ pub fn sys_exec(path: *const u8) -> isize {
     let token = current_user_token();
     let path = translated_str(token, path);
     let task = current_task().unwrap();
-    let mut inner = task.inner_exclusive_access();
+    let inner = task.inner_exclusive_access();
     log::debug!("sys_after");
     if let Some(app_inode) = open(
         inner.current_path.as_str(),
@@ -49,9 +49,9 @@ pub fn sys_exec(path: *const u8) -> isize {
         OpenFlags::RDONLY,
         DiskInodeType::File,
     ) {
+        drop(inner);
         let all_data = app_inode.read_all();
         let task = current_task().unwrap();
-        drop(inner);
         task.exec(all_data.as_slice());
         0
     } else {

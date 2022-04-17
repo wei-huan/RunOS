@@ -135,7 +135,7 @@ impl OSInode {
 
     pub fn find(&self, path:&str, flags:OpenFlags)->Option<Arc<OSInode>>{
         let inner = self.inner.lock();
-        let mut pathv:Vec<&str> = path.split('/').collect();
+        let pathv:Vec<&str> = path.split('/').collect();
         let vfile = inner.inode.find_vfile_bypath(pathv);
         if vfile.is_none(){
             return None
@@ -227,7 +227,7 @@ impl OSInode {
 
     pub fn get_size(&self)->usize{
         let inner = self.inner.lock();
-        let (size, _, mt_me, _, _) = inner.inode.stat();
+        let (size, _, _, _, _) = inner.inode.stat();
         return size as usize
     }
 
@@ -348,11 +348,11 @@ lazy_static! {
 pub fn init_rootfs(){
     // println!("[fs] build rootfs ... start");
     // println!("[fs] build rootfs: creating /proc");
-    let file = open("/","proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    open("/","proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // println!("[fs] build rootfs: init /proc");
-    let file = open("/proc","mounts", OpenFlags::CREATE, DiskInodeType::File).unwrap();
-    let meminfo = open("/proc","meminfo", OpenFlags::CREATE, DiskInodeType::File).unwrap();
-    let file = open("/","ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
+    open("/proc","mounts", OpenFlags::CREATE, DiskInodeType::File).unwrap();
+    open("/proc","meminfo", OpenFlags::CREATE, DiskInodeType::File).unwrap();
+    open("/","ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
     // println!("[fs] build rootfs ... finish");
 }
 
@@ -379,7 +379,7 @@ pub fn list_files(work_path: &str, path: &str){
             ROOT_INODE.find_vfile_bypath( wpath ).unwrap()
         }
     };
-    let mut pathv:Vec<&str> = path.split('/').collect();
+    let pathv:Vec<&str> = path.split('/').collect();
     let cur_inode = work_inode.find_vfile_bypath(pathv).unwrap();
 
     let mut file_vec = cur_inode.ls_lite().unwrap();

@@ -13,7 +13,7 @@ pub struct MountTable {
 
 impl MountTable {
 
-    pub fn mount(&mut self, special:String,dir:String,fstype:String, flag:u32)->isize{
+    pub fn mount(&mut self, special:String,dir:String,fstype:String, _flag:u32)->isize{
         //println!("[mount] mnt {} to {}", special, dir);
         if self.mnt_list.len() == MNT_MAXLEN {
             return -1
@@ -25,7 +25,7 @@ impl MountTable {
         return 0
     }
 
-    pub fn umount(&mut self, special:String, flags:u32)->isize{
+    pub fn umount(&mut self, special:String, _flags:u32)->isize{
         let len = self.mnt_list.len();
         //println!("[umount] special={}", special);
         for i in 0..len {
