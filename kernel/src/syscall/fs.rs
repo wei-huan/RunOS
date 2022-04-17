@@ -25,9 +25,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
-    // log::debug!("BR");
     let inner = task.inner_exclusive_access();
-    // log::debug!("AR");
     if fd >= inner.fd_table.len() {
         return -1;
     }
@@ -36,8 +34,10 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         if !file.readable() {
             return -1;
         }
-        // release current task PCB manually to avoid multi-borrow
+        // release current task PCB inner manually to avoid multi-borrow
         drop(inner);
+        // release current task PCB manually to avoid Arc::strong_count grow
+        drop(task);
         let user_buf = UserBuffer::new(translated_byte_buffer(token, buf, len));
         file.read(user_buf) as isize
     } else {

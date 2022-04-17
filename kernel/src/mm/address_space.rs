@@ -297,7 +297,6 @@ impl AddrSpace {
         }
         addr_space
     }
-    #[allow(unused)]
     pub fn recycle_data_pages(&mut self) {
         self.sections.clear();
     }
