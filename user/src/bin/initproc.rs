@@ -4,13 +4,13 @@
 #[macro_use]
 extern crate user;
 
-use user::{exec, fork, wait, yield_, getpid};
+use user::{exec, fork, wait, yield_};
 
 #[no_mangle]
 fn main() -> i32 {
-    println!("Init Process, pid: {}", getpid());
+    println!("Init Process");
     if fork() == 0 {
-        println!("exec user_shell");
+        // println!("exec user_shell");
         exec("user_shell\0");
     } else {
         loop {

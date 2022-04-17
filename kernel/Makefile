@@ -10,8 +10,7 @@ APPS := ../user/src/bin/*
 # FS
 FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 # FAT32
-FAT32_IMG := ../user/target/$(TARGET)/$(MODE)/fat32.img
-# FAT32
+FAT32_IMG := ../fat32-pack/fat32.img
 # PLATFORM qemu or k210
 PLATFORM ?= qemu
 # SBI opensbi or rustsbi
@@ -61,24 +60,25 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-build: switch-check $(KERNEL_BIN) fat32-img
+build: switch-check $(KERNEL_BIN) fat32-oscomp-img
 
-fat32-img: $(APPS)
+fat32-img:
 	@cd ../fat32-pack && ./createfs.sh
-	@./buildfs.sh
-	@cp ../fat32-pack/fat32.img ../user/target/riscv64gc-unknown-none-elf/release/
+	@cd ../user && ./addtestfile2fs.sh
 
-sdcard: fat32-img
-	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
-	@sudo dd if=$(FS_IMG) of=$(SDCARD)
+fat32-oscomp-img:
+	@cd ../fat32-pack && ./createfs.sh
+	@cd ../os-comp && ./addoscompfile2fs.sh
+
+# sdcard: fat32-img
+# 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
+# 	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
+# 	@sudo dd if=$(FS_IMG) of=$(SDCARD)
 
 # fs-img: $(APPS)
 # 	@cd ../user && make build
 # 	@rm -f $(FS_IMG)
 # 	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
-
-$(APPS):
 
 kernel:
 	@cp src/linker-$(PLATFORM).ld src/linker.ld
@@ -93,7 +93,7 @@ run: build
 ifeq ($(PLATFORM),qemu)
 ifeq ($(SBI),opensbi)
 	@qemu-system-riscv64 \
-		-m 512M \
+		-m 8M \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
@@ -103,6 +103,7 @@ ifeq ($(SBI),opensbi)
 		-smp $(CPUS)
 else
 	@qemu-system-riscv64 \
+		-m 8M \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
@@ -128,7 +129,7 @@ debug: build
     	-nographic \
     	-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
-		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-drive file=$(FAT32_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-s -S \
 		-smp $(CPUS)
