@@ -132,7 +132,7 @@ impl TaskControlBlock {
         );
         task
     }
-    pub fn exec(&self, elf_data: &[u8]) {
+    pub fn exec(&self, elf_data: &[u8], args: Vec<String>) {
         // memory_set with elf program headers/trampoline/trap context/user stack
         let (addr_space, mut user_sp, entry_point) = AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addr_space
