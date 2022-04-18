@@ -1,7 +1,6 @@
 use super::File;
 use crate::mm::{UserBuffer};
 use crate::task::suspend_current_and_run_next;
-use lazy_static::*;
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::console_getchar;
 #[cfg(feature = "opensbi")]
@@ -24,7 +23,7 @@ impl File for Stdin {
     fn read(&self, mut user_buf: UserBuffer) -> usize {
         //assert_eq!(user_buf.len(), 1);
         // busy loop
-        let mut c: usize;
+        let c: usize;
         if user_buf.len() > 1{
             return 0;
         }

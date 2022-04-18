@@ -2,12 +2,12 @@ use super::{
     address::{PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum},
     frame::{frame_alloc, Frame},
 };
-use crate::cpu::current_task;
+// use crate::cpu::current_task;
 use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::bitflags;
-use core::arch::asm;
+// use core::arch::asm;
 
 bitflags! {
     pub struct PTEFlags: u8 {
@@ -255,6 +255,7 @@ pub fn translated_refmut<T>(token: usize, ptr: *mut T) -> &'static mut T {
 }
 
 /* 获取用户数组的一份拷贝 */
+#[allow(unused)]
 pub fn translated_array_copy<T>(token: usize, ptr: *mut T, len: usize) -> Vec<T>
 where
     T: Copy,

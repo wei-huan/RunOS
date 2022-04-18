@@ -29,7 +29,8 @@ fs-img:
 	@rm -f $(FS_IMG)
 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
-run: fs-img
+#fs-img
+run:
 	@make run -C $(OS_DIR)
 
 debug:

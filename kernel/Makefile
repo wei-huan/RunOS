@@ -4,13 +4,9 @@ TARGET := riscv64gc-unknown-none-elf
 MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 KERNEL_BIN := $(KERNEL_ELF).bin
-SDCARD := /dev/sda
+SDCARD := /dev/sda1
 APPS := ../user/src/bin/*
 
-# FS
-FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
-# FAT32
-FAT32_IMG := ../fat32-pack/fat32.img
 # PLATFORM qemu or k210
 PLATFORM ?= qemu
 # SBI opensbi or rustsbi
@@ -19,11 +15,14 @@ SBI ?= opensbi
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
+
+# FS
+FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 # FAT32
 ifeq ($(PLATFORM), k210)
-	FAT32 := $(SDCARD)
+	FAT32_IMG := $(SDCARD)
 else
-	FAT32 := fat32-pack/fat32.img
+	FAT32_IMG := ../fat32-pack/fat32.img
 endif
 
 # KERNEL ENTRY
@@ -60,15 +59,15 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-build: switch-check $(KERNEL_BIN) fat32-oscomp-img
+build: switch-check fat32-oscomp-img $(KERNEL_BIN)
 
 fat32-img:
 	@cd ../fat32-pack && ./createfs.sh
 	@cd ../user && ./addtestfile2fs.sh
 
 fat32-oscomp-img:
-	@cd ../fat32-pack && ./createfs.sh
-	@cd ../os-comp && ./addoscompfile2fs.sh
+	cd ../fat32-pack && ./createfs.sh
+	cd ../oscomp && ./addoscompfile2fs.sh
 
 # sdcard: fat32-img
 # 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
@@ -82,7 +81,7 @@ fat32-oscomp-img:
 
 kernel:
 	@cp src/linker-$(PLATFORM).ld src/linker.ld
-	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
+	cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
 	@rm src/linker.ld
 # RUSTFLAGS="-C link-arg=-Tsrc/linker.ld -g"
 
@@ -92,7 +91,7 @@ $(KERNEL_BIN): kernel
 run: build
 ifeq ($(PLATFORM),qemu)
 ifeq ($(SBI),opensbi)
-	@qemu-system-riscv64 \
+	qemu-system-riscv64 \
 		-m 8M \
 		-machine virt \
 		-nographic \
@@ -124,7 +123,7 @@ endif
 
 debug: build
 	@qemu-system-riscv64 \
-		-m 128M \
+		-m 8M \
     	-machine virt \
     	-nographic \
     	-bios $(SBI_IMG) \

@@ -11,13 +11,17 @@ use fat32::{ATTRIBUTE_ARCHIVE, ATTRIBUTE_DIRECTORY, FAT32Manager, VFile};
 //use crate::config::*;
 //use crate::gdb_println;
 
+#[allow(unused)]
 pub const SEEK_SET:i32 = 0;  /* set to offset bytes.  */
+#[allow(unused)]
 pub const SEEK_CUR:i32 = 1;  /* set to its current location plus offset bytes.  */
+#[allow(unused)]
 pub const SEEK_END:i32 = 2;  /* set to the size of the file plus offset bytes.  */
 /*  Adjust the file offset to the next location in the file
     greater than or equal to offset containing data.  If
     offset points to data, then the file offset is set to
     offset */
+#[allow(unused)]
 pub const SEEK_DATA:i32 = 3;
 /*  Adjust the file offset to the next hole in the file
     greater than or equal to offset.  If offset points into
@@ -25,6 +29,7 @@ pub const SEEK_DATA:i32 = 3;
     offset.  If there is no hole past offset, then the file
     offset is adjusted to the end of the file (i.e., there is
     an implicit hole at the end of any file). */
+    #[allow(unused)]
 pub const SEEK_HOLE:i32 = 4;
 
 
@@ -493,7 +498,7 @@ pub fn ch_dir(work_path: &str, path: &str) -> isize{
         }
     };
     let pathv:Vec<&str> = path.split('/').collect();
-    if let Some(tar_dir) = cur_inode.find_vfile_bypath(pathv){
+    if let Some(_tar_dir) = cur_inode.find_vfile_bypath(pathv){
         // ! 当inode_id > 2^16 时，有溢出的可能（目前不会发生。。
         0
     }else{

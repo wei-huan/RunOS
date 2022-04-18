@@ -5,9 +5,9 @@ SELF_TEST_DIR="target/riscv64gc-unknown-none-elf/release"
 FAT32_IMG="${FAT32_DIR}/fat32.img"
 # FAT32_IMG="/dev/sda"
 
-sudo chmod 777 ${FAT32_IMG}
-sudo umount ${FAT32_IMG}
-mkfs.vfat -F 32 ${FAT32_IMG}
+# sudo chmod -R 777 ${FAT32_IMG}
+# sudo umount ${FAT32_IMG}
+# mkfs.vfat -F 32 ${FAT32_IMG}
 
 # 如果文件夹存在
 if test -e ${FAT32_DIR}/fs
@@ -23,7 +23,7 @@ sudo rm -rf ${FAT32_DIR}/fs/*
 
 for inode in $(ls build/riscv64)
 do
-    sudo cp -r build/riscv64/${inode} ${FAT32_DIR}/fs/${inode}
+    sudo cp -r ./build/riscv64/${inode} ${FAT32_DIR}/fs/${inode}
 done
 
 for programname in $(ls ../user/src/bin)

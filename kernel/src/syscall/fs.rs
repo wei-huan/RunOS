@@ -28,7 +28,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
         drop(inner);
         let size = file.write(UserBuffer::new(translated_byte_buffer(token, buf, len)));
         if fd == 2 {
-            str::replace(translated_str(token, buf).as_str(), "\n", "\\n");
+            // str::replace(translated_str(token, buf).as_str(), "\n", "\\n");
         }
         size as isize
     } else {
