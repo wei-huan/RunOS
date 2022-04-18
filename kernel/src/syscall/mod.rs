@@ -4,8 +4,6 @@ mod process;
 
 use fs::*;
 use process::*;
-// use sync::*;
-// use thread::*;
 
 const SYSCALL_GETCWD: usize = 17;
 const SYSCALL_DUP: usize = 23;
