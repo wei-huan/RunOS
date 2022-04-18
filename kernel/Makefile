@@ -4,11 +4,9 @@ TARGET := riscv64gc-unknown-none-elf
 MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 KERNEL_BIN := $(KERNEL_ELF).bin
-SDCARD := /dev/sda
+SDCARD := /dev/sda1
 APPS := ../user/src/bin/*
 
-# FS
-FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 # PLATFORM qemu or k210
 PLATFORM ?= qemu
 # SBI opensbi or rustsbi
@@ -17,11 +15,14 @@ SBI ?= opensbi
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
+
+# FS
+FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 # FAT32
 ifeq ($(PLATFORM), k210)
-	FAT32 := $(SDCARD)
+	FAT32_IMG := $(SDCARD)
 else
-	FAT32 := ../fat32-pack/fat32.img
+	FAT32_IMG := ../fat32-pack/fat32.img
 endif
 
 # KERNEL ENTRY
@@ -59,24 +60,30 @@ else ifeq ($(PLATFORM), k210)
 endif
 
 build: switch-check $(KERNEL_BIN)
-#fs-img
 
-sdcard: fs-img
-	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
-	@sudo dd if=$(FS_IMG) of=$(SDCARD)
+fat32-img:
+	@cd ../fat32-pack && ./createfs.sh
+	@cd ../user && ./addtestfile2fs.sh
 
-fs-img: $(APPS)
-	@cd ../user && make build
-	@rm -f $(FS_IMG)
-	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
+# fat32-oscomp-img:
+# 	cd ../fat32-pack && ./createfs.sh
+# 	cd ../oscomp && ./addoscompfile2fs.sh
 
-$(APPS):
+# sdcard: fat32-img
+# 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]
+# 	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
+# 	@sudo dd if=$(FS_IMG) of=$(SDCARD)
+
+# fs-img: $(APPS)
+# 	@cd ../user && make build
+# 	@rm -f $(FS_IMG)
+# 	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
 
 kernel:
-	cp src/linker-$(PLATFORM).ld src/linker.ld
-	RUSTFLAGS="-C link-arg=-Tsrc/linker.ld -g" cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
-	rm src/linker.ld
+	@cp src/linker-$(PLATFORM).ld src/linker.ld
+	cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
+	@rm src/linker.ld
+# RUSTFLAGS="-C link-arg=-Tsrc/linker.ld -g"
 
 $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
@@ -84,21 +91,24 @@ $(KERNEL_BIN): kernel
 run: build
 ifeq ($(PLATFORM),qemu)
 ifeq ($(SBI),opensbi)
-	@qemu-system-riscv64 \
-		-m 512M \
+	qemu-system-riscv64 \
+		-m 128M \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
-		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-drive file=$(FAT32_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPUS)
 else
 	@qemu-system-riscv64 \
+		-m 128M \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
+		-drive file=$(FAT32_IMG),if=none,format=raw,id=x0 \
+		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPUS)
 endif
 else
@@ -118,7 +128,7 @@ debug: build
     	-nographic \
     	-bios $(SBI_IMG) \
 		-device loader,file=$(KERNEL_BIN),addr=$(KERNEL_ENTRY_PA) \
-		-drive file=$(FS_IMG),if=none,format=raw,id=x0 \
+		-drive file=$(FAT32_IMG),if=none,format=raw,id=x0 \
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-s -S \
 		-smp $(CPUS)

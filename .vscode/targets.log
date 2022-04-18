@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Apr 18 14:18:13 2022
+# Make data base, printed on Mon Apr 18 20:23:45 2022
 
 # Variables
 
@@ -284,15 +286,13 @@ LANG = C
 # Pattern-specific Variable Values
 
 # No pattern-specific variable values.
- 
-make: *** No rule to make target 'all'.  Stop.
-
 
 # Directories
 
-# . (device 66310, inode 3414746): 21 files, no impossibilities.
+ 
+# . (device 66310, inode 3414746): 20 files, no impossibilities.
 
-# 21 files, no impossibilities in 1 directories.
+# 20 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -308,14 +308,19 @@ user:
 #  recipe to execute (from 'Makefile', line 25):
 	@make build -C $(USER_DIR)
 
-fs-img:
+fs-img: user
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 28):
+	@rm -f $(OSCOMP_TAR_DIR)/initproc
+	@rm -f $(OSCOMP_TAR_DIR)/user_shell
+	@cp $(USER_TAR_DIR)/initproc $(OSCOMP_TAR_DIR)/
+	@cp $(USER_TAR_DIR)/user_shell $(OSCOMP_TAR_DIR)/
 	@rm -f $(FS_IMG)
 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(OSCOMP_TAR_DIR)/ -t $(OSCOMP_TAR_DIR)/
+	@cp ./fs.img $(USER_TAR_DIR)/
 
 sdcard:
 #  Phony target (prerequisite of .PHONY).
@@ -325,12 +330,19 @@ sdcard:
 #  recipe to execute (from 'Makefile', line 19):
 	@make sdcard -C $(OS_DIR)
 
+fat32-img:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 22):
+	@make fat32-img -C $(OS_DIR)
+
 gdb:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 39):
+#  recipe to execute (from 'Makefile', line 48):
 	@make gdb -C $(OS_DIR)
 
 # Not a target:
@@ -348,7 +360,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-18 11:01:11.084044784
+#  Last modified 2022-04-18 20:18:29.160364235
 #  File has been updated.
 #  Successfully updated.
 
@@ -357,7 +369,7 @@ debug:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 36):
+#  recipe to execute (from 'Makefile', line 45):
 	@make debug -C $(OS_DIR)
 
 build:
@@ -374,43 +386,44 @@ build:
 #  Modification time never checked.
 #  File has not been updated.
 
-run:
+run: fat32-oscomp-img
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 33):
+#  recipe to execute (from 'Makefile', line 42):
 	@make run -C $(OS_DIR)
-
-fat32:
-#  Implicit rule search has not been done.
-#  Modification time never checked.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 22):
-	@cd $(FAT32_PACK_DIR) && ./qemu_fat32.sh
 
 disasm:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 42):
+#  recipe to execute (from 'Makefile', line 51):
 	@make disasm -C $(OS_DIR)
 
+fat32-oscomp-img: user
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 38):
+	cd fat32-pack && ./createfs.sh
+	cd oscomp && ./addoscompfile2fs.sh
+
 # files hash-table stats:
-# Load=14/1024=1%, Rehash=0, Collisions=0/32=0%
+# Load=15/1024=1%, Rehash=0, Collisions=0/36=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 34 / storage = 259 B / avg = 7 B
-# current buf: size = 8162 B / used = 259 B / count = 34 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 35 / storage = 282 B / avg = 8 B
+# current buf: size = 8162 B / used = 282 B / count = 35 / avg = 8 B
 
-# strcache performance: lookups = 58 / hit rate = 41%
+# strcache performance: lookups = 62 / hit rate = 43%
 # hash-table stats:
-# Load=34/8192=0%, Rehash=0, Collisions=1/58=2%
-# Finished Make data base on Mon Apr 18 14:18:13 2022
+# Load=35/8192=0%, Rehash=0, Collisions=1/62=2%
+# Finished Make data base on Mon Apr 18 20:23:45 2022
 
  

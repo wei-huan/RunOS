@@ -1,5 +1,5 @@
 use crate::cpu::{current_task, current_user_token};
-use crate::fs::{open_file, OpenFlags};
+use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
@@ -39,6 +39,7 @@ pub fn sys_fork() -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
+    // log::debug!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
     let mut args_vec: Vec<String> = Vec::new();
@@ -51,7 +52,16 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         // println!("arg{}: {}",0, args_vec[0]);
         unsafe { args = args.add(1); }
     }
-    if let Some(app_inode) = open_file(path.as_str(), OpenFlags::RDONLY) {
+    let task = current_task().unwrap();
+    let inner = task.inner_exclusive_access();
+    // log::debug!("sys_after");
+    if let Some(app_inode) = open(
+        inner.current_path.as_str(),
+        path.as_str(),
+        OpenFlags::RDONLY,
+        DiskInodeType::File,
+    ) {
+        drop(inner);
         let all_data = app_inode.read_all();
         let task = current_task().unwrap();
         task.exec(all_data.as_slice(), args_vec);

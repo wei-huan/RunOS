@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_token, current_trap_cx, current_user_token};
+use crate::cpu::{current_trap_cx, current_user_token};
 // use crate::mm::{kernel_token, kernel_translate};
 // use crate::scheduler::schedule;
 use crate::syscall::syscall;

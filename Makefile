@@ -18,8 +18,8 @@ build:
 sdcard:
 	@make sdcard -C $(OS_DIR)
 
-fat32:
-	@cd $(FAT32_PACK_DIR) && ./qemu_fat32.sh
+fat32-img:
+	@make fat32-img -C $(OS_DIR)
 
 user:
 	@make build -C $(USER_DIR)
@@ -34,7 +34,11 @@ fs-img: user
 	@cp ./fs.img $(USER_TAR_DIR)/
 # @cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(USER_TAR_DIR)/
 
-run: fs-img
+fat32-oscomp-img: user
+	cd fat32-pack && ./createfs.sh
+	cd oscomp && ./addoscompfile2fs.sh
+
+run: fat32-oscomp-img
 	@make run -C $(OS_DIR)
 
 debug:

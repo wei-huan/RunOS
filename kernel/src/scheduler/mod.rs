@@ -1,6 +1,6 @@
 mod round_robin;
 
-use crate::fs::{open_file, OpenFlags, ROOT_INODE};
+use crate::fs::{open, OpenFlags, DiskInodeType};
 use crate::task::{TaskContext, TaskControlBlock};
 use alloc::sync::Arc;
 use core::arch::global_asm;
@@ -25,18 +25,6 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
-#[allow(unused)]
-pub fn add_apps() {
-    for app in ROOT_INODE.ls() {
-        log::debug!("app name: {}", app);
-        if let Some(app_inode) = open_file(app.as_str(), OpenFlags::RDONLY) {
-            let elf_data = app_inode.read_all();
-            let new_task = TaskControlBlock::new(elf_data.as_slice());
-            add_task(Arc::new(new_task));
-        }
-    }
-}
-
 global_asm!(include_str!("schedule.S"));
 extern "C" {
     pub fn __schedule_new(next_task_cx_ptr: *const TaskContext) -> !;
@@ -44,14 +32,12 @@ extern "C" {
 
 lazy_static! {
     pub static ref INITPROC: Arc<TaskControlBlock> = Arc::new({
-        let inode = open_file("initproc", OpenFlags::RDONLY).unwrap();
+        let inode = open("/","initproc", OpenFlags::RDONLY, DiskInodeType::File).unwrap();
         let v = inode.read_all();
         TaskControlBlock::new(v.as_slice())
     });
 }
 
-#[allow(unused)]
 pub fn add_initproc() {
     add_task(INITPROC.clone());
 }
-

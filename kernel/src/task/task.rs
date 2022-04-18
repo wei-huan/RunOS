@@ -3,16 +3,16 @@ use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
 use super::{pid_alloc, PidHandle};
 use crate::config::TRAP_CONTEXT;
-use crate::fs::{File, Stdin, Stdout};
+use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
 use crate::trap::{user_trap_handler, TrapContext};
 use crate::{
     mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE, translated_refmut},
     sync::UPSafeCell,
 };
+use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
-use alloc::string::String;
 use core::cell::RefMut;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -30,6 +30,7 @@ pub struct TaskControlBlock {
     inner: UPSafeCell<TaskControlBlockInner>,
 }
 
+pub type FdTable = Vec<Option<FileDescripter>>;
 pub struct TaskControlBlockInner {
     pub entry_point: usize, // 用户程序入口点 exec会改变
     pub trap_cx_ppn: PhysPageNum,
@@ -40,7 +41,8 @@ pub struct TaskControlBlockInner {
     pub parent: Option<Weak<TaskControlBlock>>,
     pub children: Vec<Arc<TaskControlBlock>>,
     pub exit_code: i32,
-    pub fd_table: Vec<Option<Arc<dyn File + Send + Sync>>>,
+    pub fd_table: FdTable,
+    pub current_path: String,
 }
 
 impl TaskControlBlockInner {
@@ -63,6 +65,9 @@ impl TaskControlBlockInner {
             self.fd_table.push(None);
             self.fd_table.len() - 1
         }
+    }
+    pub fn get_work_path(&self) -> String {
+        self.current_path.clone()
     }
 }
 
@@ -97,12 +102,22 @@ impl TaskControlBlock {
                     exit_code: 0,
                     fd_table: vec![
                         // 0 -> stdin
-                        Some(Arc::new(Stdin)),
+                        Some(FileDescripter::new(
+                            false,
+                            FileClass::Abstr(Arc::new(Stdin)),
+                        )),
                         // 1 -> stdout
-                        Some(Arc::new(Stdout)),
+                        Some(FileDescripter::new(
+                            false,
+                            FileClass::Abstr(Arc::new(Stdout)),
+                        )),
                         // 2 -> stderr
-                        Some(Arc::new(Stdout)),
+                        Some(FileDescripter::new(
+                            false,
+                            FileClass::Abstr(Arc::new(Stdout)),
+                        )),
                     ],
+                    current_path: String::from("/"),
                 })
             },
         };
@@ -191,7 +206,7 @@ impl TaskControlBlock {
         let kernel_stack = kstack_alloc();
         let kernel_stack_top = kernel_stack.get_top();
         // copy fd table
-        let mut new_fd_table: Vec<Option<Arc<dyn File + Send + Sync>>> = Vec::new();
+        let mut new_fd_table: FdTable = Vec::new();
         for fd in parent_inner.fd_table.iter() {
             if let Some(file) = fd {
                 new_fd_table.push(Some(file.clone()));
@@ -214,6 +229,7 @@ impl TaskControlBlock {
                     children: Vec::new(),
                     exit_code: 0,
                     fd_table: new_fd_table,
+                    current_path: parent_inner.current_path.clone(),
                 })
             },
         });

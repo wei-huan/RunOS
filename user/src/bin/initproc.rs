@@ -10,6 +10,7 @@ use user::{exec, fork, wait, yield_};
 fn main() -> i32 {
     println!("Init Process");
     if fork() == 0 {
+        // println!("exec user_shell");
         exec("user_shell\0", &[0 as *const u8]);
     } else {
         loop {

@@ -19,9 +19,9 @@ pub fn main() -> i32 {
         print!(">> ");
         read_line(&mut line).unwrap();
         // println!("123 {}", line);
-        if line == "exit\0" {
-            break;
-        }
+        // if line == "exit\0" {
+        //     break;
+        // }
         let pid = fork();
         if pid == 0 {
             // child process
@@ -38,5 +38,4 @@ pub fn main() -> i32 {
         }
         line.clear();
     }
-    0
 }
