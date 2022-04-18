@@ -1,6 +1,6 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{open, DiskInodeType, OpenFlags};
-use crate::mm::{translated_refmut, translated_str};
+use crate::mm::{translated_ref, translated_refmut, translated_str};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::get_time_ms;
@@ -38,10 +38,20 @@ pub fn sys_fork() -> isize {
     new_pid as isize
 }
 
-pub fn sys_exec(path: *const u8, args: Vec<String>) -> isize {
+pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
     // log::debug!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
+    let mut args_vec: Vec<String> = Vec::new();
+    loop {
+        let arg_str_ptr = *translated_ref(token, args);
+        if arg_str_ptr == 0 {
+            break;
+        }
+        args_vec.push(translated_str(token, arg_str_ptr as *const u8));
+        // println!("arg{}: {}",0, args_vec[0]);
+        unsafe { args = args.add(1); }
+    }
     let task = current_task().unwrap();
     let inner = task.inner_exclusive_access();
     // log::debug!("sys_after");
