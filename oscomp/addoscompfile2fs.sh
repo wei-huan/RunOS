@@ -1,12 +1,12 @@
 FAT32_DIR="../fat32-pack"
 OSCOMP_TEST_DIR="./target/riscv64"
-SELF_TEST_DIR="target/riscv64gc-unknown-none-elf/release"
+SELF_TEST_DIR="../user/target/riscv64gc-unknown-none-elf/release"
 
-FAT32_IMG="${FAT32_DIR}/fat32.img"
-# FAT32_IMG="/dev/sda"
+# FAT32_IMG="${FAT32_DIR}/fat32.img"
+FAT32_IMG="/dev/sda1"
 
 # sudo chmod -R 777 ${FAT32_IMG}
-# sudo umount ${FAT32_IMG}
+sudo umount ${FAT32_IMG}
 # mkfs.vfat -F 32 ${FAT32_IMG}
 
 # 如果文件夹存在
@@ -30,7 +30,7 @@ for programname in $(ls ../user/src/bin)
 do
     if [ $programname == "initproc.rs" ] || [ $programname == "user_shell.rs" ]
     then
-    sudo cp ../user/target/riscv64gc-unknown-none-elf/release/${programname%.rs} ${FAT32_DIR}/fs/${programname%.rs}
+    sudo cp ${SELF_TEST_DIR}/${programname%.rs} ${FAT32_DIR}/fs/${programname%.rs}
     fi
 done
 

@@ -22,13 +22,17 @@ fat32-img:
 user:
 	@make build -C $(USER_DIR)
 
-fs-img: user
-	@rm -f $(FS_IMG)
-	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
+# fs-img: user
+# 	@rm -f $(FS_IMG)
+# 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
 fat32-oscomp-img: user
+ifeq ($(PLATFORM), qemu)
 	cd fat32-pack && ./createfs.sh
 	cd oscomp && ./addoscompfile2fs.sh
+else
+	cd oscomp && ./addoscompfile2fs.sh
+endif
 
 run: fat32-oscomp-img
 	@make run -C $(OS_DIR)

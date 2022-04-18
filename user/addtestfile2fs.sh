@@ -1,10 +1,10 @@
 FAT32_DIR="../fat32-pack"
 SELF_TEST_DIR="/target/riscv64gc-unknown-none-elf/release"
 
-FAT32_IMG="${FAT32_DIR}/fat32.img"
-# FAT32_IMG="/dev/sda"
+# FAT32_IMG="${FAT32_DIR}/fat32.img"
+# FAT32_IMG="/dev/sda1"
 
-sudo chmod 777 ${FAT32_IMG}
+sudo chmod -R 777 ${FAT32_IMG}
 sudo umount ${FAT32_IMG}
 # mkfs.vfat -F 32 ${FAT32_IMG}
 
