@@ -64,7 +64,7 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         drop(inner);
         let all_data = app_inode.read_all();
         let task = current_task().unwrap();
-        task.exec(all_data.as_slice(), args);
+        task.exec(all_data.as_slice(), args_vec);
         0
     } else {
         -1

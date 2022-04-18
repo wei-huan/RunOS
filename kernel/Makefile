@@ -59,15 +59,15 @@ else ifeq ($(PLATFORM), k210)
 	(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-build: switch-check fat32-oscomp-img $(KERNEL_BIN)
+build: switch-check $(KERNEL_BIN)
 
 fat32-img:
 	@cd ../fat32-pack && ./createfs.sh
 	@cd ../user && ./addtestfile2fs.sh
 
-fat32-oscomp-img:
-	cd ../fat32-pack && ./createfs.sh
-	cd ../oscomp && ./addoscompfile2fs.sh
+# fat32-oscomp-img:
+# 	cd ../fat32-pack && ./createfs.sh
+# 	cd ../oscomp && ./addoscompfile2fs.sh
 
 # sdcard: fat32-img
 # 	@echo "Are you sure write to $(SDCARD) ? [y/N] " && read ans && [ $${ans:-N} = y ]

@@ -19,18 +19,18 @@ sdcard:
 fat32-img:
 	@make fat32-img -C $(OS_DIR)
 
-fat32-oscomp-img:
-	@make fat32-oscomp-img -C $(OS_DIR)
-
 user:
 	@make build -C $(USER_DIR)
 
-fs-img:
+fs-img: user
 	@rm -f $(FS_IMG)
 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
-#fs-img
-run:
+fat32-oscomp-img: user
+	cd fat32-pack && ./createfs.sh
+	cd oscomp && ./addoscompfile2fs.sh
+
+run: fat32-oscomp-img
 	@make run -C $(OS_DIR)
 
 debug:
