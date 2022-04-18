@@ -21,7 +21,7 @@ BOOTLOADER := $(SBI_IMG)
 ifeq ($(PLATFORM), k210)
 	FAT32 := $(SDCARD)
 else
-	FAT32 := fat32-pack/fat32.img
+	FAT32 := ../fat32-pack/fat32.img
 endif
 
 # KERNEL ENTRY
