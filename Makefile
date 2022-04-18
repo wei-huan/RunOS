@@ -4,7 +4,9 @@ DIR := $(shell pwd)
 PACK_IMG_DIR := $(DIR)/myfs-pack
 FAT32_PACK_DIR := $(DIR)/fat32-pack
 USER_DIR := $(DIR)/user
-IMG_DIR := $(USER_DIR)/target/$(TARGET)/$(MODE)
+USER_TAR_DIR := $(USER_DIR)/target/$(TARGET)/$(MODE)
+OSCOMP_DIR := $(DIR)/oscomp
+OSCOMP_TAR_DIR := $(OSCOMP_DIR)/build/riscv64
 OS_DIR := $(DIR)/kernel
 FS_IMG := $(IMG_DIR)/fs.img
 
@@ -21,12 +23,13 @@ fat32:
 
 user:
 	@make build -C $(USER_DIR)
-
-fs-img: user
+# user
+fs-img:
 	@rm -f $(FS_IMG)
-	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
+	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(OSCOMP_TAR_DIR)/ -t $(OSCOMP_TAR_DIR)/
+# @cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(USER_TAR_DIR)/
 
-run: fs-img
+run: #fs-img
 	@make run -C $(OS_DIR)
 
 debug:

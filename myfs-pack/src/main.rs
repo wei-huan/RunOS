@@ -47,28 +47,31 @@ fn easy_fs_pack() -> std::io::Result<()> {
         .get_matches();
     let src_path = matches.value_of("source").unwrap();
     let target_path = matches.value_of("target").unwrap();
+    let img_path = "/home/weihuan/WorkSpace/OS/MyOS/";
     println!("src_path = {}\ntarget_path = {}", src_path, target_path);
     let block_file = Arc::new(BlockFile(Mutex::new({
         let f = OpenOptions::new()
             .read(true)
             .write(true)
             .create(true)
-            .open(format!("{}{}", target_path, "fs.img"))?;
+            .open(format!("{}{}", img_path, "fs.img"))?;
+            // .open(format!("{}{}", target_path, "fs.img"))?;
         f.set_len(16 * 2048 * 512).unwrap();
         f
     })));
     // 16MiB, at most 4095 files
     let myfs = MyFileSystem::create(block_file, 16 * 2048, 1);
     let root_inode = Arc::new(MyFileSystem::root_inode(&myfs));
-    let apps: Vec<_> = read_dir(src_path)
+    let apps: Vec<_> = read_dir(target_path)
         .unwrap()
         .into_iter()
         .map(|dir_entry| {
             let mut name_with_ext = dir_entry.unwrap().file_name().into_string().unwrap();
-            name_with_ext.drain(name_with_ext.find('.').unwrap()..name_with_ext.len());
+            // name_with_ext.drain(name_with_ext.find('.').unwrap()..name_with_ext.len());
             name_with_ext
         })
         .collect();
+    // println!("{:#?}", apps);
     for app in apps {
         // load app data from host file system
         let mut host_file = File::open(format!("{}{}", target_path, app)).unwrap();

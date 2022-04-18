@@ -3,7 +3,9 @@ use super::{
     page_table::{PTEFlags, PageTable, PageTableEntry},
     section::{MapType, Permission, Section},
 };
-use crate::config::{MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE};
+use crate::config::{
+    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_HEAP_SIZE, USER_STACK_SIZE,
+};
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
@@ -81,7 +83,19 @@ impl AddrSpace {
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         section.map(&mut self.page_table);
         if let Some(data) = data {
-            section.copy_data(&mut self.page_table, data);
+            section.copy_data(&mut self.page_table, data, 0);
+        }
+        self.sections.push(section);
+    }
+    fn push_section_with_offset(
+        &mut self,
+        mut section: Section,
+        offset: usize,
+        data: Option<&[u8]>,
+    ) {
+        section.map(&mut self.page_table);
+        if let Some(data) = data {
+            section.copy_data(&mut self.page_table, data, offset);
         }
         self.sections.push(section);
     }
@@ -99,10 +113,16 @@ impl AddrSpace {
         kernel_space.map_trampoline();
         // map kernel sections
         println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        println!(".trampoline [{:#x}, {:#x})", strampoline as usize, etrampoline as usize);
+        println!(
+            ".trampoline [{:#x}, {:#x})",
+            strampoline as usize, etrampoline as usize
+        );
         println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
         println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(".bss [{:#x}, {:#x})", sbss_with_stack as usize, ebss as usize);
+        println!(
+            ".bss [{:#x}, {:#x})",
+            sbss_with_stack as usize, ebss as usize
+        );
         // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
@@ -177,7 +197,7 @@ impl AddrSpace {
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
-    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
+    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize) {
         // println!("create_user_space");
         let mut user_space = Self::new_empty();
         // map trampoline
@@ -188,6 +208,7 @@ impl AddrSpace {
         let magic = elf_header.pt1.magic;
         assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
         let ph_count = elf_header.pt2.ph_count();
+        // println!("ph_count: {}", ph_count);
         let mut max_end_vpn = VirtPageNum(0);
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
@@ -197,9 +218,11 @@ impl AddrSpace {
                 let name = sect.get_name(&elf).unwrap();
                 // println!("name: {}", name);
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
-                // println!("start_va: 0x{:X}", usize::from(start_va));
+                // println!("start_va: {:#X}", usize::from(start_va));
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
-                // println!("end_va: 0x{:X}", usize::from(end_va));
+                // println!("end_va: {:#X}", usize::from(end_va));
+                let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
+                // println!("offset: {:#X}", offset);
                 let mut map_perm = Permission::U;
                 let ph_flags = ph.flags();
                 if ph_flags.is_read() {
@@ -211,6 +234,7 @@ impl AddrSpace {
                 if ph_flags.is_execute() {
                     map_perm |= Permission::X;
                 }
+                // println!("map_perm: {:#?}", map_perm);
                 let section = Section::new(
                     name.to_string(),
                     start_va,
@@ -224,17 +248,54 @@ impl AddrSpace {
                 // println!("ph file_size: 0x{:X}", ph.file_size());
                 // println!("ph mem_size: 0x{:X}", ph.mem_size());
                 // println!("");
-                user_space.push_section(
-                    section,
-                    Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
-                );
+                // user_space.push_section(
+                //     section,
+                //     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
+                // );
+                if offset == 0 {
+                    user_space.push_section(
+                        section,
+                        Some(
+                            &elf.input
+                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+                        ),
+                    );
+                } else {
+                    user_space.push_section_with_offset(
+                        section,
+                        offset,
+                        Some(
+                            &elf.input
+                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+                        ),
+                    );
+                }
             }
         }
         // clear bss section
-        user_space.clear_bss_pages();
-        // map user stack with U flags
+        // user_space.clear_bss_pages();
+
+        // map user heap with U flags
         let max_end_va: VirtAddr = max_end_vpn.into();
-        let mut user_stack_bottom: usize = max_end_va.into();
+        let mut user_heap_bottom: usize = max_end_va.into();
+        //guard page
+        user_heap_bottom += PAGE_SIZE;
+        let user_heap_top: usize = user_heap_bottom + USER_HEAP_SIZE;
+        // println!("user_heap_bottom: 0x{:X}", usize::from(user_heap_bottom));
+        // println!("user_heap_top: 0x{:X}", usize::from(user_heap_top));
+        user_space.push_section(
+            Section::new(
+                ".uheap".to_string(),
+                user_heap_bottom.into(),
+                user_heap_top.into(),
+                MapType::Framed,
+                Permission::R | Permission::W | Permission::U,
+            ),
+            None,
+        );
+
+        // map user stack with U flags
+        let mut user_stack_bottom: usize = user_heap_top.into();
         // guard page
         user_stack_bottom += PAGE_SIZE;
         let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
@@ -261,10 +322,11 @@ impl AddrSpace {
             ),
             None,
         );
-        unsafe { asm!("fence.i") }
+        // unsafe { asm!("fence.i") }
         (
             user_space,
             user_stack_high,
+            user_heap_bottom,
             elf.header.pt2.entry_point() as usize,
         )
     }

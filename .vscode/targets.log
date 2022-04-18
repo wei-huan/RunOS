@@ -1,6 +1,4 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
-make: *** No rule to make target 'all'.  Stop.
-
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -8,7 +6,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Apr 17 19:36:11 2022
+# Make data base, printed on Mon Apr 18 14:18:13 2022
 
 # Variables
 
@@ -51,7 +49,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:63869
+JOURNAL_STREAM = 8:53178
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -74,12 +72,14 @@ XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/d
 DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
+# makefile (from 'Makefile', line 8)
+OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 2602
+MANAGERPID = 2540
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-97ac48c9-6fb4-4243-b3cd-b241053ad7fd.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-ea42ab43-85d0-4bdd-a410-b64d17bc050c.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,9 @@ PATH = /home/weihuan/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2823,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2823
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2801,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2801
+# makefile (from 'Makefile', line 7)
+USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -103,7 +105,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 71c597c2493f43e19d6acc3b8b3f2625
+INVOCATION_ID = 48c926cb97534c72b301b63a7992a834
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -115,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 4401
+GIO_LAUNCHED_DESKTOP_FILE_PID = 4536
 # automatic
 %F = $(notdir $%)
 # environment
@@ -126,6 +128,8 @@ CONDA_EXE = /home/weihuan/anaconda3/bin/conda
 FAT32_PACK_DIR := /home/weihuan/WorkSpace/OS/MyOS/fat32-pack
 # environment
 GTK_IM_MODULE = fcitx
+# makefile (from 'Makefile', line 9)
+OSCOMP_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp/build/riscv64
 # environment
 VSCODE_PIPE_LOGGING = true
 # environment
@@ -135,19 +139,17 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2782
+SSH_AGENT_PID = 2760
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
 GTK_MODULES = gail:atk-bridge
-# makefile (from 'Makefile', line 8)
+# makefile (from 'Makefile', line 10)
 OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/kernel
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
 HOME = /home/weihuan
-# makefile (from 'Makefile', line 7)
-IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
@@ -216,17 +218,19 @@ MFLAGS = -pqrR
 *D = $(patsubst %/,%,$(dir $*))
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
-# makefile (from 'Makefile', line 9)
-FS_IMG := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release/fs.img
+# makefile (from 'Makefile', line 11)
+FS_IMG := /fs.img
 # environment
 GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
-# makefile (from 'Makefile', line 11)
+# makefile (from 'Makefile', line 13)
 PLATFORM = qemu
 # 'override' directive
 .SHELLSTATUS := 0
@@ -269,23 +273,26 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 4401
+VSCODE_PID = 4536
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=131/1024=13%, Rehash=0, Collisions=23/168=14%
+# Load=134/1024=13%, Rehash=0, Collisions=24/173=14%
 
 # Pattern-specific Variable Values
 
 # No pattern-specific variable values.
+ 
+make: *** No rule to make target 'all'.  Stop.
+
 
 # Directories
 
-# . (device 66310, inode 3414746): 19 files, no impossibilities.
+# . (device 66310, inode 3414746): 21 files, no impossibilities.
 
-# 19 files, no impossibilities in 1 directories.
+# 21 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -298,7 +305,7 @@ user:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 23):
+#  recipe to execute (from 'Makefile', line 25):
 	@make build -C $(USER_DIR)
 
 fs-img:
@@ -306,16 +313,16 @@ fs-img:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 27):
+#  recipe to execute (from 'Makefile', line 28):
 	@rm -f $(FS_IMG)
-	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
+	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(OSCOMP_TAR_DIR)/ -t $(OSCOMP_TAR_DIR)/
 
 sdcard:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 17):
+#  recipe to execute (from 'Makefile', line 19):
 	@make sdcard -C $(OS_DIR)
 
 gdb:
@@ -323,7 +330,7 @@ gdb:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 37):
+#  recipe to execute (from 'Makefile', line 39):
 	@make gdb -C $(OS_DIR)
 
 # Not a target:
@@ -339,10 +346,9 @@ all:
 #  File has not been updated.
 
 # Not a target:
- 
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-17 16:06:51.838746172
+#  Last modified 2022-04-18 11:01:11.084044784
 #  File has been updated.
 #  Successfully updated.
 
@@ -351,7 +357,7 @@ debug:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 34):
+#  recipe to execute (from 'Makefile', line 36):
 	@make debug -C $(OS_DIR)
 
 build:
@@ -359,7 +365,7 @@ build:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 14):
+#  recipe to execute (from 'Makefile', line 16):
 	@make build -C $(OS_DIR)
 
 # Not a target:
@@ -368,19 +374,19 @@ build:
 #  Modification time never checked.
 #  File has not been updated.
 
-run: fs-img
+run:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 31):
+#  recipe to execute (from 'Makefile', line 33):
 	@make run -C $(OS_DIR)
 
 fat32:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 20):
+#  recipe to execute (from 'Makefile', line 22):
 	@cd $(FAT32_PACK_DIR) && ./qemu_fat32.sh
 
 disasm:
@@ -388,23 +394,23 @@ disasm:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 40):
+#  recipe to execute (from 'Makefile', line 42):
 	@make disasm -C $(OS_DIR)
 
 # files hash-table stats:
-# Load=14/1024=1%, Rehash=0, Collisions=0/33=0%
+# Load=14/1024=1%, Rehash=0, Collisions=0/32=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 32 / storage = 245 B / avg = 7 B
-# current buf: size = 8162 B / used = 245 B / count = 32 / avg = 7 B
+# strcache buffers: 1 (0) / strings = 34 / storage = 259 B / avg = 7 B
+# current buf: size = 8162 B / used = 259 B / count = 34 / avg = 7 B
 
-# strcache performance: lookups = 57 / hit rate = 43%
+# strcache performance: lookups = 58 / hit rate = 41%
 # hash-table stats:
-# Load=32/8192=0%, Rehash=0, Collisions=1/57=2%
-# Finished Make data base on Sun Apr 17 19:36:11 2022
+# Load=34/8192=0%, Rehash=0, Collisions=1/58=2%
+# Finished Make data base on Mon Apr 18 14:18:13 2022
 
  

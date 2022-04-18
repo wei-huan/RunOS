@@ -6,12 +6,13 @@ use crate::config::TRAP_CONTEXT;
 use crate::fs::{File, Stdin, Stdout};
 use crate::trap::{user_trap_handler, TrapContext};
 use crate::{
-    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE},
+    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE, translated_refmut},
     sync::UPSafeCell,
 };
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
+use alloc::string::String;
 use core::cell::RefMut;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -33,6 +34,8 @@ pub struct TaskControlBlockInner {
     pub entry_point: usize, // 用户程序入口点 exec会改变
     pub trap_cx_ppn: PhysPageNum,
     pub ustack_bottom: usize,
+    pub uheap_base: usize,
+    pub uheap_pt: usize,
     pub task_cx: TaskContext,
     pub task_status: TaskStatus,
     pub addrspace: AddrSpace,
@@ -71,7 +74,7 @@ impl TaskControlBlock {
     }
     pub fn new(elf_data: &[u8]) -> Self {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, ustack_base, entry_point) = AddrSpace::create_user_space(elf_data);
+        let (addrspace, ustack_base, uheap_base, entry_point) = AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
@@ -88,6 +91,8 @@ impl TaskControlBlock {
                     entry_point,
                     trap_cx_ppn,
                     ustack_bottom: ustack_base,
+                    uheap_base: uheap_base,
+                    uheap_pt: uheap_base,
                     task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                     task_status: TaskStatus::Ready,
                     addrspace,
@@ -132,13 +137,48 @@ impl TaskControlBlock {
     //     let kernel_stack_top = self.kernel_stack.get_top();
     //     inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
     // }
-    pub fn exec(&self, elf_data: &[u8]) {
+    pub fn exec(&self, elf_data: &[u8], args: Vec<String>) {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addr_space, user_sp, entry_point) = AddrSpace::create_user_space(elf_data);
+        let (addr_space, mut user_sp, uheap_base, entry_point) = AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addr_space
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
             .ppn();
+
+        // **********  argv[] *************** //
+        let mut argv: Vec<usize> = (0..=args.len()).collect();
+        argv[args.len()] = 0;
+        for i in 0..args.len() {
+            user_sp -= args[i].len() + 1;
+            // println!("user_sp {:#X}", user_sp);
+            argv[i] = user_sp;
+            let mut p = user_sp;
+            // write chars to [user_sp, user_sp + len]
+            for c in args[i].as_bytes() {
+                *translated_refmut(addr_space.get_token(), p as *mut u8) = *c;
+                // println!("({})",*c as char);
+                p += 1;
+            }
+            *translated_refmut(addr_space.get_token(), p as *mut u8) = 0;
+        }
+        // make the user_sp aligned to 8B for k210 platform
+        user_sp -= user_sp % core::mem::size_of::<usize>();
+        // println!("user_sp: {:#X}", user_sp);
+
+        ////////////// *argv [] //////////////////////
+        user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
+        // println!("user_sp: {:#X}", user_sp);
+        let argv_base = user_sp;
+        *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize) = 0;
+        for i in 0..args.len() {
+            *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * i) as *mut usize) = argv[i] ;
+        }
+
+        // ************** argc *************** //
+        user_sp -= core::mem::size_of::<usize>();
+        // println!("user_sp: {:#X}", user_sp);
+        *translated_refmut(addr_space.get_token(), user_sp as *mut usize) = args.len();
+
         // **** access current TCB exclusively
         let mut inner = self.inner_exclusive_access();
         // set new entry_point
@@ -147,6 +187,9 @@ impl TaskControlBlock {
         inner.addrspace = addr_space;
         // update trap_cx ppn
         inner.trap_cx_ppn = trap_cx_ppn;
+        // update user heap
+        inner.uheap_base = uheap_base;
+        inner.uheap_pt = uheap_base;
         // initialize trap_cx
         let trap_cx = TrapContext::app_init_context(
             entry_point,
@@ -188,6 +231,8 @@ impl TaskControlBlock {
                     entry_point: parent_inner.entry_point,
                     trap_cx_ppn,
                     ustack_bottom: parent_inner.ustack_bottom,
+                    uheap_base: parent_inner.uheap_base,
+                    uheap_pt: parent_inner.uheap_pt,
                     task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                     task_status: TaskStatus::Ready,
                     addrspace,
