@@ -132,29 +132,47 @@ impl TaskControlBlock {
         );
         task
     }
-    // pub fn reset_trap_context(&mut self) {
-    //     let inner = self.inner_exclusive_access();
-    //     let trap_cx = inner.get_trap_cx();
-    //     *trap_cx = TrapContext::app_init_context(
-    //         self.entry_point,
-    //         inner.ustack_bottom,
-    //         kernel_token(),
-    //         self.kernel_stack.get_top(),
-    //         user_trap_handler as usize,
-    //     );
-    // }
-    // pub fn reset_task_context(&mut self) {
-    //     let mut inner = self.inner_exclusive_access();
-    //     let kernel_stack_top = self.kernel_stack.get_top();
-    //     inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
-    // }
     pub fn exec(&self, elf_data: &[u8]) {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addr_space, user_sp, entry_point) = AddrSpace::create_user_space(elf_data);
+        let (addr_space, mut user_sp, entry_point) = AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addr_space
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
             .ppn();
+
+        // **********  argv[] *************** //
+        let mut argv: Vec<usize> = (0..=args.len()).collect();
+        argv[args.len()] = 0;
+        for i in 0..args.len() {
+            user_sp -= args[i].len() + 1;
+            // println!("user_sp {:#X}", user_sp);
+            argv[i] = user_sp;
+            let mut p = user_sp;
+            // write chars to [user_sp, user_sp + len]
+            for c in args[i].as_bytes() {
+                *translated_refmut(addr_space.get_token(), p as *mut u8) = *c;
+                // println!("({})",*c as char);
+                p += 1;
+            }
+            *translated_refmut(addr_space.get_token(), p as *mut u8) = 0;
+        }
+        // make the user_sp aligned to 8B for k210 platform
+        user_sp -= user_sp % core::mem::size_of::<usize>();
+        // println!("user_sp: {:#X}", user_sp);
+
+        ////////////// *argv [] //////////////////////
+        user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
+        // println!("user_sp: {:#X}", user_sp);
+        *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize) = 0;
+        for i in 0..args.len() {
+            *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * i) as *mut usize) = argv[i] ;
+        }
+
+        // ************** argc *************** //
+        user_sp -= core::mem::size_of::<usize>();
+        // println!("user_sp: {:#X}", user_sp);
+        *translated_refmut(addr_space.get_token(), user_sp as *mut usize) = args.len();
+
         // **** access current TCB exclusively
         let mut inner = self.inner_exclusive_access();
         // set new entry_point
