@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Apr 17 15:05:31 2022
+# Make data base, printed on Mon Apr 18 20:15:42 2022
 
 # Variables
 
@@ -51,7 +51,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:59953
+JOURNAL_STREAM = 8:53178
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 2634
+MANAGERPID = 2540
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-cf243e37-ab8f-4bfc-ade7-a7bfedcc4d0f.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-ea42ab43-85d0-4bdd-a410-b64d17bc050c.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2851,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2851
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2801,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2801
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -103,7 +103,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 14ec9c18bb1643199bd7e7228b12c836
+INVOCATION_ID = 48c926cb97534c72b301b63a7992a834
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -115,7 +115,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 3327
+GIO_LAUNCHED_DESKTOP_FILE_PID = 4536
 # automatic
 %F = $(notdir $%)
 # environment
@@ -135,7 +135,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2810
+SSH_AGENT_PID = 2760
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -223,6 +223,8 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -269,13 +271,13 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 3327
+VSCODE_PID = 4536
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=131/1024=13%, Rehash=0, Collisions=23/168=14%
+# Load=132/1024=13%, Rehash=0, Collisions=23/169=14%
 
 # Pattern-specific Variable Values
 
@@ -283,6 +285,7 @@ LANG = C
 
 # Directories
 
+ 
 # . (device 66310, inode 3414746): 19 files, no impossibilities.
 
 # 19 files, no impossibilities in 1 directories.
@@ -294,20 +297,19 @@ LANG = C
 # Files
 
 user:
- 
+#  Phony target (prerequisite of .PHONY).
+#  Implicit rule search has not been done.
+#  File does not exist.
+#  File has not been updated.
+#  recipe to execute (from 'Makefile', line 23):
+	@make build -C $(USER_DIR)
+
+fs-img: user
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
 #  recipe to execute (from 'Makefile', line 26):
-	@make build -C $(USER_DIR)
-
-fs-img:
-#  Phony target (prerequisite of .PHONY).
-#  Implicit rule search has not been done.
-#  File does not exist.
-#  File has not been updated.
-#  recipe to execute (from 'Makefile', line 29):
 	@rm -f $(FS_IMG)
 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
@@ -331,7 +333,7 @@ gdb:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 39):
+#  recipe to execute (from 'Makefile', line 40):
 	@make gdb -C $(OS_DIR)
 
 # Not a target:
@@ -349,7 +351,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-17 12:48:38.605277404
+#  Last modified 2022-04-18 20:02:48.656675037
 #  File has been updated.
 #  Successfully updated.
 
@@ -358,7 +360,7 @@ debug:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 36):
+#  recipe to execute (from 'Makefile', line 37):
 	@make debug -C $(OS_DIR)
 
 build:
@@ -375,12 +377,12 @@ build:
 #  Modification time never checked.
 #  File has not been updated.
 
-run: fs-img
+run: fat32-oscomp-img
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 33):
+#  recipe to execute (from 'Makefile', line 34):
 	@make run -C $(OS_DIR)
 
 disasm:
@@ -388,30 +390,31 @@ disasm:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 42):
+#  recipe to execute (from 'Makefile', line 43):
 	@make disasm -C $(OS_DIR)
 
-fat32-oscomp-img:
+fat32-oscomp-img: user
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 23):
-	@make fat32-oscomp-img -C $(OS_DIR)
+#  recipe to execute (from 'Makefile', line 30):
+	cd fat32-pack && ./createfs.sh
+	cd oscomp && ./addoscompfile2fs.sh
 
 # files hash-table stats:
-# Load=15/1024=1%, Rehash=0, Collisions=0/34=0%
+# Load=15/1024=1%, Rehash=0, Collisions=0/36=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 34 / storage = 272 B / avg = 8 B
-# current buf: size = 8162 B / used = 272 B / count = 34 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 34 / storage = 275 B / avg = 8 B
+# current buf: size = 8162 B / used = 275 B / count = 34 / avg = 8 B
 
-# strcache performance: lookups = 59 / hit rate = 42%
+# strcache performance: lookups = 61 / hit rate = 44%
 # hash-table stats:
-# Load=34/8192=0%, Rehash=0, Collisions=1/59=2%
-# Finished Make data base on Sun Apr 17 15:05:31 2022
+# Load=34/8192=0%, Rehash=0, Collisions=1/61=2%
+# Finished Make data base on Mon Apr 18 20:15:42 2022
 
  
