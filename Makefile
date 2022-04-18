@@ -23,13 +23,16 @@ fat32:
 
 user:
 	@make build -C $(USER_DIR)
-# user
-fs-img:
+
+fs-img: user
+	@cp $(USER_TAR_DIR)/initproc $(OSCOMP_TAR_DIR)/
+	@cp $(USER_TAR_DIR)/user_shell $(OSCOMP_TAR_DIR)/
 	@rm -f $(FS_IMG)
 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(OSCOMP_TAR_DIR)/ -t $(OSCOMP_TAR_DIR)/
+	@cp ./fs.img $(USER_TAR_DIR)/
 # @cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(USER_TAR_DIR)/
 
-run: #fs-img
+run: fs-img
 	@make run -C $(OS_DIR)
 
 debug:

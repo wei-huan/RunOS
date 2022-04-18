@@ -148,7 +148,6 @@ impl TaskControlBlock {
         ////////////// *argv [] //////////////////////
         user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
         // println!("user_sp: {:#X}", user_sp);
-        let argv_base = user_sp;
         *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize) = 0;
         for i in 0..args.len() {
             *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * i) as *mut usize) = argv[i] ;
