@@ -36,7 +36,7 @@ pub fn sys_fork() -> isize {
     new_pid as isize
 }
 
-pub fn sys_exec(path: *const u8) -> isize {
+pub fn sys_exec(path: *const u8, args: Vec<String>) -> isize {
     // log::debug!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
@@ -52,7 +52,7 @@ pub fn sys_exec(path: *const u8) -> isize {
         drop(inner);
         let all_data = app_inode.read_all();
         let task = current_task().unwrap();
-        task.exec(all_data.as_slice());
+        task.exec(all_data.as_slice(), args);
         0
     } else {
         -1

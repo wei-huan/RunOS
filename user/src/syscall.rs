@@ -37,7 +37,10 @@ fn syscall(id: usize, args: [usize; 6]) -> isize {
 // }
 
 pub fn sys_open(path: &str, flags: u32) -> isize {
-    syscall(SYSCALL_OPEN, [path.as_ptr() as usize, flags as usize, 0, 0, 0, 0])
+    syscall(
+        SYSCALL_OPEN,
+        [path.as_ptr() as usize, flags as usize, 0, 0, 0, 0],
+    )
 }
 
 pub fn sys_close(fd: usize) -> isize {
@@ -88,7 +91,10 @@ pub fn sys_fork() -> isize {
 }
 
 pub fn sys_exec(path: &str, args: &[*const u8]) -> isize {
-    syscall(SYSCALL_EXEC, [path.as_ptr() as usize, args as &_ as usize, 0, 0, 0, 0])
+    syscall(
+        SYSCALL_EXEC,
+        [path.as_ptr() as usize, args.as_ptr() as usize, 0, 0, 0, 0],
+    )
 }
 
 pub fn sys_waitpid(pid: isize, exit_code: *mut i32) -> isize {
