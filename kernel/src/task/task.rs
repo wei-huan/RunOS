@@ -6,7 +6,7 @@ use crate::config::TRAP_CONTEXT;
 use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
 use crate::trap::{user_trap_handler, TrapContext};
 use crate::{
-    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE},
+    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE, translated_refmut},
     sync::UPSafeCell,
 };
 use alloc::string::String;
