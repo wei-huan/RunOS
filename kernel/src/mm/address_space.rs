@@ -4,7 +4,7 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{
-    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_HEAP_SIZE, USER_STACK_SIZE,
+    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE,
 };
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
@@ -197,7 +197,7 @@ impl AddrSpace {
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
-    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize) {
+    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
         // println!("create_user_space");
         let mut user_space = Self::new_empty();
         // map trampoline
@@ -273,29 +273,30 @@ impl AddrSpace {
             }
         }
         // clear bss section
-        // user_space.clear_bss_pages();
+        user_space.clear_bss_pages();
 
-        // map user heap with U flags
-        let max_end_va: VirtAddr = max_end_vpn.into();
-        let mut user_heap_bottom: usize = max_end_va.into();
-        //guard page
-        user_heap_bottom += PAGE_SIZE;
-        let user_heap_top: usize = user_heap_bottom + USER_HEAP_SIZE;
-        // println!("user_heap_bottom: 0x{:X}", usize::from(user_heap_bottom));
-        // println!("user_heap_top: 0x{:X}", usize::from(user_heap_top));
-        user_space.push_section(
-            Section::new(
-                ".uheap".to_string(),
-                user_heap_bottom.into(),
-                user_heap_top.into(),
-                MapType::Framed,
-                Permission::R | Permission::W | Permission::U,
-            ),
-            None,
-        );
+        // // map user heap with U flags
+        // let max_end_va: VirtAddr = max_end_vpn.into();
+        // let mut user_heap_bottom: usize = max_end_va.into();
+        // //guard page
+        // user_heap_bottom += PAGE_SIZE;
+        // let user_heap_top: usize = user_heap_bottom + USER_HEAP_SIZE;
+        // // println!("user_heap_bottom: 0x{:X}", usize::from(user_heap_bottom));
+        // // println!("user_heap_top: 0x{:X}", usize::from(user_heap_top));
+        // user_space.push_section(
+        //     Section::new(
+        //         ".uheap".to_string(),
+        //         user_heap_bottom.into(),
+        //         user_heap_top.into(),
+        //         MapType::Framed,
+        //         Permission::R | Permission::W | Permission::U,
+        //     ),
+        //     None,
+        // );
 
         // map user stack with U flags
-        let mut user_stack_bottom: usize = user_heap_top.into();
+        let max_end_va: VirtAddr = max_end_vpn.into();
+        let mut user_stack_bottom: usize = max_end_va.into();
         // guard page
         user_stack_bottom += PAGE_SIZE;
         let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
@@ -311,6 +312,7 @@ impl AddrSpace {
             ),
             None,
         );
+
         // map TrapContext
         user_space.push_section(
             Section::new(
@@ -326,7 +328,6 @@ impl AddrSpace {
         (
             user_space,
             user_stack_high,
-            user_heap_bottom,
             elf.header.pt2.entry_point() as usize,
         )
     }
