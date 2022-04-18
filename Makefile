@@ -25,6 +25,8 @@ user:
 	@make build -C $(USER_DIR)
 
 fs-img: user
+	@rm -f $(OSCOMP_TAR_DIR)/initproc
+	@rm -f $(OSCOMP_TAR_DIR)/user_shell
 	@cp $(USER_TAR_DIR)/initproc $(OSCOMP_TAR_DIR)/
 	@cp $(USER_TAR_DIR)/user_shell $(OSCOMP_TAR_DIR)/
 	@rm -f $(FS_IMG)
