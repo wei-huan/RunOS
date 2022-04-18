@@ -55,18 +55,19 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
+        fs::init_rootfs();
         logger::init();
         logger::show_machine_sbi_os_info();
-        fs::init_rootfs();
+        fs::list_apps();
         scheduler::add_initproc();
-        // timer::init();
+        timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
         scheduler::schedule();
     } else {
         trap::init();
         mm::init();
-        // timer::init();
+        timer::init();
         scheduler::schedule();
     }
 }

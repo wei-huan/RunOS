@@ -37,12 +37,12 @@ pub fn sys_fork() -> isize {
 }
 
 pub fn sys_exec(path: *const u8) -> isize {
-    log::debug!("sys_exec");
+    // log::debug!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
     let task = current_task().unwrap();
     let inner = task.inner_exclusive_access();
-    log::debug!("sys_after");
+    // log::debug!("sys_after");
     if let Some(app_inode) = open(
         inner.current_path.as_str(),
         path.as_str(),

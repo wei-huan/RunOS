@@ -259,7 +259,7 @@ impl AddrSpace {
             ),
             None,
         );
-        unsafe { asm!("fence.i") }
+        // unsafe { asm!("fence.i") }
         (
             user_space,
             user_stack_high,
