@@ -29,9 +29,9 @@ user:
 fat32-oscomp-img: user
 ifeq ($(PLATFORM), qemu)
 	cd fat32-pack && ./createfs.sh
-	cd oscomp && ./addoscompfile2fs.sh
+	cd oscomp && ./addoscompfile2fs.sh qemu
 else
-	cd oscomp && ./addoscompfile2fs.sh
+	cd oscomp && ./addoscompfile2fs.sh k210
 endif
 
 run: fat32-oscomp-img

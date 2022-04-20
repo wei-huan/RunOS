@@ -2,8 +2,13 @@ FAT32_DIR="../fat32-pack"
 OSCOMP_TEST_DIR="./target/riscv64"
 SELF_TEST_DIR="../user/target/riscv64gc-unknown-none-elf/release"
 
-# FAT32_IMG="${FAT32_DIR}/fat32.img"
-FAT32_IMG="/dev/sda1"
+
+if [ $1 == "qemu" ]
+then
+    FAT32_IMG="${FAT32_DIR}/fat32.img"
+else
+    FAT32_IMG="/dev/sda1"
+fi
 
 # sudo chmod -R 777 ${FAT32_IMG}
 sudo umount ${FAT32_IMG}
