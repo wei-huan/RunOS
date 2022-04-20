@@ -1,3 +1,5 @@
+mod block_dev;
+
 #[cfg(test)]
 mod tests {
     #[test]
