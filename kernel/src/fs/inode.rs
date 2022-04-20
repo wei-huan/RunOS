@@ -48,8 +48,8 @@ pub struct OSInode {
 }
 
 pub struct OSInodeInner {
-    offset: usize, // 当前读写的位置
-    inode: Arc<VFile>, // inode引用
+    offset: usize,      // 当前读写的位置
+    inode: Arc<VFile>,  // inode引用
 }
 
 impl OSInode {

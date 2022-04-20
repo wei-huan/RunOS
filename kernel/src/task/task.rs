@@ -75,6 +75,7 @@ impl TaskControlBlock {
     pub fn inner_exclusive_access(&self) -> RefMut<'_, TaskControlBlockInner> {
         self.inner.exclusive_access()
     }
+    // only for initproc
     pub fn new(elf_data: &[u8]) -> Self {
         // memory_set with elf program headers/trampoline/trap context/user stack
         let (addrspace, ustack_base, entry_point) = AddrSpace::create_user_space(elf_data);

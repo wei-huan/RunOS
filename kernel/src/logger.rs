@@ -1,6 +1,6 @@
 #[cfg(feature = "opensbi")]
 use crate::opensbi::{impl_id, impl_version, spec_version};
-#[cfg(feature = "rustsbi")]
+#[cfg(not(feature = "opensbi"))]
 use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
     cpu::hart_id,
