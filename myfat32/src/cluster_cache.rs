@@ -1,49 +1,57 @@
-/// 簇缓存层，主要用于 FAT32 的数据区
-use super::{BlockDevice, CLUSTER_SZ};
-use alloc::collections::VecDeque;
-use alloc::sync::Arc;
-use lazy_static::*;
-use spin::Mutex;
+/// 簇缓存层，扇区的进一步抽象，主要用于 FAT32 的数据区
+use super::{BlockDevice, SectorCache, CLUS_SZ, DATA_START_SEC, SECS_PER_CLU, SEC_SZ};
+use std::sync::Arc;
+// use std::collections::VecDeque;
+// use lazy_static::*;
+// use spin::Mutex;
 
 pub struct ClusterCache {
-    cache: [u8; CLUSTER_SZ],
-    cluster_id: usize,
-    block_device: Arc<dyn BlockDevice>,
+    cluster_cache: [SectorCache; SECS_PER_CLU],
     modified: bool,
+    cluster_id: usize,                  // cluster_id 是数据区的簇号, 从 2 开始标号
 }
 
 impl ClusterCache {
     pub fn new(cluster_id: usize, block_device: Arc<dyn BlockDevice>) -> Self {
-        let mut cache = [0u8; CLUSTER_SZ];
-        block_device.read_block(block_id, &mut cache);
+        let mut cluster_cache: [SectorCache; SECS_PER_CLU] = Default::default(); //[SectorCache::new_empty(block_device.clone()); SECS_PER_CLU];
+        let block_id = (cluster_id - 2) * SECS_PER_CLU + DATA_START_SEC;
+        for (i, id) in (block_id..(block_id + SECS_PER_CLU)).enumerate() {
+            block_device.read_block(id, cluster_cache[i].get_cache_mut());
+        }
         Self {
-            cache,
-            block_id,
-            block_device,
+            cluster_id,
+            cluster_cache,
             modified: false,
         }
-    }
-    fn addr_of_offset(&self, offset: usize) -> usize {
-        &self.cache[offset] as *const _ as usize
     }
     pub fn get_ref<T>(&self, offset: usize) -> &T
     where
         T: Sized,
     {
         let type_size = core::mem::size_of::<T>();
-        assert!(offset + type_size <= BLOCK_SZ);
-        let addr = self.addr_of_offset(offset);
-        unsafe { &*(addr as *const T) }
+        assert!(offset + type_size <= CLUS_SZ);
+        let sec_id = offset / SEC_SZ;
+        let sec_offset = offset % SEC_SZ;
+        unsafe {
+            &*((*(self.cluster_cache[sec_id].get_cache_ref()))[sec_offset..(sec_offset + type_size)]
+                .as_ptr() as *const _ as usize as *const T) as &T
+        }
     }
     pub fn get_mut<T>(&mut self, offset: usize) -> &mut T
     where
         T: Sized,
     {
         let type_size = core::mem::size_of::<T>();
-        assert!(offset + type_size <= BLOCK_SZ);
+        assert!(offset + type_size <= CLUS_SZ);
         self.modified = true;
-        let addr = self.addr_of_offset(offset);
-        unsafe { &mut *(addr as *mut T) }
+        let sec_id = offset / SEC_SZ;
+        let sec_offset = offset % SEC_SZ;
+        self.cluster_cache[sec_id].set_modify();
+        unsafe {
+            &mut *((*(self.cluster_cache[sec_id].get_cache_mut()))
+                [sec_offset..(sec_offset + type_size)]
+                .as_mut_ptr() as *mut _ as usize as *mut T) as &mut T
+        }
     }
     pub fn read<T, V>(&self, offset: usize, f: impl FnOnce(&T) -> V) -> V {
         f(self.get_ref(offset))
@@ -54,58 +62,20 @@ impl ClusterCache {
     pub fn sync(&mut self) {
         if self.modified {
             self.modified = false;
-            self.block_device.write_block(self.block_id, &self.cache);
-        }
-    }
-}
-
-impl Drop for BlockCache {
-    fn drop(&mut self) {
-        self.sync()
-    }
-}
-
-const CLUSTER_CACHE_SIZE: usize = 8;
-
-pub struct ClusterCacheManager {
-    queue: VecDeque<(usize, Arc<Mutex<ClusterCache>>)>,
-}
-
-impl ClusterCacheManager {
-    pub fn new() -> Self {
-        Self {
-            queue: VecDeque::new(),
-        }
-    }
-    pub fn get_block_cache(
-        &mut self,
-        block_id: usize,
-        block_device: Arc<dyn BlockDevice>,
-    ) -> Arc<Mutex<BlockCache>> {
-        if let Some(pair) = self.queue.iter().find(|pair| pair.0 == block_id) {
-            Arc::clone(&pair.1)
-        } else {
-            // substitute
-            if self.queue.len() == BLOCK_CACHE_SIZE {
-                // from front to tail
-                if let Some((idx, _)) = self
-                    .queue
-                    .iter()
-                    .enumerate()
-                    .find(|(_, pair)| Arc::strong_count(&pair.1) == 1)
-                {
-                    self.queue.drain(idx..=idx);
-                } else {
-                    panic!("Run out of BlockCache!");
+            // for i in SECS_PER_CLU.find(|(i, _)| self.cluster_cache[*i].is_modify() == true) {
+            //     drop(self.cluster_cache[i])
+            // }
+            for i in 0..SECS_PER_CLU {
+                if self.cluster_cache[i].is_modify() == true {
+                    self.cluster_cache[i].sync()
                 }
             }
-            // load block into mem and push back
-            let block_cache = Arc::new(Mutex::new(BlockCache::new(
-                block_id,
-                Arc::clone(&block_device),
-            )));
-            self.queue.push_back((block_id, Arc::clone(&block_cache)));
-            block_cache
         }
+    }
+}
+
+impl Drop for ClusterCache {
+    fn drop(&mut self) {
+        self.sync()
     }
 }
