@@ -43,3 +43,15 @@ slab缓存器
 继续丰富syscall
 报名，提交部分代码
 shell改造， 要能关机
+
+今天是2022年4月24日
+深入理解Fat32, 写了一半，规范太反人类，搁置
+怎么wait和yield问题这么大
+suspend_current_and_run_next 问题逐渐显现，要缕清，不然以后很麻烦
+uname dup dup2 gettimeofday, times搞定
+
+下一步：
+完成和wait4相关的syscall
+需要fat32在sdcard上运行成功
+继续丰富syscall
+报名，提交部分代码

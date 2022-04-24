@@ -4,7 +4,7 @@ use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
-use crate::timer::{get_time, get_time_sec_usec, get_time_val, TimeVal, USEC_PER_SEC};
+use crate::timer::{get_time, get_time_sec_usec, get_time_us, get_time_val, TimeVal, USEC_PER_SEC};
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -20,6 +20,23 @@ pub fn sys_yield() -> ! {
 
 pub fn sys_get_time(time_val: *mut TimeVal) -> isize {
     get_time_val(time_val)
+}
+
+pub fn sys_times(time: *mut i64) -> isize {
+    // struct tms
+    // {
+    //     long tms_utime;
+    //     long tms_stime;
+    //     long tms_cutime;
+    //     long tms_cstime;
+    // };
+    let token = current_user_token();
+    let sec = get_time_us() as i64;
+    *translated_refmut(token, time) = sec;
+    *translated_refmut(token, unsafe { time.add(1) }) = sec;
+    *translated_refmut(token, unsafe { time.add(2) }) = sec;
+    *translated_refmut(token, unsafe { time.add(3) }) = sec;
+    0
 }
 
 pub fn sys_getpid() -> isize {
@@ -131,4 +148,51 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
         -2
     }
     // ---- release current PCB automatically
+}
+
+/// If there is not a child process whose pid is same as given, return -1.
+/// Else if there is a child process but it is still running, return -2.
+pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
+    if option != 0 {
+        panic! {"Extended option not support yet..."};
+    }
+    loop {
+        let task = current_task().unwrap();
+        // find a child process
+
+        // ---- access current PCB exclusively
+        let mut inner = task.inner_exclusive_access();
+        if !inner
+            .children
+            .iter()
+            .any(|p| pid == -1 || pid as usize == p.getpid())
+        {
+            return -1;
+            // ---- release current PCB
+        }
+        let pair = inner.children.iter().enumerate().find(|(_, p)| {
+            // ++++ temporarily access child PCB exclusively
+            p.inner_exclusive_access().is_zombie() && (pid == -1 || pid as usize == p.getpid())
+            // ++++ release child PCB
+        });
+        if let Some((idx, _)) = pair {
+            let child = inner.children.remove(idx);
+            // confirm that child will be deallocated after being removed from children list
+            assert_eq!(Arc::strong_count(&child), 1);
+            let found_pid = child.getpid();
+            // ++++ temporarily access child PCB exclusively
+            let exit_code = child.inner_exclusive_access().exit_code;
+            // ++++ release child PCB
+            let ret_status = exit_code << 8;
+            if (wstatus as usize) != 0 {
+                *translated_refmut(inner.addrspace.get_token(), wstatus) = ret_status;
+            }
+            return found_pid as isize;
+        } else {
+            drop(inner);
+            drop(task);
+            suspend_current_and_run_next();
+        }
+        // ---- release current PCB automatically
+    }
 }
