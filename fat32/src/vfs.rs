@@ -38,7 +38,7 @@ impl VFile {
         long_pos_vec: Vec<(usize, usize)>,
         //first_cluster: u32,
         attribute: u8,
-        size: u32,
+        _size: u32,
         fs: Arc<RwLock<FAT32Manager>>,
         block_device: Arc<dyn BlockDevice>,
     ) -> Self {

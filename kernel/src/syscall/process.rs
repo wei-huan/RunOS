@@ -1,12 +1,14 @@
 use crate::cpu::{current_task, current_user_token};
+use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
-use crate::timer::get_time_ms;
+use crate::timer::{get_time, get_time_sec_usec, get_time_val, TimeVal, USEC_PER_SEC};
+use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use alloc::string::String;
+use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
@@ -16,8 +18,8 @@ pub fn sys_yield() -> ! {
     suspend_current_and_run_next();
 }
 
-pub fn sys_get_time() -> isize {
-    get_time_ms() as isize
+pub fn sys_get_time(time_val: *mut TimeVal) -> isize {
+    get_time_val(time_val)
 }
 
 pub fn sys_getpid() -> isize {
@@ -38,6 +40,27 @@ pub fn sys_fork() -> isize {
     new_pid as isize
 }
 
+pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
+    let (mut sec, mut usec) = get_time_sec_usec();
+    let token = current_user_token();
+    let req_sec = *translated_ref(token, &(time_req.sec));
+    let req_usec = *translated_ref(token, &(time_req.usec));
+    let (end_sec, end_usec) = (req_sec + sec, req_usec + usec);
+    // println!("end_sec: {}", end_sec);
+    // println!("end_usec: {}", end_usec);
+    loop {
+        (sec, usec) = get_time_sec_usec();
+        // println!("sec: {}", sec);
+        // println!("usec: {}", usec);
+        if (sec < end_sec) || (usec < end_usec) {
+            *translated_refmut(token, time_remain) = TimeVal { sec: 0, usec: 0 };
+            suspend_current_and_run_next();
+        } else {
+            return 0;
+        }
+    }
+}
+
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
     // log::debug!("sys_exec");
     let token = current_user_token();
@@ -50,7 +73,9 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         }
         args_vec.push(translated_str(token, arg_str_ptr as *const u8));
         // println!("arg{}: {}",0, args_vec[0]);
-        unsafe { args = args.add(1); }
+        unsafe {
+            args = args.add(1);
+        }
     }
     let task = current_task().unwrap();
     let inner = task.inner_exclusive_access();

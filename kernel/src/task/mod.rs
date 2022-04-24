@@ -53,9 +53,7 @@ pub fn suspend_current_and_run_next() -> ! {
     // There must be an application running.
     let task = take_current_task().unwrap();
     // ---- access current TCB exclusively
-    // log::debug!("BF");
     let mut task_inner = task.inner_exclusive_access();
-    // log::debug!("AF");
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
     // Reset Task context
@@ -63,6 +61,7 @@ pub fn suspend_current_and_run_next() -> ! {
     let kernel_stack_top = task.kernel_stack.get_top();
     // 应该改成上一个栈帧的位置
     task_inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
+    // task_inner.get_trap_cx().sepc -= 4;
     // drop inner
     drop(task_inner);
     // Push back to ready queue.

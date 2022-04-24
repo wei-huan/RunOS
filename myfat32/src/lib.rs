@@ -1,30 +1,30 @@
 #![allow(unused)]
-mod block_dev;
+
+mod block_device;
 mod cluster_cache;
-mod fat_table;
+mod file_alloc_table;
 mod sector_cache;
+mod directory_entry;
 
-use block_dev::BlockDevice;
-use sector_cache::{SectorCache, get_sector_cache};
+use sector_cache::SectorCache;
 
-const BLOCK_SZ: usize = 512;
-const SEC_SZ: usize = BLOCK_SZ;
-const SECS_PER_CLU: usize = 16;
-const CLUS_SZ: usize = SEC_SZ * SECS_PER_CLU;
-const RESERVE_SECS: usize = 32;
-const FAT_TABLE_SECS: usize = 15184;
+pub use block_device::BlockDevice;
+pub use cluster_cache::{data_cache_sync_all, get_data_cache};
+pub use sector_cache::{get_info_cache, info_cache_sync_all};
+
+pub const BLOCK_SZ: usize = 512;
+pub const SEC_SZ: usize = BLOCK_SZ;
+const SECS_PER_CLU: usize = 0x10;
+pub const CLUS_SZ: usize = SEC_SZ * SECS_PER_CLU;
+const RESERVE_SEC_SZ: usize = 32;
+const TOTAL_SECS: usize = 256000;
+const FAT_TABLE_SECS: usize = 1969;
 const DBR_START_SEC: usize = 0;
-const FAT_TABLE_START_SEC: usize = DBR_START_SEC + RESERVE_SECS;
-const DATA_START_SEC: usize = FAT_TABLE_START_SEC + FAT_TABLE_SECS * 2;
+
+pub const FAT_TABLE_START_SEC: usize = DBR_START_SEC + RESERVE_SEC_SZ;
+pub const DATA_START_SEC: usize = FAT_TABLE_START_SEC + FAT_TABLE_SECS * 2;
 
 // 扇区缓冲区长度
-const SECTOR_CACHE_SIZE: usize = 8;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        let result = 2 + 2;
-        assert_eq!(result, 4);
-    }
-}
+const INFOSEC_CACHE_SZ: usize = 4;
+// 簇缓冲区长度
+const CLU_CACHE_SZ: usize = 4;
