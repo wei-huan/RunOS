@@ -39,6 +39,8 @@ const SYSCALL_WAIT4: usize = 260;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     match syscall_id {
+        SYSCALL_DUP => sys_dup(args[0]),
+        SYSCALL_DUP3 => sys_dup3(args[0], args[1]),
         SYSCALL_OPENAT => sys_open_at(
             args[0] as isize,
             args[1] as *const u8,

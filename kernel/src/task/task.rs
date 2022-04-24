@@ -30,7 +30,7 @@ pub struct TaskControlBlock {
     inner: UPSafeCell<TaskControlBlockInner>,
 }
 
-pub type FdTable = Vec<Option<FileDescripter>>;
+pub type FDTable = Vec<Option<FileDescripter>>;
 pub struct TaskControlBlockInner {
     pub entry_point: usize, // 用户程序入口点 exec会改变
     pub trap_cx_ppn: PhysPageNum,
@@ -41,7 +41,7 @@ pub struct TaskControlBlockInner {
     pub parent: Option<Weak<TaskControlBlock>>,
     pub children: Vec<Arc<TaskControlBlock>>,
     pub exit_code: i32,
-    pub fd_table: FdTable,
+    pub fd_table: FDTable,
     pub current_path: String,
 }
 
@@ -207,7 +207,7 @@ impl TaskControlBlock {
         let kernel_stack = kstack_alloc();
         let kernel_stack_top = kernel_stack.get_top();
         // copy fd table
-        let mut new_fd_table: FdTable = Vec::new();
+        let mut new_fd_table: FDTable = Vec::new();
         for fd in parent_inner.fd_table.iter() {
             if let Some(file) = fd {
                 new_fd_table.push(Some(file.clone()));

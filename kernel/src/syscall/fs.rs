@@ -164,3 +164,36 @@ pub fn sys_close(fd: usize) -> isize {
     inner.fd_table[fd].take();
     0
 }
+
+pub fn sys_dup(fd: usize) -> isize {
+    let task = current_task().unwrap();
+    let mut inner = task.inner_exclusive_access();
+    if fd >= inner.fd_table.len() {
+        return -1;
+    }
+    if inner.fd_table[fd].is_none() {
+        return -1;
+    }
+    let new_fd = inner.alloc_fd();
+    inner.fd_table[new_fd] = Some(inner.fd_table[fd].as_ref().unwrap().clone());
+    new_fd as isize
+}
+
+pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
+    let task = current_task().unwrap();
+    let mut inner = task.inner_exclusive_access();
+    if old_fd >= inner.fd_table.len() || new_fd > FD_LIMIT {
+        return -1;
+    }
+    if inner.fd_table[old_fd].is_none() {
+        return -1;
+    }
+    // 太傻比了，为了一个 fd 添加这么多，以后要改
+    if new_fd >= inner.fd_table.len() {
+        for i in inner.fd_table.len()..(new_fd + 1) {
+            inner.fd_table.push(None);
+        }
+    }
+    inner.fd_table[new_fd] = Some(inner.fd_table[old_fd].as_ref().unwrap().clone());
+    new_fd as isize
+}
