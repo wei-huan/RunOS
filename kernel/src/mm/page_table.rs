@@ -316,7 +316,23 @@ impl UserBuffer {
                 }
             }
         }
-        return len;
+        len
+    }
+    // 将一个Buffer的数据写入UserBuffer，返回写入长度
+    pub fn write(&mut self, buf: &[u8]) -> usize {
+        let len = self.len().min(buf.len());
+        let mut current = 0;
+        for sub_buff in self.buffers.iter_mut() {
+            let sblen = (*sub_buff).len();
+            for j in 0..sblen {
+                (*sub_buff)[j] = buf[current];
+                current += 1;
+                if current == len {
+                    return len;
+                }
+            }
+        }
+        len
     }
 }
 

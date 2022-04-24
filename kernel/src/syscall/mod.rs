@@ -1,10 +1,12 @@
 #![allow(unused)]
 mod fs;
 mod process;
+mod utsname;
 
 use crate::timer::TimeVal;
 use fs::*;
 use process::*;
+use utsname::*;
 
 const SYSCALL_GETCWD: usize = 17;
 const SYSCALL_DUP: usize = 23;
@@ -55,6 +57,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             &mut *(args[1] as *mut TimeVal)
         }),
         SYSCALL_SCHED_YIELD => sys_yield(),
+        SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
         SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_CLONE => sys_fork(),
