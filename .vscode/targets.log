@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Apr 24 19:44:09 2022
+# Make data base, printed on Sun Apr 24 19:48:24 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2598
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-30b5b5ec-9293-4dd4-8139-ca2e67f0d00a.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-00f9c903-e191-4420-9d2c-bbca7e648217.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -225,6 +225,8 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -277,11 +279,12 @@ _CE_CONDA =
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=132/1024=13%, Rehash=0, Collisions=23/170=14%
+# Load=133/1024=13%, Rehash=0, Collisions=23/171=13%
 
 # Pattern-specific Variable Values
 
 # No pattern-specific variable values.
+ 
 
 # Directories
 
@@ -347,7 +350,6 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
- 
 #  Last modified 2022-04-18 21:28:31.323973338
 #  File has been updated.
 #  Successfully updated.
@@ -412,6 +414,6 @@ fat32-oscomp-img: user
 # strcache performance: lookups = 59 / hit rate = 40%
 # hash-table stats:
 # Load=35/8192=0%, Rehash=0, Collisions=1/59=2%
-# Finished Make data base on Sun Apr 24 19:44:09 2022
+# Finished Make data base on Sun Apr 24 19:48:24 2022
 
  
