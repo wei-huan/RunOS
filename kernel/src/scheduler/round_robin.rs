@@ -30,7 +30,7 @@ impl Scheduler for RoundRobinScheduler {
         // log::debug!("start schedule");
         if let Some(task) = self.fetch_task() {
             // log::debug!("BT");
-            let mut task_inner = task.inner_exclusive_access();
+            let mut task_inner = task.acquire_inner_lock();
             // log::debug!("AT");
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;

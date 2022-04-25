@@ -1,5 +1,5 @@
 .altmacro
-.macro LOAD_SNT n
+.macro LOAD_S n
     ld s\n, (\n+3)*8(a0)
 .endm
 
@@ -17,7 +17,7 @@ __schedule_new:
     ld ra, 0(a0)
     .set n, 0
     .rept 12
-        LOAD_SNT %n
+        LOAD_S %n
         .set n, n + 1
     .endr
     # restore kernel stack of next task

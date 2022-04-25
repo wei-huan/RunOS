@@ -22,7 +22,7 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     // take from Processor
     let task = take_current_task().unwrap();
     // **** access current TCB exclusively
-    let mut task_inner = task.inner_exclusive_access();
+    let mut task_inner = task.acquire_inner_lock();
     // Change status to Ready
     task_inner.task_status = TaskStatus::Zombie;
     // Record exit code
@@ -30,9 +30,9 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     // do not move to its parent but under initproc
     // ++++++ access initproc TCB exclusively
     if task.pid.0 != 1 {
-        let mut initproc_inner = INITPROC.inner_exclusive_access();
+        let mut initproc_inner = INITPROC.acquire_inner_lock();
         for child in task_inner.children.iter() {
-            child.inner_exclusive_access().parent = Some(Arc::downgrade(&INITPROC));
+            child.acquire_inner_lock().parent = Some(Arc::downgrade(&INITPROC));
             initproc_inner.children.push(child.clone());
         }
     }
@@ -53,7 +53,7 @@ pub fn suspend_current_and_run_next() -> ! {
     // There must be an application running.
     let task = take_current_task().unwrap();
     // ---- access current TCB exclusively
-    let mut task_inner = task.inner_exclusive_access();
+    let mut task_inner = task.acquire_inner_lock();
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
     // Reset Task context
@@ -61,7 +61,6 @@ pub fn suspend_current_and_run_next() -> ! {
     let kernel_stack_top = task.kernel_stack.get_top();
     // 应该改成上一个栈帧的位置
     task_inner.task_cx = TaskContext::goto_trap_return(kernel_stack_top);
-    // task_inner.get_trap_cx().sepc -= 4;
     // drop inner
     drop(task_inner);
     // Push back to ready queue.

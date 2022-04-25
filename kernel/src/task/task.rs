@@ -4,16 +4,13 @@ use super::kernel_stack::{kstack_alloc, KernelStack};
 use super::{pid_alloc, PidHandle};
 use crate::config::TRAP_CONTEXT;
 use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
+use crate::mm::{kernel_token, translated_refmut, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE};
 use crate::trap::{user_trap_handler, TrapContext};
-use crate::{
-    mm::{kernel_token, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE, translated_refmut},
-    sync::UPSafeCell,
-};
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
-use core::cell::RefMut;
+use spin::{Mutex, MutexGuard};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskStatus {
@@ -27,7 +24,7 @@ pub struct TaskControlBlock {
     pub pid: PidHandle,
     pub kernel_stack: KernelStack,
     // mutable
-    inner: UPSafeCell<TaskControlBlockInner>,
+    inner: Mutex<TaskControlBlockInner>,
 }
 
 pub type FDTable = Vec<Option<FileDescripter>>;
@@ -72,8 +69,8 @@ impl TaskControlBlockInner {
 }
 
 impl TaskControlBlock {
-    pub fn inner_exclusive_access(&self) -> RefMut<'_, TaskControlBlockInner> {
-        self.inner.exclusive_access()
+    pub fn acquire_inner_lock(&self) -> MutexGuard<TaskControlBlockInner> {
+        self.inner.lock()
     }
     // only for initproc
     pub fn new(elf_data: &[u8]) -> Self {
@@ -91,7 +88,7 @@ impl TaskControlBlock {
             pid: pid_handle,
             kernel_stack,
             inner: unsafe {
-                UPSafeCell::new(TaskControlBlockInner {
+                Mutex::new(TaskControlBlockInner {
                     entry_point,
                     trap_cx_ppn,
                     ustack_bottom: ustack_base,
@@ -123,7 +120,7 @@ impl TaskControlBlock {
             },
         };
         // prepare TrapContext in user space
-        let trap_cx = task.inner_exclusive_access().get_trap_cx();
+        let trap_cx = task.acquire_inner_lock().get_trap_cx();
         *trap_cx = TrapContext::app_init_context(
             entry_point,
             ustack_base,
@@ -164,9 +161,15 @@ impl TaskControlBlock {
         ////////////// *argv [] //////////////////////
         user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
         // println!("user_sp: {:#X}", user_sp);
-        *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize) = 0;
+        *translated_refmut(
+            addr_space.get_token(),
+            (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize,
+        ) = 0;
         for i in 0..args.len() {
-            *translated_refmut(addr_space.get_token(), (user_sp + core::mem::size_of::<usize>() * i) as *mut usize) = argv[i] ;
+            *translated_refmut(
+                addr_space.get_token(),
+                (user_sp + core::mem::size_of::<usize>() * i) as *mut usize,
+            ) = argv[i];
         }
 
         // ************** argc *************** //
@@ -175,7 +178,7 @@ impl TaskControlBlock {
         *translated_refmut(addr_space.get_token(), user_sp as *mut usize) = args.len();
 
         // **** access current TCB exclusively
-        let mut inner = self.inner_exclusive_access();
+        let mut inner = self.acquire_inner_lock();
         // set new entry_point
         inner.entry_point = entry_point;
         // substitute memory_set
@@ -195,7 +198,7 @@ impl TaskControlBlock {
     }
     pub fn fork(self: &Arc<TaskControlBlock>) -> Arc<TaskControlBlock> {
         // ---- hold parent PCB lock
-        let mut parent_inner = self.inner_exclusive_access();
+        let mut parent_inner = self.acquire_inner_lock();
         // copy user space(include trap context)
         let addrspace = AddrSpace::from_existed_user(&parent_inner.addrspace);
         let trap_cx_ppn = addrspace
@@ -219,7 +222,7 @@ impl TaskControlBlock {
             pid: pid_handle,
             kernel_stack,
             inner: unsafe {
-                UPSafeCell::new(TaskControlBlockInner {
+                Mutex::new(TaskControlBlockInner {
                     entry_point: parent_inner.entry_point,
                     trap_cx_ppn,
                     ustack_bottom: parent_inner.ustack_bottom,
@@ -238,7 +241,7 @@ impl TaskControlBlock {
         parent_inner.children.push(task_control_block.clone());
         // modify kernel_sp in trap_cx
         // **** access child PCB exclusively
-        let trap_cx = task_control_block.inner_exclusive_access().get_trap_cx();
+        let trap_cx = task_control_block.acquire_inner_lock().get_trap_cx();
         trap_cx.kernel_sp = kernel_stack_top;
         // return
         task_control_block
@@ -247,5 +250,13 @@ impl TaskControlBlock {
     }
     pub fn getpid(&self) -> usize {
         self.pid.0
+    }
+    pub fn get_parent(&self) -> Option<Arc<TaskControlBlock>> {
+        let inner = self.acquire_inner_lock();
+        inner.parent.as_ref().unwrap().upgrade()
+    }
+    // initproc 不会调用 sys_getppid
+    pub fn getppid(&self) -> usize {
+        self.get_parent().unwrap().pid.0
     }
 }

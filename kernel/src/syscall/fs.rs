@@ -9,7 +9,7 @@ pub const FD_LIMIT: usize = 128;
 pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
-    let inner = task.inner_exclusive_access();
+    let inner = task.acquire_inner_lock();
     if fd >= inner.fd_table.len() {
         return -1;
     }
@@ -40,7 +40,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
     // log::debug!("BR");
-    let inner = task.inner_exclusive_access();
+    let inner = task.acquire_inner_lock();
     // log::debug!("AR");
     if fd >= inner.fd_table.len() {
         return -1;
@@ -73,7 +73,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
 //     let token = current_user_token();
 //     let path = translated_str(token, path);
 //     if let Some(inode) = open_file(path.as_str(), OpenFlags::from_bits(flags).unwrap()) {
-//         let mut inner = task.inner_exclusive_access();
+//         let mut inner = task.acquire_inner_lock();
 //         let fd = inner.alloc_fd();
 //         inner.fd_table[fd] = Some(inode);
 //         fd as isize
@@ -88,7 +88,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
     let token = current_user_token();
     // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
     let path = translated_str(token, path);
-    let mut inner = task.inner_exclusive_access();
+    let mut inner = task.acquire_inner_lock();
 
     let oflags = OpenFlags::from_bits(flags).unwrap();
     if dirfd == AT_FDCWD {
@@ -154,7 +154,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
 
 pub fn sys_close(fd: usize) -> isize {
     let task = current_task().unwrap();
-    let mut inner = task.inner_exclusive_access();
+    let mut inner = task.acquire_inner_lock();
     if fd >= inner.fd_table.len() {
         return -1;
     }
@@ -167,7 +167,7 @@ pub fn sys_close(fd: usize) -> isize {
 
 pub fn sys_dup(fd: usize) -> isize {
     let task = current_task().unwrap();
-    let mut inner = task.inner_exclusive_access();
+    let mut inner = task.acquire_inner_lock();
     if fd >= inner.fd_table.len() {
         return -1;
     }
@@ -181,7 +181,7 @@ pub fn sys_dup(fd: usize) -> isize {
 
 pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     let task = current_task().unwrap();
-    let mut inner = task.inner_exclusive_access();
+    let mut inner = task.acquire_inner_lock();
     if old_fd >= inner.fd_table.len() || new_fd > FD_LIMIT {
         return -1;
     }

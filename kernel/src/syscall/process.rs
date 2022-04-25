@@ -43,12 +43,16 @@ pub fn sys_getpid() -> isize {
     current_task().unwrap().getpid() as isize
 }
 
+pub fn sys_getppid() -> isize {
+    current_task().unwrap().getppid() as isize
+}
+
 pub fn sys_fork() -> isize {
     let current_task = current_task().unwrap();
     let new_task = current_task.fork();
     let new_pid = new_task.pid.0;
     // modify trap context of new_task, because it returns immediately after switching
-    let trap_cx = new_task.inner_exclusive_access().get_trap_cx();
+    let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
     // we do not have to move to next instruction since we have done it before
     // for child process, fork returns 0
     trap_cx.x[10] = 0;
@@ -95,7 +99,7 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         }
     }
     let task = current_task().unwrap();
-    let inner = task.inner_exclusive_access();
+    let inner = task.acquire_inner_lock();
     // log::debug!("sys_after");
     if let Some(app_inode) = open(
         inner.current_path.as_str(),
@@ -120,7 +124,7 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
     // find a child process
 
     // ---- access current PCB exclusively
-    let mut inner = task.inner_exclusive_access();
+    let mut inner = task.acquire_inner_lock();
     if !inner
         .children
         .iter()
@@ -131,7 +135,7 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
     }
     let pair = inner.children.iter().enumerate().find(|(_, p)| {
         // ++++ temporarily access child PCB exclusively
-        p.inner_exclusive_access().is_zombie() && (pid == -1 || pid as usize == p.getpid())
+        p.acquire_inner_lock().is_zombie() && (pid == -1 || pid as usize == p.getpid())
         // ++++ release child PCB
     });
     if let Some((idx, _)) = pair {
@@ -140,9 +144,11 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
         assert_eq!(Arc::strong_count(&child), 1);
         let found_pid = child.getpid();
         // ++++ temporarily access child PCB exclusively
-        let exit_code = child.inner_exclusive_access().exit_code;
+        let exit_code = child.acquire_inner_lock().exit_code;
         // ++++ release child PCB
-        *translated_refmut(inner.addrspace.get_token(), exit_code_ptr) = exit_code;
+        if (exit_code_ptr as usize) != 0 {
+            *translated_refmut(inner.addrspace.get_token(), exit_code_ptr) = exit_code << 8;
+        }
         found_pid as isize
     } else {
         -2
@@ -161,7 +167,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         // find a child process
 
         // ---- access current PCB exclusively
-        let mut inner = task.inner_exclusive_access();
+        let mut inner = task.acquire_inner_lock();
         if !inner
             .children
             .iter()
@@ -172,7 +178,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         }
         let pair = inner.children.iter().enumerate().find(|(_, p)| {
             // ++++ temporarily access child PCB exclusively
-            p.inner_exclusive_access().is_zombie() && (pid == -1 || pid as usize == p.getpid())
+            p.acquire_inner_lock().is_zombie() && (pid == -1 || pid as usize == p.getpid())
             // ++++ release child PCB
         });
         if let Some((idx, _)) = pair {
@@ -181,7 +187,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             assert_eq!(Arc::strong_count(&child), 1);
             let found_pid = child.getpid();
             // ++++ temporarily access child PCB exclusively
-            let exit_code = child.inner_exclusive_access().exit_code;
+            let exit_code = child.acquire_inner_lock().exit_code;
             // ++++ release child PCB
             let ret_status = exit_code << 8;
             if (wstatus as usize) != 0 {
@@ -189,6 +195,10 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             }
             return found_pid as isize;
         } else {
+            let wait_pid = task.getpid();
+            if wait_pid >= 1 {
+                println!("Not yet, pid {} still wait", wait_pid);
+            }
             drop(inner);
             drop(task);
             suspend_current_and_run_next();

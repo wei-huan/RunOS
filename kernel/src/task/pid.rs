@@ -14,6 +14,7 @@ pub fn pid_alloc() -> PidHandle {
 
 impl Drop for PidHandle {
     fn drop(&mut self) {
+        // println!("pid {} recycled", self.0);
         PID_ALLOCATOR.lock().dealloc(self.0);
     }
 }

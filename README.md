@@ -55,3 +55,6 @@ uname dup dup2 gettimeofday, times搞定
 需要fat32在sdcard上运行成功
 继续丰富syscall
 报名，提交部分代码
+
+今天是2022年4月25日
+getppid搞定
