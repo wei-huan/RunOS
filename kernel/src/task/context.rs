@@ -1,7 +1,6 @@
 use crate::cpu::current_hstack_top;
 use crate::scheduler::schedule;
 use crate::trap::trap_return;
-use core::arch::asm;
 use riscv::register::sstatus::{self, set_spp, SPP};
 
 #[repr(C)]
@@ -14,7 +13,8 @@ pub struct TaskContext {
 }
 
 impl TaskContext {
-    pub fn zero_init() -> Self {
+    // ra 换成 schedule, sp 换成 hart 的栈顶
+    pub fn goto_schedule() -> Self {
         let sstatus = sstatus::read();
         let sstatus = sstatus.bits();
         Self {
@@ -35,26 +35,6 @@ impl TaskContext {
             sp: kstack_ptr,
             sstatus,
             s: [0; 12],
-        }
-    }
-    #[inline(always)]
-    pub fn back_to_last_frame() -> Self {
-        let sstatus = sstatus::read();
-        let sstatus = sstatus.bits();
-        let mut fp: usize;
-        unsafe {
-            asm!("mv {}, s0", out(reg) fp);
-        }
-        let ra = unsafe { *((fp - 8) as *const usize) } as usize;
-        let mut s = [0; 12];
-        for i in 0..12 {
-            s[i] = unsafe { *((fp - (8 * (i + 2))) as *const usize) } as usize;
-        }
-        Self {
-            ra,
-            sp: fp,
-            sstatus,
-            s,
         }
     }
 }

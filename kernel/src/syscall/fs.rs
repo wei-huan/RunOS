@@ -39,19 +39,14 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
-    // log::debug!("BR");
     let inner = task.acquire_inner_lock();
-    // log::debug!("AR");
     if fd >= inner.fd_table.len() {
         return -1;
     }
     if let Some(file) = &inner.fd_table[fd] {
         let file: Arc<dyn File + Send + Sync> = match &file.fclass {
             FileClass::Abstr(f) => f.clone(),
-            FileClass::File(f) => {
-                /*print!("\n");*/
-                f.clone()
-            }
+            FileClass::File(f) => f.clone(),
             _ => return -1,
         };
         if !file.readable() {
@@ -60,9 +55,8 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         // release current task PCB manually to avoid multi-borrow
         drop(inner);
         // release current task PCB manually to avoid Arc::strong_count grow
-        drop(task);
-        let size = file.read(UserBuffer::new(translated_byte_buffer(token, buf, len)));
-        size as isize
+        // drop(task);
+        file.read(UserBuffer::new(translated_byte_buffer(token, buf, len))) as isize
     } else {
         -1
     }

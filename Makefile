@@ -37,7 +37,7 @@ endif
 run: fat32-oscomp-img
 	@make run -C $(OS_DIR)
 
-debug:
+debug: fat32-oscomp-img
 	@make debug -C $(OS_DIR)
 
 gdb:

@@ -20,18 +20,16 @@ impl RoundRobinScheduler {
 }
 
 impl Scheduler for RoundRobinScheduler {
-    fn schedule(&self) -> ! {
+    fn schedule(&self) -> !{
         interrupt_off();
-        // push stack incase overwhelm in schedule -> supervisor_time -> scheduler loop
-        let top = current_stack_top();
-        unsafe {
-            asm!("mv sp, {}", in(reg) top);
-        }
-        // log::debug!("start schedule");
+        // push stack incase overwhelm in schedule -> idle_task -> kernel_trap_handler -> supervisor_time -> scheduler loop
+        // let top = current_stack_top();
+        // unsafe {
+        //     asm!("mv sp, {}", in(reg) top);
+        // }
+        log::trace!("Start Schedule");
         if let Some(task) = self.fetch_task() {
-            // log::debug!("BT");
             let mut task_inner = task.acquire_inner_lock();
-            // log::debug!("AT");
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;
             // release coming task PCB manually
@@ -43,6 +41,7 @@ impl Scheduler for RoundRobinScheduler {
             drop(cpu);
             // schedule new task
             unsafe { __schedule_new(next_task_cx_ptr) }
+            panic!("Unreachable in Schedule");
         } else {
             idle_task();
         }

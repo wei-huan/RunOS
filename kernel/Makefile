@@ -101,7 +101,7 @@ ifeq ($(SBI),opensbi)
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPUS)
 else
-	@qemu-system-riscv64 \
+	qemu-system-riscv64 \
 		-m 128M \
 		-machine virt \
 		-nographic \
@@ -122,7 +122,7 @@ else
 endif
 
 debug: build
-	@qemu-system-riscv64 \
+	qemu-system-riscv64 \
 		-m 128M \
     	-machine virt \
     	-nographic \

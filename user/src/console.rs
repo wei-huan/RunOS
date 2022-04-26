@@ -43,16 +43,17 @@ const LF: u8 = 0x0au8;
 const CR: u8 = 0x0du8;
 const DL: u8 = 0x7fu8;
 const BS: u8 = 0x08u8;
-const NONE: u8 = 0x00u8;
+// const NONE: u8 = 0x00u8;
 
 pub fn read_line(line: &mut String) -> Result<usize, Error> {
     let mut cnt: usize = 0;
     loop {
+        // println!("Reading");
         let c = getchar();
         match c {
-            NONE => {
-                continue;
-            }
+            // NONE => {
+            //     continue;
+            // }
             LF | CR => {
                 println!("");
                 if !line.is_empty() {

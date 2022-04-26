@@ -12,10 +12,12 @@ use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
+    panic!("Unreachable in sys_exit!");
 }
 
-pub fn sys_yield() -> ! {
+pub fn sys_yield() -> isize {
     suspend_current_and_run_next();
+    0
 }
 
 pub fn sys_get_time(time_val: *mut TimeVal) -> isize {
@@ -197,7 +199,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         } else {
             let wait_pid = task.getpid();
             if wait_pid >= 1 {
-                println!("Not yet, pid {} still wait", wait_pid);
+                log::trace!("Not yet, pid {} still wait", wait_pid);
             }
             drop(inner);
             drop(task);

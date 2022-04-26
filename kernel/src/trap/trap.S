@@ -11,9 +11,6 @@
     .globl __kernelvec
     .align 4
 __kernelvec:
-    # // Disable interrupts
-    # csrci sstatus, 2
-
     // make room to save registers.
     addi sp, sp, -256
 

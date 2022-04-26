@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue Apr 26 11:17:42 2022
+# Make data base, printed on Tue Apr 26 21:45:17 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2595
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-f9f16c6a-9436-4a54-8343-fd50578275c4.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-d34700b0-a4af-49bd-af02-9850dd55c7c0.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -282,15 +282,15 @@ LANG = C
 # Load=133/1024=13%, Rehash=0, Collisions=23/171=13%
 
 # Pattern-specific Variable Values
- 
 
 # No pattern-specific variable values.
 
 # Directories
 
-# . (device 66310, inode 3414746): 20 files, no impossibilities.
+ 
+# . (device 66310, inode 3414746): 21 files, no impossibilities.
 
-# 20 files, no impossibilities in 1 directories.
+# 21 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -350,11 +350,11 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-24 20:55:05.260036609
+#  Last modified 2022-04-26 16:17:26.811711629
 #  File has been updated.
 #  Successfully updated.
 
-debug:
+debug: fat32-oscomp-img
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
@@ -401,19 +401,19 @@ fat32-oscomp-img: user
 	cd oscomp && ./addoscompfile2fs.sh qemu
 
 # files hash-table stats:
-# Load=15/1024=1%, Rehash=0, Collisions=0/35=0%
+# Load=15/1024=1%, Rehash=0, Collisions=0/36=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 35 / storage = 283 B / avg = 8 B
-# current buf: size = 8162 B / used = 283 B / count = 35 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 36 / storage = 294 B / avg = 8 B
+# current buf: size = 8162 B / used = 294 B / count = 36 / avg = 8 B
 
-# strcache performance: lookups = 59 / hit rate = 40%
+# strcache performance: lookups = 61 / hit rate = 40%
 # hash-table stats:
-# Load=35/8192=0%, Rehash=0, Collisions=1/59=2%
-# Finished Make data base on Tue Apr 26 11:17:42 2022
+# Load=36/8192=0%, Rehash=0, Collisions=1/61=2%
+# Finished Make data base on Tue Apr 26 21:45:17 2022
 
  

@@ -58,3 +58,15 @@ uname dup dup2 gettimeofday, times搞定
 
 今天是2022年4月25日
 getppid搞定
+
+今天是2022年4月26日
+suspend_current_and_run_next 改造完成, 方法比较不错, 和原来的调度逻辑不冲突
+S态的 supervisor timer 还是和多核有冲突
+wait waitpid exit yield搞定
+还差将近一半的syscall没做完(14个任务)
+
+下一步：
+supervisor timer bug改
+需要fat32在sdcard上运行成功
+继续丰富syscall
+报名，提交部分代码
