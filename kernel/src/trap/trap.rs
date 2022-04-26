@@ -34,8 +34,8 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             // log::debug!("Supervisor Timer");
-            set_next_trigger();
-            schedule();
+            // set_next_trigger();
+            // schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
             log::debug!("boot hart");

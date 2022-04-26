@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use crate::{drivers::BLOCK_DEVICE, println};
 use _core::usize;
 use alloc::sync::Arc;

@@ -1,6 +1,7 @@
 use crate::cpu::current_hstack_top;
 use crate::scheduler::schedule;
 use crate::trap::trap_return;
+use core::arch::asm;
 use riscv::register::sstatus::{self, set_spp, SPP};
 
 #[repr(C)]
@@ -23,10 +24,6 @@ impl TaskContext {
             s: [0; 12],
         }
     }
-    #[allow(unused)]
-    pub fn get_sp(&self) -> usize {
-        self.sp
-    }
     pub fn goto_trap_return(kstack_ptr: usize) -> Self {
         unsafe {
             set_spp(SPP::User);
@@ -38,6 +35,26 @@ impl TaskContext {
             sp: kstack_ptr,
             sstatus,
             s: [0; 12],
+        }
+    }
+    #[inline(always)]
+    pub fn back_to_last_frame() -> Self {
+        let sstatus = sstatus::read();
+        let sstatus = sstatus.bits();
+        let mut fp: usize;
+        unsafe {
+            asm!("mv {}, s0", out(reg) fp);
+        }
+        let ra = unsafe { *((fp - 8) as *const usize) } as usize;
+        let mut s = [0; 12];
+        for i in 0..12 {
+            s[i] = unsafe { *((fp - (8 * (i + 2))) as *const usize) } as usize;
+        }
+        Self {
+            ra,
+            sp: fp,
+            sstatus,
+            s,
         }
     }
 }

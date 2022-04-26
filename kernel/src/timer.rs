@@ -58,6 +58,7 @@ pub fn get_time_sec_usec() -> (u64, u64) {
     (sec, usec)
 }
 
+#[allow(unused)]
 pub fn compare_time_sec_usec(t_sec: usize, t_usec: usize, f_sec: usize, f_usec: usize) -> bool {
     // Compare sec
     if t_sec > f_sec {

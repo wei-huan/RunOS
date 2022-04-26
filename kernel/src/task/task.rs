@@ -87,37 +87,35 @@ impl TaskControlBlock {
         let task = Self {
             pid: pid_handle,
             kernel_stack,
-            inner: unsafe {
-                Mutex::new(TaskControlBlockInner {
-                    entry_point,
-                    trap_cx_ppn,
-                    ustack_bottom: ustack_base,
-                    task_cx: TaskContext::goto_trap_return(kernel_stack_top),
-                    task_status: TaskStatus::Ready,
-                    addrspace,
-                    parent: None,
-                    children: Vec::new(),
-                    exit_code: 0,
-                    fd_table: vec![
-                        // 0 -> stdin
-                        Some(FileDescripter::new(
-                            false,
-                            FileClass::Abstr(Arc::new(Stdin)),
-                        )),
-                        // 1 -> stdout
-                        Some(FileDescripter::new(
-                            false,
-                            FileClass::Abstr(Arc::new(Stdout)),
-                        )),
-                        // 2 -> stderr
-                        Some(FileDescripter::new(
-                            false,
-                            FileClass::Abstr(Arc::new(Stdout)),
-                        )),
-                    ],
-                    current_path: String::from("/"),
-                })
-            },
+            inner: Mutex::new(TaskControlBlockInner {
+                entry_point,
+                trap_cx_ppn,
+                ustack_bottom: ustack_base,
+                task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+                task_status: TaskStatus::Ready,
+                addrspace,
+                parent: None,
+                children: Vec::new(),
+                exit_code: 0,
+                fd_table: vec![
+                    // 0 -> stdin
+                    Some(FileDescripter::new(
+                        false,
+                        FileClass::Abstr(Arc::new(Stdin)),
+                    )),
+                    // 1 -> stdout
+                    Some(FileDescripter::new(
+                        false,
+                        FileClass::Abstr(Arc::new(Stdout)),
+                    )),
+                    // 2 -> stderr
+                    Some(FileDescripter::new(
+                        false,
+                        FileClass::Abstr(Arc::new(Stdout)),
+                    )),
+                ],
+                current_path: String::from("/"),
+            }),
         };
         // prepare TrapContext in user space
         let trap_cx = task.acquire_inner_lock().get_trap_cx();
@@ -221,21 +219,19 @@ impl TaskControlBlock {
         let task_control_block = Arc::new(TaskControlBlock {
             pid: pid_handle,
             kernel_stack,
-            inner: unsafe {
-                Mutex::new(TaskControlBlockInner {
-                    entry_point: parent_inner.entry_point,
-                    trap_cx_ppn,
-                    ustack_bottom: parent_inner.ustack_bottom,
-                    task_cx: TaskContext::goto_trap_return(kernel_stack_top),
-                    task_status: TaskStatus::Ready,
-                    addrspace,
-                    parent: Some(Arc::downgrade(self)),
-                    children: Vec::new(),
-                    exit_code: 0,
-                    fd_table: new_fd_table,
-                    current_path: parent_inner.current_path.clone(),
-                })
-            },
+            inner: Mutex::new(TaskControlBlockInner {
+                entry_point: parent_inner.entry_point,
+                trap_cx_ppn,
+                ustack_bottom: parent_inner.ustack_bottom,
+                task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+                task_status: TaskStatus::Ready,
+                addrspace,
+                parent: Some(Arc::downgrade(self)),
+                children: Vec::new(),
+                exit_code: 0,
+                fd_table: new_fd_table,
+                current_path: parent_inner.current_path.clone(),
+            }),
         });
         // add child
         parent_inner.children.push(task_control_block.clone());
