@@ -92,7 +92,7 @@ supervisor timer 和多核冲突 bug 原因找到了, user_trap_handler 后又�
 上面的bug改掉了，舒坦！！！
 pipe, getdents, chdir完成
 还差 1 / 3 的syscall没做完(9个任务)
-mkdir_, open_at, clone 都有些问题，需要解决
+mkdir_, openat, clone 都有些问题，需要解决
 
 下一步：
 盖章，改报名
