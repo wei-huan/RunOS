@@ -1,6 +1,7 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
-    ch_dir, make_pipe, open, DiskInodeType, File, FileClass, FileDescripter, Kstat, OpenFlags,
+    ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, FileDescripter, Kstat,
+    OpenFlags,
 };
 use crate::mm::{translated_byte_buffer, translated_refmut, translated_str, UserBuffer};
 use alloc::string::String;
@@ -356,5 +357,72 @@ pub fn sys_chdir(path: *const u8) -> isize {
         new_ino_id
     } else {
         new_ino_id
+    }
+}
+
+pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
+    //return 0;
+    //println!("=====================================");
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let buf_vec = translated_byte_buffer(token, buf, len);
+    let inner = task.acquire_inner_lock();
+    let dent_len = size_of::<Dirent>();
+    //let max_num = len / dent_len;
+    let mut total_len: usize = 0;
+    // 使用UserBuffer结构，以便于跨页读写
+    let mut userbuf = UserBuffer::new(buf_vec);
+    let mut dirent = Dirent::empty();
+    if fd == AT_FDCWD {
+        let work_path = inner.current_path.clone();
+        if let Some(file) = open(
+            "/",
+            work_path.as_str(),
+            OpenFlags::RDONLY,
+            DiskInodeType::Directory,
+        ) {
+            loop {
+                if total_len + dent_len > len {
+                    break;
+                }
+                if file.getdirent(&mut dirent) > 0 {
+                    userbuf.write_at(total_len, dirent.as_bytes());
+                    total_len += dent_len;
+                } else {
+                    break;
+                }
+            }
+            return total_len as isize; //warning
+        } else {
+            return -1;
+        }
+    } else {
+        let fd_usz = fd as usize;
+        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+            return -1;
+        }
+        if let Some(file) = &inner.fd_table[fd_usz] {
+            match &file.fclass {
+                FileClass::File(f) => {
+                    loop {
+                        if total_len + dent_len > len {
+                            break;
+                        }
+                        if f.getdirent(&mut dirent) > 0 {
+                            userbuf.write_at(total_len, dirent.as_bytes());
+                            total_len += dent_len;
+                        } else {
+                            break;
+                        }
+                    }
+                    return total_len as isize; //warning
+                }
+                _ => {
+                    return -1;
+                }
+            }
+        } else {
+            return -1;
+        }
     }
 }

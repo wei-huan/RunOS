@@ -90,11 +90,13 @@ getcwd，fstat完成
 supervisor timer 和多核冲突 bug 原因找到了, user_trap_handler 后又时钟中
 断进入 kernel_trap_handler，无语，要在 user_trap 禁时间中断
 上面的bug改掉了，舒坦！！！
-pipe, chdir完成
-还差 1 / 3 的syscall没做完(10个任务)
+pipe, getdents, chdir完成
+还差 1 / 3 的syscall没做完(9个任务)
+mkdir_, open_at, clone 都有些问题，需要解决
 
 下一步：
 盖章，改报名
+备份保存正常版本
 需要 fat32 在 sdcard 上运行成功
 尝试提交
 继续丰富syscall
