@@ -113,6 +113,7 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
 
 /// If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, return -2.
+#[allow(unused)]
 pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
     let task = current_task().unwrap();
     // find a child process
@@ -189,7 +190,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             }
             return found_pid as isize;
         } else {
-            let wait_pid = task.getpid();
+            // let wait_pid = task.getpid();
             // if wait_pid >= 1 {
             //     log::trace!("Not yet, pid {} still wait", wait_pid);
             // }

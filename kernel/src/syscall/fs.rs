@@ -171,7 +171,6 @@ pub fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
     let buf_vec = translated_byte_buffer(token, buf, len);
     let inner = task.acquire_inner_lock();
     let mut userbuf = UserBuffer::new(buf_vec);
-    let current_offset: usize = 0;
     if buf as usize == 0 {
         return 0;
     } else {
@@ -206,7 +205,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     }
     // 太傻比了，为了一个 fd 添加这么多，以后要改
     if new_fd >= inner.fd_table.len() {
-        for i in inner.fd_table.len()..(new_fd + 1) {
+        for _ in inner.fd_table.len()..(new_fd + 1) {
             inner.fd_table.push(None);
         }
     }
@@ -217,7 +216,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
 pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
-    let mut buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
+    let buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
     let inner = task.acquire_inner_lock();
     // 使用UserBuffer结构，以便于跨页读写
     let mut userbuf = UserBuffer::new(buf_vec);
@@ -276,14 +275,14 @@ pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
     0
 }
 
-pub fn sys_mkdir(dirfd: isize, path: *const u8, mode: u32) -> isize {
+pub fn sys_mkdir(dirfd: isize, path: *const u8, _mode: u32) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
     let path = translated_str(token, path);
     if dirfd == AT_FDCWD {
         let work_path = inner.current_path.clone();
-        if let Some(inode) = open(
+        if let Some(_) = open(
             inner.get_work_path().as_str(),
             path.as_str(),
             OpenFlags::CREATE,
@@ -302,7 +301,7 @@ pub fn sys_mkdir(dirfd: isize, path: *const u8, mode: u32) -> isize {
         if let Some(file) = &inner.fd_table[fd_usz] {
             match &file.fclass {
                 FileClass::File(f) => {
-                    if let Some(new_dir) = f.create(path.as_str(), DiskInodeType::Directory) {
+                    if let Some(_) = f.create(path.as_str(), DiskInodeType::Directory) {
                         return 0;
                     } else {
                         return -1;
@@ -331,7 +330,7 @@ pub fn sys_chdir(path: *const u8) -> isize {
         } else {
             work_path.push('/');
             work_path.push_str(path.as_str());
-            let mut path_vec: Vec<&str> = work_path.as_str().split('/').collect();
+            let path_vec: Vec<&str> = work_path.as_str().split('/').collect();
             let mut new_pathv: Vec<&str> = Vec::new();
             for i in 0..path_vec.len() {
                 if path_vec[i] == "" || path_vec[i] == "." {
