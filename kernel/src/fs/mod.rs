@@ -38,15 +38,6 @@ pub trait File: Send + Sync {
     fn writable(&self) -> bool;
     fn read(&self, buf: UserBuffer) -> usize;
     fn write(&self, buf: UserBuffer) -> usize;
-    // fn ioctl(&self, _cmd: u32, _arg: usize) -> isize {
-    //     0
-    // }
-    // fn r_ready(&self) -> bool {
-    //     true
-    // }
-    // fn w_ready(&self) -> bool {
-    //     true
-    // }
 }
 
 pub use finfo::{Dirent, FdSet, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN, *};

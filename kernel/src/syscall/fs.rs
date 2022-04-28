@@ -1,9 +1,11 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
-    make_pipe, open, DiskInodeType, File, FileClass, FileDescripter, Kstat, OpenFlags,
+    ch_dir, make_pipe, open, DiskInodeType, File, FileClass, FileDescripter, Kstat, OpenFlags,
 };
 use crate::mm::{translated_byte_buffer, translated_refmut, translated_str, UserBuffer};
+use alloc::string::String;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use core::mem::size_of;
 
 const AT_FDCWD: isize = -100;
@@ -271,4 +273,88 @@ pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
     *translated_refmut(token, pipe) = read_fd as u32;
     *translated_refmut(token, unsafe { pipe.add(1) }) = write_fd as u32;
     0
+}
+
+pub fn sys_mkdir(dirfd: isize, path: *const u8, mode: u32) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let path = translated_str(token, path);
+    if dirfd == AT_FDCWD {
+        let work_path = inner.current_path.clone();
+        if let Some(inode) = open(
+            inner.get_work_path().as_str(),
+            path.as_str(),
+            OpenFlags::CREATE,
+            DiskInodeType::Directory,
+        ) {
+            return 0;
+        } else {
+            return -1;
+        }
+    } else {
+        // DEBUG: 获取dirfd的OSInode
+        let fd_usz = dirfd as usize;
+        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+            return -1;
+        }
+        if let Some(file) = &inner.fd_table[fd_usz] {
+            match &file.fclass {
+                FileClass::File(f) => {
+                    if let Some(new_dir) = f.create(path.as_str(), DiskInodeType::Directory) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                }
+                _ => return -1,
+            }
+        } else {
+            return -1;
+        }
+    }
+}
+
+pub fn sys_chdir(path: *const u8) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let mut inner = task.acquire_inner_lock();
+    let path = translated_str(token, path);
+    let mut work_path = inner.current_path.clone();
+    let new_ino_id = ch_dir(work_path.as_str(), path.as_str()) as isize;
+    //println!("new inode id = {}", new_ino_id);
+    if new_ino_id >= 0 {
+        //inner.current_inode = new_ino_id as u32;
+        if path.chars().nth(0).unwrap() == '/' {
+            inner.current_path = path.clone();
+        } else {
+            work_path.push('/');
+            work_path.push_str(path.as_str());
+            let mut path_vec: Vec<&str> = work_path.as_str().split('/').collect();
+            let mut new_pathv: Vec<&str> = Vec::new();
+            for i in 0..path_vec.len() {
+                if path_vec[i] == "" || path_vec[i] == "." {
+                    continue;
+                }
+                if path_vec[i] == ".." {
+                    new_pathv.pop();
+                    continue;
+                }
+                new_pathv.push(path_vec[i]);
+            }
+            let mut new_wpath = String::new();
+            for i in 0..new_pathv.len() {
+                new_wpath.push('/');
+                new_wpath.push_str(new_pathv[i]);
+            }
+            if new_pathv.len() == 0 {
+                new_wpath.push('/');
+            }
+            //println!("after cd workpath = {}", new_wpath);
+            inner.current_path = new_wpath.clone();
+        }
+        new_ino_id
+    } else {
+        new_ino_id
+    }
 }

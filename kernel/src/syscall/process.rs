@@ -1,20 +1,15 @@
 use crate::cpu::{current_task, current_user_token};
-use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
-use crate::timer::{
-    get_time, get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times, USEC_PER_SEC,
-};
+use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times};
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
-use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
-    panic!("Unreachable in sys_exit!");
 }
 
 pub fn sys_yield() -> isize {

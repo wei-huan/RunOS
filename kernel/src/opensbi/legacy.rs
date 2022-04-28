@@ -135,7 +135,7 @@ pub fn remote_sfence_vma_asid(
 
 #[allow(unused)]
 pub fn shutdown() -> ! {
-    println!("I am dead");
+    log::debug!("shutdown");
     opensbi_call(SBI_SHUTDOWN_EID, SBI_SHUTDOWN_FID, 0, 0, 0, 0, 0, 0);
     panic!("It should shutdown!");
 }
