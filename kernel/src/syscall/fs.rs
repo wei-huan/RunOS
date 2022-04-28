@@ -1,6 +1,8 @@
 use crate::cpu::{current_task, current_user_token};
-use crate::fs::{open, DiskInodeType, File, FileClass, FileDescripter, Kstat, OpenFlags};
-use crate::mm::{translated_byte_buffer, translated_str, UserBuffer};
+use crate::fs::{
+    make_pipe, open, DiskInodeType, File, FileClass, FileDescripter, Kstat, OpenFlags,
+};
+use crate::mm::{translated_byte_buffer, translated_refmut, translated_str, UserBuffer};
 use alloc::sync::Arc;
 use core::mem::size_of;
 
@@ -252,4 +254,21 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
             return -1;
         }
     }
+}
+
+pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
+    if flags != 0 {
+        println!("[sys_pipe]: flags not support");
+    }
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    let mut inner = task.acquire_inner_lock();
+    let (pipe_read, pipe_write) = make_pipe();
+    let read_fd = inner.alloc_fd();
+    inner.fd_table[read_fd] = Some(FileDescripter::new(false, FileClass::Abstr(pipe_read)));
+    let write_fd = inner.alloc_fd();
+    inner.fd_table[write_fd] = Some(FileDescripter::new(false, FileClass::Abstr(pipe_write)));
+    *translated_refmut(token, pipe) = read_fd as u32;
+    *translated_refmut(token, unsafe { pipe.add(1) }) = write_fd as u32;
+    0
 }

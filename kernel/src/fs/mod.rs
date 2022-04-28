@@ -1,7 +1,8 @@
-pub mod finfo;
+mod finfo;
+mod stdio;
 mod inode;
 mod mount;
-pub mod stdio;
+mod pipe;
 
 use crate::mm::UserBuffer;
 use alloc::sync::Arc;
@@ -54,4 +55,5 @@ pub use inode::{
     DiskInodeType, OSInode, OpenFlags,
 };
 pub use mount::MNT_TABLE;
+pub use pipe::{make_pipe, Pipe};
 pub use stdio::{Stdin, Stdout};

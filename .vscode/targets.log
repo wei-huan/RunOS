@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Apr 28 14:10:24 2022
+# Make data base, printed on Thu Apr 28 19:39:49 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2557
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-3d3e46bc-70a9-4b31-88e3-04883ff0d43d.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-416b2107-0226-43e8-b513-75af60ed7d04.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -287,7 +287,6 @@ LANG = C
 
 # Directories
 
- 
 # . (device 66310, inode 3414746): 20 files, no impossibilities.
 
 # 20 files, no impossibilities in 1 directories.
@@ -303,6 +302,7 @@ user:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+ 
 #  recipe to execute (from 'Makefile', line 23):
 	@make build -C $(USER_DIR)
 
@@ -350,7 +350,7 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-26 16:17:26.811711629
+#  Last modified 2022-04-28 16:26:51.919611387
 #  File has been updated.
 #  Successfully updated.
 
@@ -414,6 +414,6 @@ fat32-oscomp-img: user
 # strcache performance: lookups = 60 / hit rate = 41%
 # hash-table stats:
 # Load=35/8192=0%, Rehash=0, Collisions=1/60=2%
-# Finished Make data base on Thu Apr 28 14:10:24 2022
+# Finished Make data base on Thu Apr 28 19:39:49 2022
 
  
