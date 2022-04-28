@@ -11,12 +11,11 @@ pub use pid::{pid_alloc, PidHandle};
 pub use task::{TaskControlBlock, TaskStatus};
 
 use crate::cpu::take_current_task;
-use crate::scheduler::{__schedule, __schedule_new, add_task, INITPROC};
+use crate::scheduler::{save_current_and_goto_schedule, go_to_schedule, add_task, INITPROC};
 use alloc::sync::Arc;
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
-pub fn exit_current_and_run_next(exit_code: i32) {
-    // log::debug!("exit");
+pub fn exit_current_and_run_next(exit_code: i32) -> !{
     // take from Processor
     let task = take_current_task().unwrap();
     // **** access current TCB exclusively
@@ -27,7 +26,8 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     task_inner.exit_code = exit_code;
     // do not move to its parent but under initproc
     // ++++++ access initproc TCB exclusively
-    if task.pid.0 != 1 {
+    // pid 0 for initproc , pid 1 for user_shell
+    if task.pid.0 >= 2 {
         let mut initproc_inner = INITPROC.acquire_inner_lock();
         for child in task_inner.children.iter() {
             child.acquire_inner_lock().parent = Some(Arc::downgrade(&INITPROC));
@@ -43,8 +43,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // drop task manually to maintain rc correctly
     drop(task);
     // jump to schedule cycle
-    let mut schedule_task = TaskContext::goto_schedule();
-    unsafe { __schedule_new(&mut schedule_task as *const _) };
+    go_to_schedule();
 }
 
 pub fn suspend_current_and_run_next() {
@@ -62,6 +61,7 @@ pub fn suspend_current_and_run_next() {
     // push back to ready queue.
     add_task(task);
     // jump to schedule cycle
-    let schedule_task = TaskContext::goto_schedule();
-    unsafe { __schedule(task_cx_ptr, &schedule_task as *const TaskContext) };
+    save_current_and_goto_schedule(task_cx_ptr);
+    // let schedule_task = TaskContext::goto_schedule();
+    // unsafe { __schedule(task_cx_ptr, &schedule_task as *const TaskContext) };
 }

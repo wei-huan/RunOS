@@ -42,3 +42,15 @@ lazy_static! {
 pub fn add_initproc() {
     add_task(INITPROC.clone());
 }
+
+#[inline(always)]
+pub fn go_to_schedule() -> ! {
+    let schedule_task = TaskContext::goto_schedule();
+    unsafe { __schedule_new(&schedule_task as *const TaskContext) };
+}
+
+#[inline(always)]
+pub fn save_current_and_goto_schedule(current_task_cx_ptr: *mut TaskContext) {
+    let schedule_task = TaskContext::goto_schedule();
+    unsafe { __schedule(current_task_cx_ptr, &schedule_task as *const TaskContext) };
+}

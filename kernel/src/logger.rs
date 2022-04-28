@@ -1,6 +1,6 @@
-#[cfg(feature = "opensbi")]
+#[cfg(not(feature = "rustsbi"))]
 use crate::opensbi::{impl_id, impl_version, spec_version};
-#[cfg(not(feature = "opensbi"))]
+#[cfg(feature = "rustsbi")]
 use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
     cpu::hart_id,
@@ -114,13 +114,18 @@ fn set_hart_filter(hart_id: usize) {
     HART_FILTER.store(hart_id, Ordering::Relaxed);
 }
 
+extern "C" {
+    fn boot_stack();
+    fn boot_stack_top();
+}
+
 pub fn show_machine_sbi_os_info() {
     let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
     let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
-    info!("=== Machine Info ===");
-    info!(" Total CPUs: {}", n_cpus);
-    info!(" Timer Clock: {}Hz", timebase_frequency);
-    info!("=== SBI Implementation ===");
+    log::info!("=== Machine Info ===");
+    log::info!(" Total CPUs: {}", n_cpus);
+    log::info!(" Timer Clock: {}Hz", timebase_frequency);
+    log::info!("=== SBI Implementation ===");
     let (impl_major, impl_minor) = {
         let version = impl_version();
         (version >> 16, version & 0xFFFF)
@@ -129,13 +134,23 @@ pub fn show_machine_sbi_os_info() {
         let version = spec_version();
         (version.major, version.minor)
     };
-    info!(
+    log::info!(
         " Implementor: {:?} (version: {}.{})",
         impl_id(),
         impl_major,
         impl_minor
     );
-    info!(" Spec Version: {}.{}", spec_major, spec_minor);
-    info!("=== MyOS Info ===");
-    info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+    log::info!(" Spec Version: {}.{}", spec_major, spec_minor);
+    log::info!("=== MyOS Info ===");
+    log::info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+    log::info!(
+        "Boot_Stack_0: [{:#X}, {:#X})",
+        boot_stack as usize,
+        boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4
+    );
+    log::info!(
+        "Boot_Stack_1: [{:#X}, {:#X})",
+        boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4,
+        boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 2
+    );
 }

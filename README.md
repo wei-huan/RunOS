@@ -11,7 +11,7 @@ suspend 改造完成
 
 堆问题解决了，确实是buf爆了
 
-页表问题页解决了，问题就是栈溢出，调度逻辑中shceduler无限嵌套，深度太大把栈搞崩了，暂时在scheduler时把栈清空，得过且过
+页表问题页解决了，问题就是栈溢出，调度逻辑中shceduler和supervisor timer无限嵌套，深度太大把栈搞崩了，暂时在scheduler时把栈清空，得过且过
 
 k210的sbi还是选用rustsbi，rustsbi通过软件方式支持1.9.1版本的特权级架构，对k210更友好，其他功能也和Opensbi spec 1.0一样
 
@@ -66,7 +66,25 @@ wait waitpid exit yield搞定
 还差将近一半的syscall没做完(14个任务)
 
 下一步：
-supervisor timer bug改
-需要fat32在sdcard上运行成功
+supervisor timer bug改, 暂时猜测是 task 的 kernel_stack 崩了，要么 user_trap 关中断，
+要么 supervisor timer 到 schedule 自己换栈
+需要 fat32 在 sdcard 上运行成功
 继续丰富syscall
 报名，提交部分代码
+
+今天是2022年4月27日
+理清任务的全部执行流，supervisor timer很奇怪, 和多核冲突，原因未知
+还需要完成信号量，线程，管道，动态内存分配，文件系统，月前任务艰巨
+getcwd，fstat完成
+还差将近一半的syscall没做完(12个任务)
+
+下一步：
+理清任务的全部执行流，改 supervisor timer 和多核冲突 bug
+需要 fat32 在 sdcard 上运行成功
+盖章，报名，改队名
+继续丰富syscall
+
+今天是2022年4月28日
+昨晚玩了一天
+改了队名
+supervisor timer 和多核冲突 bug 原因找到了, user_trap_handler 后又时钟中断进入 kernel_trap_handler，无语，要在 user_trap 禁中断

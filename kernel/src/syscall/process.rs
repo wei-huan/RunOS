@@ -4,7 +4,9 @@ use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
-use crate::timer::{get_time, get_time_sec_usec, get_time_us, get_time_val, TimeVal, USEC_PER_SEC};
+use crate::timer::{
+    get_time, get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times, USEC_PER_SEC,
+};
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
@@ -24,20 +26,15 @@ pub fn sys_get_time(time_val: *mut TimeVal) -> isize {
     get_time_val(time_val)
 }
 
-pub fn sys_times(time: *mut i64) -> isize {
-    // struct tms
-    // {
-    //     long tms_utime;
-    //     long tms_stime;
-    //     long tms_cutime;
-    //     long tms_cstime;
-    // };
+pub fn sys_times(times: *mut Times) -> isize {
     let token = current_user_token();
     let sec = get_time_us() as i64;
-    *translated_refmut(token, time) = sec;
-    *translated_refmut(token, unsafe { time.add(1) }) = sec;
-    *translated_refmut(token, unsafe { time.add(2) }) = sec;
-    *translated_refmut(token, unsafe { time.add(3) }) = sec;
+    *translated_refmut(token, times) = Times {
+        tms_utime: sec,
+        tms_stime: sec,
+        tms_cutime: sec,
+        tms_cstime: sec,
+    };
     0
 }
 
@@ -198,9 +195,9 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             return found_pid as isize;
         } else {
             let wait_pid = task.getpid();
-            if wait_pid >= 1 {
-                log::trace!("Not yet, pid {} still wait", wait_pid);
-            }
+            // if wait_pid >= 1 {
+            //     log::trace!("Not yet, pid {} still wait", wait_pid);
+            // }
             drop(inner);
             drop(task);
             suspend_current_and_run_next();

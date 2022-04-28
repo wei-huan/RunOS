@@ -1,7 +1,8 @@
 use crate::cpu::{current_task, current_user_token};
-use crate::fs::{open, DiskInodeType, File, FileClass, FileDescripter, OpenFlags};
+use crate::fs::{open, DiskInodeType, File, FileClass, FileDescripter, Kstat, OpenFlags};
 use crate::mm::{translated_byte_buffer, translated_str, UserBuffer};
 use alloc::sync::Arc;
+use core::mem::size_of;
 
 const AT_FDCWD: isize = -100;
 pub const FD_LIMIT: usize = 128;
@@ -159,6 +160,22 @@ pub fn sys_close(fd: usize) -> isize {
     0
 }
 
+pub fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let buf_vec = translated_byte_buffer(token, buf, len);
+    let inner = task.acquire_inner_lock();
+    let mut userbuf = UserBuffer::new(buf_vec);
+    let current_offset: usize = 0;
+    if buf as usize == 0 {
+        return 0;
+    } else {
+        let cwd = inner.current_path.as_bytes();
+        userbuf.write(cwd);
+        return buf as isize;
+    }
+}
+
 pub fn sys_dup(fd: usize) -> isize {
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
@@ -190,4 +207,49 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     }
     inner.fd_table[new_fd] = Some(inner.fd_table[old_fd].as_ref().unwrap().clone());
     new_fd as isize
+}
+
+pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let mut buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
+    let inner = task.acquire_inner_lock();
+    // 使用UserBuffer结构，以便于跨页读写
+    let mut userbuf = UserBuffer::new(buf_vec);
+    let mut kstat = Kstat::empty();
+    if fd == AT_FDCWD {
+        let work_path = inner.current_path.clone();
+        if let Some(file) = open(
+            "/",
+            work_path.as_str(),
+            OpenFlags::RDONLY,
+            DiskInodeType::Directory,
+        ) {
+            file.get_fstat(&mut kstat);
+            userbuf.write(kstat.as_bytes());
+            return 0;
+        } else {
+            return -1;
+        }
+    } else {
+        let fd_usz = fd as usize;
+        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+            return -1;
+        }
+        if let Some(file) = &inner.fd_table[fd_usz] {
+            match &file.fclass {
+                FileClass::File(f) => {
+                    f.get_fstat(&mut kstat);
+                    userbuf.write(kstat.as_bytes());
+                    return 0;
+                }
+                _ => {
+                    userbuf.write(Kstat::new_abstract().as_bytes());
+                    return 0; //warning
+                }
+            }
+        } else {
+            return -1;
+        }
+    }
 }

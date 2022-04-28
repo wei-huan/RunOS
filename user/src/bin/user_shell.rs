@@ -13,7 +13,7 @@ use user::{exec, fork, waitpid};
 
 #[no_mangle]
 pub fn main() -> i32 {
-    println!("Rust user shell");
+    // println!("Rust user shell");
     let mut line: String = String::new();
     loop {
         print!(">> ");

@@ -19,6 +19,8 @@ _start:
 #     call os_sub_main
 
     .section .bss.stack
+    .globl boot_stack
+    .globl boot_stack_top
 boot_stack:
     .globl boot_stack
     # 64K 启动栈大小 * CPU_NUMS

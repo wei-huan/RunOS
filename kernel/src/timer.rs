@@ -19,6 +19,14 @@ pub struct TimeVal {
     pub usec: u64,
 }
 
+#[derive(Copy, Clone)]
+pub struct Times {
+    pub tms_utime: i64,
+    pub tms_stime: i64,
+    pub tms_cutime: i64,
+    pub tms_cstime: i64,
+}
+
 pub fn get_time() -> usize {
     time::read()
 }
