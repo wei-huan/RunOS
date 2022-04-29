@@ -107,6 +107,7 @@ mkdir_, openat, clone 都有些问题，需要解决
 gitlab账号有问题，没法提交
 备份保存正常版本完成
 fat32 在 sdcard 上运行成功
+openat, mkdir_完成
 
 下一步：
 提交邱老师的教师证文件
