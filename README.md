@@ -108,6 +108,9 @@ gitlab账号有问题，没法提交
 备份保存正常版本完成
 fat32 在 sdcard 上运行成功
 openat, mkdir_完成
+还差 1 / 4 的syscall没做完(7个任务)
 
 下一步：
+多线程
+继续丰富syscall
 提交邱老师的教师证文件
