@@ -4,7 +4,7 @@ TARGET := riscv64gc-unknown-none-elf
 MODE := release
 KERNEL_ELF := target/$(TARGET)/$(MODE)/os
 KERNEL_BIN := $(KERNEL_ELF).bin
-SDCARD := /dev/sda1
+SDCARD := /dev/sda
 APPS := ../user/src/bin/*
 
 # PLATFORM qemu or k210

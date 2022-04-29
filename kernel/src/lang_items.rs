@@ -1,5 +1,5 @@
 use crate::cpu::current_stack_top;
-// #[cfg(feature = "opensbi")]
+#[cfg(feature = "opensbi")]
 use crate::opensbi::shutdown;
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::shutdown;

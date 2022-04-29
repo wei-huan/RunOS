@@ -16,17 +16,17 @@ build:
 sdcard:
 	@make sdcard -C $(OS_DIR)
 
-fat32-img:
+fat32:
 	@make fat32-img -C $(OS_DIR)
 
 user:
 	@make build -C $(USER_DIR)
 
-# fs-img: user
+# fs: user
 # 	@rm -f $(FS_IMG)
 # 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
-fat32-oscomp-img: user
+fat32-oscomp: user
 ifeq ($(PLATFORM), qemu)
 	cd fat32-pack && ./createfs.sh
 	cd oscomp && ./addoscompfile2fs.sh qemu
@@ -34,10 +34,10 @@ else
 	cd oscomp && ./addoscompfile2fs.sh k210
 endif
 
-run: fat32-oscomp-img
+run:
 	@make run -C $(OS_DIR)
 
-debug: fat32-oscomp-img
+debug: fat32-oscomp
 	@make debug -C $(OS_DIR)
 
 gdb:
@@ -46,4 +46,4 @@ gdb:
 disasm:
 	@make disasm -C $(OS_DIR)
 
-.PHONY: build sdcard user fs-img run debug gdb disasm fat32-oscomp-img fat32-img
+.PHONY: build sdcard user fs run debug gdb disasm fat32-oscomp fat32
