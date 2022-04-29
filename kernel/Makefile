@@ -15,6 +15,8 @@ SBI ?= opensbi
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
 BOOTLOADER := $(SBI_IMG)
+# LOG
+LOG ?= DEBUG
 
 # FS
 FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
