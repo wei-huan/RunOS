@@ -114,7 +114,7 @@ openat, mkdir_, unlink, mount, umount完成
 gitlab账号有问题，问主办老师
 提交邱老师的教师证文件
 多线程
-继续丰富syscall, 比如
+继续丰富syscall, 比如 brk
 idle_task statistic,
 shell 退出
 shutdown
