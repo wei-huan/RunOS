@@ -107,14 +107,14 @@ mkdir_, openat, clone 都有些问题，需要解决
 gitlab账号有问题，没法提交
 备份保存正常版本完成
 fat32 在 sdcard 上运行成功
-openat, mkdir_完成
-还差 1 / 4 的syscall没做完(7个任务)
+openat, mkdir_, unlink, mount, umount完成
+还差 1 / 8 的syscall没做完(4个任务: brk, clone, mmap, unmap)
 
 下一步：
 gitlab账号有问题，问主办老师
 提交邱老师的教师证文件
 多线程
-继续丰富syscall, 比如 mount, unmount
+继续丰富syscall, 比如
 idle_task statistic,
 shell 退出
 shutdown

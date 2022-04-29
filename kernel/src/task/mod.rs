@@ -8,7 +8,7 @@ mod task;
 pub use context::TaskContext;
 pub use kernel_task::idle_task;
 pub use pid::{pid_alloc, PidHandle};
-pub use task::{TaskControlBlock, TaskStatus};
+pub use task::{TaskControlBlock, TaskStatus, TaskControlBlockInner};
 
 use crate::cpu::take_current_task;
 use crate::scheduler::{save_current_and_goto_schedule, go_to_schedule, add_task, INITPROC};

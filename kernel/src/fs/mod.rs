@@ -1,8 +1,8 @@
 mod finfo;
-mod stdio;
 mod inode;
 mod mount;
 mod pipe;
+mod stdio;
 
 use crate::mm::UserBuffer;
 use alloc::sync::Arc;
