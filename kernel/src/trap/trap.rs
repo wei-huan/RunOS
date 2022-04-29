@@ -1,7 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_trap_cx, current_user_token};
 // use crate::mm::{kernel_token, kernel_translate};
-use crate::scheduler::schedule;
+// use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
@@ -28,70 +28,14 @@ pub fn set_kernel_trap_entry() {
     }
 }
 
-extern "C" {
-    fn stext();
-    fn etext();
-    fn srodata();
-    fn erodata();
-    fn sdata();
-    fn edata();
-    fn sbss_with_stack();
-    fn ebss();
-    // fn ekernel();
-    // fn strampoline();
-}
-
-#[allow(unused)]
-fn print_kernel_layout() {
-    println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-    println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
-    println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-    println!(
-        ".bss [{:#x}, {:#x})",
-        sbss_with_stack as usize, ebss as usize
-    );
-}
-
-#[allow(unused)]
-fn where_is_stval(stval: usize) {
-    log::info!("stval = 0x{:X}", stval);
-    if stval >= stext as usize && stval < etext as usize {
-        println!("stval is in .text");
-    } else if stval >= srodata as usize && stval < erodata as usize {
-        println!("stval is in .rodata");
-    } else if stval >= sdata as usize && stval < edata as usize {
-        println!("stval is in .data");
-    } else if stval >= sbss_with_stack as usize && stval < ebss as usize {
-        println!("stval is in .bss");
-    } else {
-        println!("stval either");
-    }
-}
-
-#[allow(unused)]
-fn where_is_sepc(sepc: usize) {
-    log::info!("sepc = 0x{:X}", sepc);
-    if sepc >= stext as usize && sepc < etext as usize {
-        println!("sepc is in .text");
-    } else if sepc >= srodata as usize && sepc < erodata as usize {
-        println!("sepc is in .rodata");
-    } else if sepc >= sdata as usize && sepc < edata as usize {
-        println!("sepc is in .data");
-    } else if sepc >= sbss_with_stack as usize && sepc < ebss as usize {
-        println!("sepc is in .bss");
-    } else {
-        println!("sepc either");
-    }
-}
-
 #[no_mangle]
 pub fn kernel_trap_handler() {
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // log::debug!("Supervisor Timer");
-            set_next_trigger();
-            schedule();
+            log::debug!("Supervisor Timer");
+            // set_next_trigger();
+            // schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
             log::debug!("boot hart");
