@@ -1,3 +1,4 @@
 os_main
 fdt_get_timerfreq
-以上两处要改成对应版本
+boot_all_harts
+以上3处要改成对应版本
