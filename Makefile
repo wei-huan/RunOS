@@ -24,24 +24,22 @@ fat32-img:
 user:
 	@make build -C $(USER_DIR)
 
-fs-img: user
-	@rm -f $(OSCOMP_TAR_DIR)/initproc
-	@rm -f $(OSCOMP_TAR_DIR)/user_shell
-	@cp $(USER_TAR_DIR)/initproc $(OSCOMP_TAR_DIR)/
-	@cp $(USER_TAR_DIR)/user_shell $(OSCOMP_TAR_DIR)/
-	@rm -f $(FS_IMG)
-	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(OSCOMP_TAR_DIR)/ -t $(OSCOMP_TAR_DIR)/
-	@cp ./fs.img $(USER_TAR_DIR)/
-# @cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(USER_TAR_DIR)/
+# fs-img: user
+# 	@rm -f $(FS_IMG)
+# 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(USER_DIR)/src/bin/ -t $(IMG_DIR)/
 
 fat32-oscomp-img: user
+ifeq ($(PLATFORM), qemu)
 	cd fat32-pack && ./createfs.sh
-	cd oscomp && ./addoscompfile2fs.sh
+	cd oscomp && ./addoscompfile2fs.sh qemu
+else
+	cd oscomp && ./addoscompfile2fs.sh k210
+endif
 
 run: fat32-oscomp-img
 	@make run -C $(OS_DIR)
 
-debug:
+debug: fat32-oscomp-img
 	@make debug -C $(OS_DIR)
 
 gdb:

@@ -1,6 +1,6 @@
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::console_putchar;
-#[cfg(not(any(feature = "rustsbi")))]
+#[cfg(not(feature = "rustsbi"))]
 use crate::opensbi::console_putchar;
 
 use core::fmt::{self, Write};

@@ -1,19 +1,36 @@
+#![allow(unused)]
 use core::arch::asm;
 
-// const SYSCALL_DUP: usize = 24;
-const SYSCALL_OPEN: usize = 56;
+const SYSCALL_GETCWD: usize = 17;
+const SYSCALL_DUP: usize = 23;
+const SYSCALL_DUP3: usize = 24;
+const SYSCALL_MKDIRAT: usize = 34;
+const SYSCALL_UNLINKAT: usize = 35;
+const SYSCALL_LINKAT: usize = 37;
+const SYSCALL_UMOUNT2: usize = 39;
+const SYSCALL_MOUNT: usize = 40;
+const SYSCALL_CHDIR: usize = 49;
+const SYSCALL_OPENAT: usize = 56;
 const SYSCALL_CLOSE: usize = 57;
-// const SYSCALL_PIPE: usize = 59;
+const SYSCALL_PIPE2: usize = 59;
+const SYSCALL_GETDENTS64: usize = 61;
 const SYSCALL_READ: usize = 63;
 const SYSCALL_WRITE: usize = 64;
+const SYSCALL_FSTAT: usize = 80;
 const SYSCALL_EXIT: usize = 93;
-const SYSCALL_YIELD: usize = 124;
-const SYSCALL_KILL: usize = 129;
-const SYSCALL_GET_TIME: usize = 169;
+const SYSCALL_NANOSLEEP: usize = 101;
+const SYSCALL_SCHED_YIELD: usize = 124;
+const SYSCALL_TIMES: usize = 153;
+const SYSCALL_UNAME: usize = 160;
+const SYSCALL_GET_TIMEOFDAY: usize = 169;
 const SYSCALL_GETPID: usize = 172;
-const SYSCALL_FORK: usize = 220;
-const SYSCALL_EXEC: usize = 221;
-const SYSCALL_WAITPID: usize = 260;
+const SYSCALL_GETPPID: usize = 172;
+const SYSCALL_BRK: usize = 214;
+const SYSCALL_MUNMAP: usize = 215;
+const SYSCALL_CLONE: usize = 220;
+const SYSCALL_EXECVE: usize = 221;
+const SYSCALL_MMAP: usize = 222;
+const SYSCALL_WAIT4: usize = 260;
 
 fn syscall(id: usize, args: [usize; 6]) -> isize {
     let mut ret: isize;
@@ -38,7 +55,7 @@ fn syscall(id: usize, args: [usize; 6]) -> isize {
 
 pub fn sys_open(path: &str, flags: u32) -> isize {
     syscall(
-        SYSCALL_OPEN,
+        SYSCALL_OPENAT,
         [path.as_ptr() as usize, flags as usize, 0, 0, 0, 0],
     )
 }
@@ -71,15 +88,15 @@ pub fn sys_exit(exit_code: i32) -> ! {
 }
 
 pub fn sys_yield() -> isize {
-    syscall(SYSCALL_YIELD, [0, 0, 0, 0, 0, 0])
+    syscall(SYSCALL_SCHED_YIELD, [0, 0, 0, 0, 0, 0])
 }
 
-pub fn sys_kill(pid: usize, signal: i32) -> isize {
-    syscall(SYSCALL_KILL, [pid, signal as usize, 0, 0, 0, 0])
-}
+// pub fn sys_kill(pid: usize, signal: i32) -> isize {
+//     syscall(SYSCALL_KILL, [pid, signal as usize, 0, 0, 0, 0])
+// }
 
 pub fn sys_get_time() -> isize {
-    syscall(SYSCALL_GET_TIME, [0, 0, 0, 0, 0, 0])
+    syscall(SYSCALL_GET_TIMEOFDAY, [0, 0, 0, 0, 0, 0])
 }
 
 pub fn sys_getpid() -> isize {
@@ -87,19 +104,19 @@ pub fn sys_getpid() -> isize {
 }
 
 pub fn sys_fork() -> isize {
-    syscall(SYSCALL_FORK, [0, 0, 0, 0, 0, 0])
+    syscall(SYSCALL_CLONE, [0, 0, 0, 0, 0, 0])
 }
 
-pub fn sys_exec(path: &str, args: &[*const u8]) -> isize {
+pub fn sys_execve(path: &str, args: &[*const u8]) -> isize {
     syscall(
-        SYSCALL_EXEC,
+        SYSCALL_EXECVE,
         [path.as_ptr() as usize, args.as_ptr() as usize, 0, 0, 0, 0],
     )
 }
 
 pub fn sys_waitpid(pid: isize, exit_code: *mut i32) -> isize {
     syscall(
-        SYSCALL_WAITPID,
+        SYSCALL_WAIT4,
         [pid as usize, exit_code as usize, 0, 0, 0, 0],
     )
 }

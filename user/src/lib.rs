@@ -86,7 +86,7 @@ pub fn fork() -> isize {
     sys_fork()
 }
 pub fn exec(path: &str, args: &[*const u8]) -> isize {
-    sys_exec(path, args)
+    sys_execve(path, args)
 }
 pub fn wait(exit_code: &mut i32) -> isize {
     loop {
@@ -119,9 +119,9 @@ bitflags! {
         const SIGSEGV   = 1 << 11;
     }
 }
-pub fn kill(pid: usize, signal: i32) -> isize {
-    sys_kill(pid, signal)
-}
+// pub fn kill(pid: usize, signal: i32) -> isize {
+//     sys_kill(pid, signal)
+// }
 pub fn sleep(period_ms: usize) {
     let start = sys_get_time();
     while sys_get_time() < start + period_ms as isize {

@@ -1,19 +1,19 @@
 #![no_std]
 #![no_main]
 
+extern crate alloc;
 #[macro_use]
 extern crate user;
 
-use user::{exec, fork, wait, yield_};
-
 #[no_mangle]
 fn main() -> i32 {
+    use user::{exec, fork, wait, yield_};
     println!("Init Process");
     if fork() == 0 {
-        // println!("exec user_shell");
         exec("user_shell\0", &[0 as *const u8]);
     } else {
         loop {
+            // println!("Init Process Waiting");
             let mut exit_code: i32 = 0;
             let pid = wait(&mut exit_code);
             if pid == -1 {
@@ -27,4 +27,11 @@ fn main() -> i32 {
         }
     }
     0
+
+    // use alloc::string::String;
+    // use user::console::read_line;
+    // let mut line: String = String::new();
+    // read_line(&mut line).unwrap();
+    // println!("{}", line);
+    // 0
 }

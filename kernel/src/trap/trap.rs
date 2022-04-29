@@ -1,7 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_trap_cx, current_user_token};
 // use crate::mm::{kernel_token, kernel_translate};
-// use crate::scheduler::schedule;
+use crate::scheduler::go_to_schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
@@ -12,13 +12,10 @@ use riscv::register::{
     scause::{self, Exception, Interrupt, Trap},
     sepc, stval, stvec,
 };
-// #[cfg(feature = "rustsbi")]
-// use crate::rustsbi::shutdown;
-// #[cfg(feature = "opensbi")]
-// use crate::opensbi::shutdown;
 
 global_asm!(include_str!("trap.S"));
 
+#[inline(always)]
 pub fn set_kernel_trap_entry() {
     extern "C" {
         fn __kernelvec();
@@ -33,12 +30,12 @@ pub fn kernel_trap_handler() {
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            log::debug!("Supervisor Timer");
+            // log::trace!("Supervisor Timer");
             // set_next_trigger();
-            // schedule();
+            // go_to_schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
-            log::debug!("boot hart");
+            log::trace!("boot hart");
         }
         Trap::Exception(Exception::StorePageFault)
         | Trap::Exception(Exception::LoadPageFault)
@@ -63,6 +60,9 @@ pub fn kernel_trap_handler() {
             // }
             panic!("a trap {:?} from kernel", scause.cause());
         }
+        Trap::Exception(Exception::Breakpoint) => {
+            log::debug!("Breakpoint");
+        }
         _ => {
             panic!(
                 "a trap {:?} from kernel with stval = {:#X} sepc = {:#X}!",
@@ -74,6 +74,7 @@ pub fn kernel_trap_handler() {
     }
 }
 
+#[inline(always)]
 fn set_user_trap_entry() {
     unsafe {
         stvec::write(TRAMPOLINE as usize, TrapMode::Direct);
@@ -89,8 +90,8 @@ pub fn user_trap_handler() -> ! {
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
             // log::debug!("UserEnvCall");
-            // jump to syscall next instruction anyway, avoid re-trigger
             let mut cx = current_trap_cx();
+            // jump to syscall next instruction anyway, avoid re-trigger
             cx.sepc += 4;
             // get system call return value
             let result = syscall(

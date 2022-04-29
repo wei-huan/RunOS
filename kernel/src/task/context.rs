@@ -13,7 +13,8 @@ pub struct TaskContext {
 }
 
 impl TaskContext {
-    pub fn zero_init() -> Self {
+    // ra 换成 schedule, sp 换成 hart 的栈顶
+    pub fn goto_schedule() -> Self {
         let sstatus = sstatus::read();
         let sstatus = sstatus.bits();
         Self {
@@ -22,10 +23,6 @@ impl TaskContext {
             sstatus,
             s: [0; 12],
         }
-    }
-    #[allow(unused)]
-    pub fn get_sp(&self) -> usize {
-        self.sp
     }
     pub fn goto_trap_return(kstack_ptr: usize) -> Self {
         unsafe {

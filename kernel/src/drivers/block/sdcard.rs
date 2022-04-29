@@ -2,6 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(unused)]
 
+use spin::Mutex;
 use super::BlockDevice;
 use crate::sync::UPSafeCell;
 use core::convert::TryInto;
@@ -740,24 +741,24 @@ fn init_sdcard() -> SDCard<SPIImpl<SPI0>> {
     sd
 }
 
-pub struct SDCardWrapper(UPSafeCell<SDCard<SPIImpl<SPI0>>>);
+pub struct SDCardWrapper(Mutex<SDCard<SPIImpl<SPI0>>>);
 
 impl SDCardWrapper {
     pub fn new() -> Self {
-        unsafe { Self(UPSafeCell::new(init_sdcard())) }
+        unsafe { Self(Mutex::new(init_sdcard())) }
     }
 }
 
 impl BlockDevice for SDCardWrapper {
     fn read_block(&self, block_id: usize, buf: &mut [u8]) {
         self.0
-            .exclusive_access()
+            .lock()
             .read_sector(buf, block_id as u32)
             .unwrap();
     }
     fn write_block(&self, block_id: usize, buf: &[u8]) {
         self.0
-            .exclusive_access()
+            .lock()
             .write_sector(buf, block_id as u32)
             .unwrap();
     }

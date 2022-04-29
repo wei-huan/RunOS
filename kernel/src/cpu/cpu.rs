@@ -51,14 +51,14 @@ impl Cpu {
 
 pub fn current_user_token() -> usize {
     let task = current_task().unwrap();
-    let token = task.inner_exclusive_access().get_user_token();
+    let token = task.acquire_inner_lock().get_user_token();
     token
 }
 
 #[allow(unused)]
 pub fn current_token() -> usize {
     if let Some(task) = current_task() {
-        let token = task.inner_exclusive_access().get_user_token();
+        let token = task.acquire_inner_lock().get_user_token();
         return token;
     } else {
         return kernel_token();
@@ -68,7 +68,7 @@ pub fn current_token() -> usize {
 pub fn current_trap_cx() -> &'static mut TrapContext {
     current_task()
         .unwrap()
-        .inner_exclusive_access()
+        .acquire_inner_lock()
         .get_trap_cx()
 }
 

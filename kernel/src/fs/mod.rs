@@ -1,52 +1,57 @@
-pub mod stdio;
+pub mod finfo;
 mod inode;
 mod mount;
-pub mod finfo;
+pub mod stdio;
 
 use crate::mm::UserBuffer;
 use alloc::sync::Arc;
 
 #[derive(Clone)]
-pub struct FileDescripter{
+pub struct FileDescripter {
     cloexec: bool,
     pub fclass: FileClass,
 }
 
 impl FileDescripter {
-    pub fn new(cloexec:bool, fclass:FileClass)->Self{
-        Self{
-            cloexec,
-            fclass
-        }
+    pub fn new(cloexec: bool, fclass: FileClass) -> Self {
+        Self { cloexec, fclass }
     }
 
-    pub fn set_cloexec(&mut self, flag: bool){
+    pub fn set_cloexec(&mut self, flag: bool) {
         self.cloexec = flag;
     }
 
-    pub fn get_cloexec(& self) -> bool{
+    pub fn get_cloexec(&self) -> bool {
         self.cloexec
     }
 }
 
 #[derive(Clone)]
 pub enum FileClass {
-    File (Arc<OSInode>),
-    Abstr (Arc<dyn File + Send + Sync>),
+    File(Arc<OSInode>),
+    Abstr(Arc<dyn File + Send + Sync>),
 }
 
-pub trait File : Send + Sync {
+pub trait File: Send + Sync {
     fn readable(&self) -> bool;
     fn writable(&self) -> bool;
     fn read(&self, buf: UserBuffer) -> usize;
     fn write(&self, buf: UserBuffer) -> usize;
-    fn ioctl(&self, _cmd: u32, _arg: usize)-> isize {0}
-    fn r_ready(&self)->bool{true}
-    fn w_ready(&self)->bool{true}
-
+    // fn ioctl(&self, _cmd: u32, _arg: usize) -> isize {
+    //     0
+    // }
+    // fn r_ready(&self) -> bool {
+    //     true
+    // }
+    // fn w_ready(&self) -> bool {
+    //     true
+    // }
 }
 
+pub use finfo::{Dirent, FdSet, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN, *};
+pub use inode::{
+    /* find_par_inode_id, */ ch_dir, clear_cache, init_rootfs, list_apps, list_files, open,
+    DiskInodeType, OSInode, OpenFlags,
+};
 pub use mount::MNT_TABLE;
-pub use finfo::{Dirent, Kstat, NewStat, FdSet,  DT_DIR, DT_REG, DT_UNKNOWN, *};
-pub use stdio::{Stdin, Stdout,};
-pub use inode::{OSInode, open, clear_cache, init_rootfs, OpenFlags, list_apps, /*find_par_inode_id, */ch_dir, list_files,  DiskInodeType};
+pub use stdio::{Stdin, Stdout};

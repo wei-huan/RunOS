@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Apr 18 20:23:45 2022
+# Make data base, printed on Thu Apr 28 14:10:24 2022
 
 # Variables
 
@@ -51,7 +51,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:53178
+JOURNAL_STREAM = 8:57970
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -77,11 +77,11 @@ VSCODE_VERBOSE_LOGGING = true
 # makefile (from 'Makefile', line 8)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 2540
+MANAGERPID = 2557
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-ea42ab43-85d0-4bdd-a410-b64d17bc050c.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-3d3e46bc-70a9-4b31-88e3-04883ff0d43d.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -91,13 +91,17 @@ GSETTINGS_SCHEMA_DIR = /home/weihuan/data
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
-PATH = /home/weihuan/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14/bin:/home/weihuan/anaconda3/bin:/home/weihuan/anaconda3/condabin:/home/weihuan/.cargo/bin:/home/weihuan/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/weihuan/bin:/opt/riscv/bin:/home/weihuan/bin:/opt/riscv/bin
+PATH = /home/weihuan/bin:/usr/local/cuda-11.6/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14/bin:/home/weihuan/anaconda3/bin:/home/weihuan/anaconda3/condabin:/home/weihuan/.cargo/bin:/home/weihuan/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/weihuan/bin:/opt/riscv/bin:/home/weihuan/bin:/opt/riscv/bin
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
+<<<<<<< HEAD
 SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2801,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2801
 # makefile (from 'Makefile', line 7)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
+=======
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2773,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2773
+>>>>>>> dev
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -107,7 +111,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 48c926cb97534c72b301b63a7992a834
+INVOCATION_ID = 242f3333f8c146b98ed5c11e08d32033
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -119,7 +123,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 4536
+GIO_LAUNCHED_DESKTOP_FILE_PID = 3237
 # automatic
 %F = $(notdir $%)
 # environment
@@ -141,7 +145,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2760
+SSH_AGENT_PID = 2732
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -152,6 +156,8 @@ OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/kernel
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
 HOME = /home/weihuan
+# environment
+LD_LIBRARY_PATH = /usr/local/cuda-10.1/lib64
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
@@ -275,13 +281,17 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 4536
+VSCODE_PID = 3237
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
+<<<<<<< HEAD
 # Load=134/1024=13%, Rehash=0, Collisions=24/173=14%
+=======
+# Load=133/1024=13%, Rehash=0, Collisions=23/171=13%
+>>>>>>> dev
 
 # Pattern-specific Variable Values
 
@@ -308,11 +318,12 @@ user:
 #  recipe to execute (from 'Makefile', line 25):
 	@make build -C $(USER_DIR)
 
-fs-img: user
+fs-img:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 28):
 	@rm -f $(OSCOMP_TAR_DIR)/initproc
 	@rm -f $(OSCOMP_TAR_DIR)/user_shell
@@ -321,6 +332,8 @@ fs-img: user
 	@rm -f $(FS_IMG)
 	@cd $(PACK_IMG_DIR) && cargo run --release -- -s $(OSCOMP_TAR_DIR)/ -t $(OSCOMP_TAR_DIR)/
 	@cp ./fs.img $(USER_TAR_DIR)/
+=======
+>>>>>>> dev
 
 sdcard:
 #  Phony target (prerequisite of .PHONY).
@@ -342,7 +355,11 @@ gdb:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 48):
+=======
+#  recipe to execute (from 'Makefile', line 44):
+>>>>>>> dev
 	@make gdb -C $(OS_DIR)
 
 # Not a target:
@@ -360,16 +377,24 @@ all:
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
+<<<<<<< HEAD
 #  Last modified 2022-04-18 20:18:29.160364235
+=======
+#  Last modified 2022-04-26 16:17:26.811711629
+>>>>>>> dev
 #  File has been updated.
 #  Successfully updated.
 
-debug:
+debug: fat32-oscomp-img
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 45):
+=======
+#  recipe to execute (from 'Makefile', line 41):
+>>>>>>> dev
 	@make debug -C $(OS_DIR)
 
 build:
@@ -391,7 +416,11 @@ run: fat32-oscomp-img
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 42):
+=======
+#  recipe to execute (from 'Makefile', line 38):
+>>>>>>> dev
 	@make run -C $(OS_DIR)
 
 disasm:
@@ -399,16 +428,24 @@ disasm:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 51):
+=======
+#  recipe to execute (from 'Makefile', line 47):
+>>>>>>> dev
 	@make disasm -C $(OS_DIR)
 
 fat32-oscomp-img: user
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 38):
+=======
+#  recipe to execute (from 'Makefile', line 31):
+>>>>>>> dev
 	cd fat32-pack && ./createfs.sh
-	cd oscomp && ./addoscompfile2fs.sh
+	cd oscomp && ./addoscompfile2fs.sh qemu
 
 # files hash-table stats:
 # Load=15/1024=1%, Rehash=0, Collisions=0/36=0%
@@ -418,6 +455,7 @@ fat32-oscomp-img: user
 
 # No general ('VPATH' variable) search path.
 
+<<<<<<< HEAD
 # strcache buffers: 1 (0) / strings = 35 / storage = 282 B / avg = 8 B
 # current buf: size = 8162 B / used = 282 B / count = 35 / avg = 8 B
 
@@ -425,5 +463,14 @@ fat32-oscomp-img: user
 # hash-table stats:
 # Load=35/8192=0%, Rehash=0, Collisions=1/62=2%
 # Finished Make data base on Mon Apr 18 20:23:45 2022
+=======
+# strcache buffers: 1 (0) / strings = 35 / storage = 283 B / avg = 8 B
+# current buf: size = 8162 B / used = 283 B / count = 35 / avg = 8 B
+
+# strcache performance: lookups = 60 / hit rate = 41%
+# hash-table stats:
+# Load=35/8192=0%, Rehash=0, Collisions=1/60=2%
+# Finished Make data base on Thu Apr 28 14:10:24 2022
+>>>>>>> dev
 
  

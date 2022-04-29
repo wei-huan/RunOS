@@ -1,6 +1,6 @@
 use super::Scheduler;
 use super::__schedule_new;
-use crate::cpu::{current_stack_top, take_my_cpu};
+use crate::cpu::{take_my_cpu, current_stack_top}; //
 use crate::sync::interrupt_off;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc};
@@ -22,16 +22,15 @@ impl RoundRobinScheduler {
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) -> ! {
         interrupt_off();
-        // push stack incase overwhelm in schedule -> supervisor_time -> scheduler loop
-        let top = current_stack_top();
-        unsafe {
-            asm!("mv sp, {}", in(reg) top);
-        }
-        // log::debug!("start schedule");
+        // push stack incase overwhelm in schedule -> idle_task -> kernel_trap_handler -> supervisor_time -> scheduler loop
+        // let top = current_stack_top();
+        // unsafe {
+        //     asm!("mv sp, {}", in(reg) top);
+        // }
+        // log::trace!("Start Schedule");
         if let Some(task) = self.fetch_task() {
-            // log::debug!("BT");
-            let mut task_inner = task.inner_exclusive_access();
-            // log::debug!("AT");
+            // log::trace!("have task");
+            let mut task_inner = task.acquire_inner_lock();
             let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
             task_inner.task_status = TaskStatus::Running;
             // release coming task PCB manually

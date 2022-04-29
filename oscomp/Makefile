@@ -16,7 +16,7 @@ endif
 OBJCOPY := $(ARCH)-unknown-elf-objcopy
 OBJDUMP := $(ARCH)-unknown-elf-objdump
 CP := cp
-CH_TESTS :=  
+CH_TESTS :=
 
 CH2_TESTS := ch2_ ch2t_
 CH3_TESTS_BASE := $(CH2_TESTS) ch3_0_ ch3t_

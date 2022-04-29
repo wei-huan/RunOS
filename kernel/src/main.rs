@@ -35,6 +35,7 @@ use core::arch::global_asm;
 use crate::cpu::SMP_START;
 #[cfg(not(feature = "k210"))]
 use core::sync::atomic::Ordering;
+use riscv::asm::ebreak;
 
 global_asm!(include_str!("entry.asm"));
 
