@@ -114,7 +114,7 @@ fn set_hart_filter(hart_id: usize) {
     HART_FILTER.store(hart_id, Ordering::Relaxed);
 }
 
-pub fn show_machine_sbi_os_info() {
+pub fn show_basic_info() {
     let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
     let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
     info!("=== Machine Info ===");

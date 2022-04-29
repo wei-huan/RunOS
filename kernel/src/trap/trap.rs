@@ -1,7 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_trap_cx, current_user_token};
 // use crate::mm::{kernel_token, kernel_translate};
-// use crate::scheduler::schedule;
+use crate::scheduler::schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
@@ -90,8 +90,8 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             // log::debug!("Supervisor Timer");
-            // set_next_trigger();
-            // schedule();
+            set_next_trigger();
+            schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
             log::debug!("boot hart");

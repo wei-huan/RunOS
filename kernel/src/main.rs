@@ -57,7 +57,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         mm::boot_init();
         fs::init_rootfs();
         logger::init();
-        logger::show_machine_sbi_os_info();
+        logger::show_basic_info();
         fs::list_apps();
         scheduler::add_initproc();
         timer::init();
