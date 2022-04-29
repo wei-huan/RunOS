@@ -1,7 +1,8 @@
 use crate::cpu::current_user_token;
-use crate::mm::{translated_byte_buffer, PageTable, UserBuffer};
+use crate::mm::{translated_byte_buffer, UserBuffer};
 use core::mem::size_of;
 
+#[allow(unused)]
 struct UTSName {
     sysname: [u8; 65],
     nodename: [u8; 65],
@@ -39,7 +40,7 @@ impl UTSName {
 
 pub fn sys_uname(buf: *mut u8) -> isize {
     let token = current_user_token();
-    let mut buf_vec = translated_byte_buffer(token, buf, size_of::<UTSName>());
+    let buf_vec = translated_byte_buffer(token, buf, size_of::<UTSName>());
     let uname = UTSName::new();
     let mut userbuf = UserBuffer::new(buf_vec);
     userbuf.write(uname.as_bytes());

@@ -7,7 +7,7 @@ if [ $1 == "qemu" ]
 then
     FAT32_IMG="${FAT32_DIR}/fat32.img"
 else
-    FAT32_IMG="/dev/sda1"
+    FAT32_IMG="/dev/sda"
 fi
 
 # sudo chmod -R 777 ${FAT32_IMG}

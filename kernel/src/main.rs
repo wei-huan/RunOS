@@ -35,7 +35,6 @@ use core::arch::global_asm;
 use crate::cpu::SMP_START;
 #[cfg(not(feature = "k210"))]
 use core::sync::atomic::Ordering;
-use riscv::asm::ebreak;
 
 global_asm!(include_str!("entry.asm"));
 
@@ -73,34 +72,32 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     }
 }
 
-// k210 opensbi
+// k210 rustsbi
 #[no_mangle]
-#[cfg(all(feature = "k210", feature = "opensbi"))]
+#[cfg(all(feature = "k210", feature = "rustsbi"))]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    clear_bss();
-    // println!("here 0");
-    trap::init();
-    dt::init(dtb_ptr);
-    mm::boot_init();
-    logger::init();
-    logger::show_machine_sbi_os_info();
-    scheduler::add_apps();
-    timer::init();
-    log::debug!("here 1");
-    // SMP_START will turn to true in this function
-    cpu::boot_all_harts(hartid);
-    log::debug!("here 2");
-    scheduler::schedule();
-}
-
-// SMP 其他核的启动主函数
-#[no_mangle]
-#[cfg(all(feature = "k210", feature = "opensbi"))]
-fn os_sub_main(hartid: usize, dtb_ptr: *mut u8) {
-    trap::init();
-    timer::init();
-    log::debug!("here 4");
-    scheduler::schedule();
+    if hartid == 0 {
+        clear_bss();
+        // println!("here 0");
+        trap::init();
+        dt::init(dtb_ptr);
+        mm::boot_init();
+        logger::init();
+        logger::show_basic_info();
+        fs::list_apps();
+        scheduler::add_initproc();
+        timer::init();
+        // SMP_START will turn to true in this function
+        cpu::boot_all_harts(hartid);
+        // log::debug!("here 4");
+        scheduler::schedule();
+    } else {
+        // log::debug!("here 5");
+        trap::init();
+        mm::init();
+        timer::init();
+        scheduler::schedule();
+    }
 }
 
 // qemu rustsbi
@@ -130,29 +127,32 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     }
 }
 
-// k210 rustsbi
+// k210 opensbi
 #[no_mangle]
-#[cfg(all(feature = "k210", feature = "rustsbi"))]
+#[cfg(all(feature = "k210", feature = "opensbi"))]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    if hartid == 0 {
-        clear_bss();
-        println!("here 0");
-        trap::init();
-        dt::init(dtb_ptr);
-        mm::boot_init();
-        logger::init();
-        logger::show_machine_sbi_os_info();
-        scheduler::add_apps();
-        timer::init();
-        // SMP_START will turn to true in this function
-        cpu::boot_all_harts(hartid);
-        // log::debug!("here 4");
-        scheduler::schedule();
-    } else {
-        trap::init();
-        mm::init();
-        log::debug!("here 5");
-        timer::init();
-        scheduler::schedule();
-    }
+    clear_bss();
+    // println!("here 0");
+    trap::init();
+    dt::init(dtb_ptr);
+    mm::boot_init();
+    logger::init();
+    logger::show_machine_sbi_os_info();
+    scheduler::add_apps();
+    timer::init();
+    log::debug!("here 1");
+    // SMP_START will turn to true in this function
+    cpu::boot_all_harts(hartid);
+    log::debug!("here 2");
+    scheduler::schedule();
+}
+
+// SMP 其他核的启动主函数
+#[no_mangle]
+#[cfg(all(feature = "k210", feature = "opensbi"))]
+fn os_sub_main(hartid: usize, dtb_ptr: *mut u8) {
+    trap::init();
+    timer::init();
+    log::debug!("here 4");
+    scheduler::schedule();
 }
