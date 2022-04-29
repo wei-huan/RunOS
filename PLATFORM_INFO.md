@@ -1,0 +1,3 @@
+os_main
+fdt_get_timerfreq
+以上两处要改成对应版本
