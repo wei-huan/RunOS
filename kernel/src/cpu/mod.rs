@@ -17,7 +17,7 @@ use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 pub static SMP_START: AtomicBool = AtomicBool::new(false);
 pub static BOOT_HARTID: AtomicUsize = AtomicUsize::new(0);
 
-// #[cfg(all(feature = "opensbi", feature = "qemu"))]
+#[cfg(all(feature = "opensbi", feature = "qemu"))]
 pub fn boot_all_harts(my_hartid: usize) {
     extern "C" {
         fn _start();
@@ -51,11 +51,11 @@ pub fn boot_all_harts(my_hartid: usize) {
     }
 }
 
-// #[cfg(not(feature = "opensbi"))]
-// pub fn boot_all_harts(my_hartid: usize) {
-//     let ncpu = CPU_NUMS.load(Ordering::Acquire);
-//     for i in 1..ncpu {
-//         let mask: usize = 1 << i;
-//         send_ipi(&mask as *const _ as usize);
-//     }
-// }
+#[cfg(not(feature = "opensbi"))]
+pub fn boot_all_harts(my_hartid: usize) {
+    let ncpu = CPU_NUMS.load(Ordering::Acquire);
+    for i in 1..ncpu {
+        let mask: usize = 1 << i;
+        send_ipi(&mask as *const _ as usize);
+    }
+}

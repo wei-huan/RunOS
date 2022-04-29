@@ -25,17 +25,27 @@ pub fn fdt_print(fdt: *mut u8) {
     print_node(fdt.find_node("/").unwrap(), 0);
 }
 
+// #[cfg(feature = "k210")]
 fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let hart_id = hart_id();
     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
-    // #[cfg(feature = "k210")]
-    // let timebase_frequency = current_cpu.clock_frequency() / 60;
-    // #[cfg(not(feature = "k210"))]
-    let timebase_frequency = current_cpu.timebase_frequency();
+    let timebase_frequency = current_cpu.clock_frequency() / 60;
     TIMER_FREQ.store(timebase_frequency, Ordering::Release);
-    // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
+    println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
+
+
+// #[cfg(not(feature = "k210"))]
+// fn fdt_get_timerfreq(fdt_ptr: *const u8) {
+//     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
+//     let hart_id = hart_id();
+//     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
+//     let timebase_frequency = current_cpu.timebase_frequency();
+//     TIMER_FREQ.store(timebase_frequency, Ordering::Release);
+//     println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
+// }
+
 
 fn fdt_get_ncpu(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
@@ -52,7 +62,7 @@ pub fn fdt_get_model(fdt_ptr: *const u8) {
         .property("model")
         .and_then(|p| p.as_str())
         .unwrap();
-    println!("device_model: {}", model);
+    // println!("device_model: {}", model);
     // MODEL.store(model as *const _ as *mut &'static str, Ordering::Release);
 }
 
@@ -64,7 +74,7 @@ pub fn init(dts_ptr: *const u8) {
     FDT.store(dts_ptr as *mut u8, Ordering::Release);
 }
 
-// qemu opensbi
+// qemu && opensbi or k210 && rustsbi
 // #[cfg(all(feature = "qemu", feature = "opensbi"))]
 pub fn init(dtb_ptr: *const u8) {
     FDT.store(dtb_ptr as *mut u8, Ordering::Release);
