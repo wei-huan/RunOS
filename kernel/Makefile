@@ -76,11 +76,6 @@ fat32-img:
 # 	@sudo dd if=/dev/zero of=$(SDCARD) bs=1048576 count=32
 # 	@sudo dd if=$(FS_IMG) of=$(SDCARD)
 
-# fs-img: $(APPS)
-# 	@cd ../user && make build
-# 	@rm -f $(FS_IMG)
-# 	@cd ../myfs-pack && cargo run --release -- -s ../user/src/bin/ -t ../user/target/riscv64gc-unknown-none-elf/release/
-
 kernel:
 	@cp src/linker-$(PLATFORM).ld src/linker.ld
 	cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
