@@ -1,7 +1,8 @@
-pub mod finfo;
+mod finfo;
+mod stdio;
 mod inode;
 mod mount;
-pub mod stdio;
+mod pipe;
 
 use crate::mm::UserBuffer;
 use alloc::sync::Arc;
@@ -37,15 +38,6 @@ pub trait File: Send + Sync {
     fn writable(&self) -> bool;
     fn read(&self, buf: UserBuffer) -> usize;
     fn write(&self, buf: UserBuffer) -> usize;
-    // fn ioctl(&self, _cmd: u32, _arg: usize) -> isize {
-    //     0
-    // }
-    // fn r_ready(&self) -> bool {
-    //     true
-    // }
-    // fn w_ready(&self) -> bool {
-    //     true
-    // }
 }
 
 pub use finfo::{Dirent, FdSet, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN, *};
@@ -54,4 +46,5 @@ pub use inode::{
     DiskInodeType, OSInode, OpenFlags,
 };
 pub use mount::MNT_TABLE;
+pub use pipe::{make_pipe, Pipe};
 pub use stdio::{Stdin, Stdout};

@@ -1,5 +1,3 @@
-use riscv::register::sstatus::{self, SPP};
-
 #[repr(C)]
 #[derive(Debug)]
 pub struct TrapContext {

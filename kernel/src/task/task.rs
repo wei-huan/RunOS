@@ -136,44 +136,69 @@ impl TaskControlBlock {
             .unwrap()
             .ppn();
 
-        // **********  argv[] *************** //
-        let mut argv: Vec<usize> = (0..=args.len()).collect();
-        argv[args.len()] = 0;
+        // // **********  argv[] *************** //
+        // let mut argv: Vec<usize> = (0..=args.len()).collect();
+        // argv[args.len()] = 0;
+        // for i in 0..args.len() {
+        //     user_sp -= args[i].len() + 1;
+        //     // println!("user_sp {:#X}", user_sp);
+        //     argv[i] = user_sp;
+        //     let mut p = user_sp;
+        //     // write chars to [user_sp, user_sp + len]
+        //     for c in args[i].as_bytes() {
+        //         *translated_refmut(addr_space.get_token(), p as *mut u8) = *c;
+        //         // println!("({})",*c as char);
+        //         p += 1;
+        //     }
+        //     *translated_refmut(addr_space.get_token(), p as *mut u8) = 0;
+        // }
+        // // make the user_sp aligned to 8B for k210 platform
+        // user_sp -= user_sp % core::mem::size_of::<usize>();
+        // // println!("user_sp: {:#X}", user_sp);
+
+        // ////////////// *argv [] //////////////////////
+        // user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
+        // // println!("user_sp: {:#X}", user_sp);
+        // *translated_refmut(
+        //     addr_space.get_token(),
+        //     (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize,
+        // ) = 0;
+        // for i in 0..args.len() {
+        //     *translated_refmut(
+        //         addr_space.get_token(),
+        //         (user_sp + core::mem::size_of::<usize>() * i) as *mut usize,
+        //     ) = argv[i];
+        // }
+
+        // // ************** argc *************** //
+        // user_sp -= core::mem::size_of::<usize>();
+        // // println!("user_sp: {:#X}", user_sp);
+        // *translated_refmut(addr_space.get_token(), user_sp as *mut usize) = args.len();
+
+        // push arguments on user stack
+        user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
+        let argv_base = user_sp;
+        let mut argv: Vec<_> = (0..=args.len())
+            .map(|arg| {
+                translated_refmut(
+                    addr_space.get_token(),
+                    (argv_base + arg * core::mem::size_of::<usize>()) as *mut usize,
+                )
+            })
+            .collect();
+        *argv[args.len()] = 0;
         for i in 0..args.len() {
             user_sp -= args[i].len() + 1;
-            // println!("user_sp {:#X}", user_sp);
-            argv[i] = user_sp;
+            *argv[i] = user_sp;
             let mut p = user_sp;
-            // write chars to [user_sp, user_sp + len]
             for c in args[i].as_bytes() {
                 *translated_refmut(addr_space.get_token(), p as *mut u8) = *c;
-                // println!("({})",*c as char);
                 p += 1;
             }
             *translated_refmut(addr_space.get_token(), p as *mut u8) = 0;
         }
         // make the user_sp aligned to 8B for k210 platform
         user_sp -= user_sp % core::mem::size_of::<usize>();
-        // println!("user_sp: {:#X}", user_sp);
-
-        ////////////// *argv [] //////////////////////
-        user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
-        // println!("user_sp: {:#X}", user_sp);
-        *translated_refmut(
-            addr_space.get_token(),
-            (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize,
-        ) = 0;
-        for i in 0..args.len() {
-            *translated_refmut(
-                addr_space.get_token(),
-                (user_sp + core::mem::size_of::<usize>() * i) as *mut usize,
-            ) = argv[i];
-        }
-
-        // ************** argc *************** //
-        user_sp -= core::mem::size_of::<usize>();
-        // println!("user_sp: {:#X}", user_sp);
-        *translated_refmut(addr_space.get_token(), user_sp as *mut usize) = args.len();
 
         // **** access current TCB exclusively
         let mut inner = self.acquire_inner_lock();
@@ -184,13 +209,15 @@ impl TaskControlBlock {
         // update trap_cx ppn
         inner.trap_cx_ppn = trap_cx_ppn;
         // initialize trap_cx
-        let trap_cx = TrapContext::app_init_context(
+        let mut trap_cx = TrapContext::app_init_context(
             entry_point,
             user_sp,
             KERNEL_SPACE.lock().get_token(),
             self.kernel_stack.get_top(),
             user_trap_handler as usize,
         );
+        trap_cx.x[10] = args.len();
+        trap_cx.x[11] = argv_base;
         *inner.get_trap_cx() = trap_cx;
         // **** release current PCB
     }

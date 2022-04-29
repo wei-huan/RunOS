@@ -46,4 +46,4 @@ gdb:
 disasm:
 	@make disasm -C $(OS_DIR)
 
-.PHONY: build sdcard user fs-img run debug gdb disasm
+.PHONY: build sdcard user fs-img run debug gdb disasm fat32-oscomp-img fat32-img

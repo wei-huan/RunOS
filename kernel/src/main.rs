@@ -35,7 +35,6 @@ use core::arch::global_asm;
 use crate::cpu::SMP_START;
 #[cfg(not(feature = "k210"))]
 use core::sync::atomic::Ordering;
-use riscv::asm::ebreak;
 
 global_asm!(include_str!("entry.asm"));
 
@@ -58,8 +57,8 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         mm::boot_init();
         fs::init_rootfs();
         logger::init();
-        logger::show_machine_sbi_os_info();
-        // fs::list_apps();
+        logger::show_basic_info();
+        fs::list_apps();
         scheduler::add_initproc();
         timer::init();
         // SMP_START will turn to true in this function

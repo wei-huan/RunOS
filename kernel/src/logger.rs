@@ -119,7 +119,7 @@ extern "C" {
     fn boot_stack_top();
 }
 
-pub fn show_machine_sbi_os_info() {
+pub fn show_basic_info() {
     let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
     let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
     log::info!("=== Machine Info ===");
@@ -143,14 +143,14 @@ pub fn show_machine_sbi_os_info() {
     log::info!(" Spec Version: {}.{}", spec_major, spec_minor);
     log::info!("=== MyOS Info ===");
     log::info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
-    log::info!(
-        "Boot_Stack_0: [{:#X}, {:#X})",
-        boot_stack as usize,
-        boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4
-    );
-    log::info!(
-        "Boot_Stack_1: [{:#X}, {:#X})",
-        boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4,
-        boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 2
-    );
+    // log::info!(
+    //     "Boot_Stack_0: [{:#X}, {:#X})",
+    //     boot_stack as usize,
+    //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4
+    // );
+    // log::info!(
+    //     "Boot_Stack_1: [{:#X}, {:#X})",
+    //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4,
+    //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 2
+    // );
 }

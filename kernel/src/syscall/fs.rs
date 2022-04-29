@@ -1,7 +1,12 @@
 use crate::cpu::{current_task, current_user_token};
-use crate::fs::{open, DiskInodeType, File, FileClass, FileDescripter, Kstat, OpenFlags};
-use crate::mm::{translated_byte_buffer, translated_str, UserBuffer};
+use crate::fs::{
+    ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, FileDescripter, Kstat,
+    OpenFlags,
+};
+use crate::mm::{translated_byte_buffer, translated_refmut, translated_str, UserBuffer};
+use alloc::string::String;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 use core::mem::size_of;
 
 const AT_FDCWD: isize = -100;
@@ -166,7 +171,6 @@ pub fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
     let buf_vec = translated_byte_buffer(token, buf, len);
     let inner = task.acquire_inner_lock();
     let mut userbuf = UserBuffer::new(buf_vec);
-    let current_offset: usize = 0;
     if buf as usize == 0 {
         return 0;
     } else {
@@ -201,7 +205,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     }
     // 太傻比了，为了一个 fd 添加这么多，以后要改
     if new_fd >= inner.fd_table.len() {
-        for i in inner.fd_table.len()..(new_fd + 1) {
+        for _ in inner.fd_table.len()..(new_fd + 1) {
             inner.fd_table.push(None);
         }
     }
@@ -212,7 +216,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
 pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
-    let mut buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
+    let buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
     let inner = task.acquire_inner_lock();
     // 使用UserBuffer结构，以便于跨页读写
     let mut userbuf = UserBuffer::new(buf_vec);
@@ -246,6 +250,174 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
                 _ => {
                     userbuf.write(Kstat::new_abstract().as_bytes());
                     return 0; //warning
+                }
+            }
+        } else {
+            return -1;
+        }
+    }
+}
+
+pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
+    if flags != 0 {
+        println!("[sys_pipe]: flags not support");
+    }
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    let mut inner = task.acquire_inner_lock();
+    let (pipe_read, pipe_write) = make_pipe();
+    let read_fd = inner.alloc_fd();
+    inner.fd_table[read_fd] = Some(FileDescripter::new(false, FileClass::Abstr(pipe_read)));
+    let write_fd = inner.alloc_fd();
+    inner.fd_table[write_fd] = Some(FileDescripter::new(false, FileClass::Abstr(pipe_write)));
+    *translated_refmut(token, pipe) = read_fd as u32;
+    *translated_refmut(token, unsafe { pipe.add(1) }) = write_fd as u32;
+    0
+}
+
+pub fn sys_mkdir(dirfd: isize, path: *const u8, _mode: u32) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let path = translated_str(token, path);
+    if dirfd == AT_FDCWD {
+        let work_path = inner.current_path.clone();
+        if let Some(_) = open(
+            inner.get_work_path().as_str(),
+            path.as_str(),
+            OpenFlags::CREATE,
+            DiskInodeType::Directory,
+        ) {
+            return 0;
+        } else {
+            return -1;
+        }
+    } else {
+        // DEBUG: 获取dirfd的OSInode
+        let fd_usz = dirfd as usize;
+        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+            return -1;
+        }
+        if let Some(file) = &inner.fd_table[fd_usz] {
+            match &file.fclass {
+                FileClass::File(f) => {
+                    if let Some(_) = f.create(path.as_str(), DiskInodeType::Directory) {
+                        return 0;
+                    } else {
+                        return -1;
+                    }
+                }
+                _ => return -1,
+            }
+        } else {
+            return -1;
+        }
+    }
+}
+
+pub fn sys_chdir(path: *const u8) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let mut inner = task.acquire_inner_lock();
+    let path = translated_str(token, path);
+    let mut work_path = inner.current_path.clone();
+    let new_ino_id = ch_dir(work_path.as_str(), path.as_str()) as isize;
+    //println!("new inode id = {}", new_ino_id);
+    if new_ino_id >= 0 {
+        //inner.current_inode = new_ino_id as u32;
+        if path.chars().nth(0).unwrap() == '/' {
+            inner.current_path = path.clone();
+        } else {
+            work_path.push('/');
+            work_path.push_str(path.as_str());
+            let path_vec: Vec<&str> = work_path.as_str().split('/').collect();
+            let mut new_pathv: Vec<&str> = Vec::new();
+            for i in 0..path_vec.len() {
+                if path_vec[i] == "" || path_vec[i] == "." {
+                    continue;
+                }
+                if path_vec[i] == ".." {
+                    new_pathv.pop();
+                    continue;
+                }
+                new_pathv.push(path_vec[i]);
+            }
+            let mut new_wpath = String::new();
+            for i in 0..new_pathv.len() {
+                new_wpath.push('/');
+                new_wpath.push_str(new_pathv[i]);
+            }
+            if new_pathv.len() == 0 {
+                new_wpath.push('/');
+            }
+            //println!("after cd workpath = {}", new_wpath);
+            inner.current_path = new_wpath.clone();
+        }
+        new_ino_id
+    } else {
+        new_ino_id
+    }
+}
+
+pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
+    //return 0;
+    //println!("=====================================");
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let buf_vec = translated_byte_buffer(token, buf, len);
+    let inner = task.acquire_inner_lock();
+    let dent_len = size_of::<Dirent>();
+    //let max_num = len / dent_len;
+    let mut total_len: usize = 0;
+    // 使用UserBuffer结构，以便于跨页读写
+    let mut userbuf = UserBuffer::new(buf_vec);
+    let mut dirent = Dirent::empty();
+    if fd == AT_FDCWD {
+        let work_path = inner.current_path.clone();
+        if let Some(file) = open(
+            "/",
+            work_path.as_str(),
+            OpenFlags::RDONLY,
+            DiskInodeType::Directory,
+        ) {
+            loop {
+                if total_len + dent_len > len {
+                    break;
+                }
+                if file.getdirent(&mut dirent) > 0 {
+                    userbuf.write_at(total_len, dirent.as_bytes());
+                    total_len += dent_len;
+                } else {
+                    break;
+                }
+            }
+            return total_len as isize; //warning
+        } else {
+            return -1;
+        }
+    } else {
+        let fd_usz = fd as usize;
+        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+            return -1;
+        }
+        if let Some(file) = &inner.fd_table[fd_usz] {
+            match &file.fclass {
+                FileClass::File(f) => {
+                    loop {
+                        if total_len + dent_len > len {
+                            break;
+                        }
+                        if f.getdirent(&mut dirent) > 0 {
+                            userbuf.write_at(total_len, dirent.as_bytes());
+                            total_len += dent_len;
+                        } else {
+                            break;
+                        }
+                    }
+                    return total_len as isize; //warning
+                }
+                _ => {
+                    return -1;
                 }
             }
         } else {
