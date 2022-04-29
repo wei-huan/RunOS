@@ -1,13 +1,15 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
     ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, FileDescripter, Kstat,
-    OpenFlags,
+    OpenFlags, MNT_TABLE,
 };
 use crate::mm::{translated_byte_buffer, translated_refmut, translated_str, UserBuffer};
+use crate::task::TaskControlBlockInner;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::mem::size_of;
+use spin::MutexGuard;
 
 const AT_FDCWD: isize = -100;
 pub const FD_LIMIT: usize = 128;
@@ -424,4 +426,101 @@ pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
             return -1;
         }
     }
+}
+
+fn get_file_discpt(
+    fd: isize,
+    path: &String,
+    inner: &MutexGuard<TaskControlBlockInner>,
+    oflags: OpenFlags,
+) -> Option<FileClass> {
+    let type_ = {
+        if oflags.contains(OpenFlags::DIRECTROY) {
+            DiskInodeType::Directory
+        } else {
+            DiskInodeType::File
+        }
+    };
+    if fd == AT_FDCWD {
+        if let Some(inode) = open(inner.get_work_path().as_str(), path.as_str(), oflags, type_) {
+            //println!("find old");
+            return Some(FileClass::File(inode));
+        } else {
+            return None;
+        }
+    } else {
+        let fd_usz = fd as usize;
+        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+            return None;
+        }
+        if let Some(file) = &inner.fd_table[fd_usz] {
+            match &file.fclass {
+                FileClass::File(f) => {
+                    if oflags.contains(OpenFlags::CREATE) {
+                        if let Some(tar_f) = f.create(path.as_str(), type_) {
+                            return Some(FileClass::File(tar_f));
+                        } else {
+                            return None;
+                        }
+                    } else {
+                        if let Some(tar_f) = f.find(path.as_str(), oflags) {
+                            return Some(FileClass::File(tar_f));
+                        } else {
+                            return None;
+                        }
+                    }
+                }
+                _ => return None, // 如果是抽象类文件，不能open
+            }
+        } else {
+            return None;
+        }
+    }
+}
+
+pub fn sys_unlinkat(fd: i32, path: *const u8, flags: u32) -> isize {
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
+    let path = translated_str(token, path);
+    let mut inner = task.acquire_inner_lock();
+
+    if let Some(file) = get_file_discpt(
+        fd as isize,
+        &path,
+        &inner,
+        OpenFlags::from_bits(flags).unwrap(),
+    ) {
+        match file {
+            FileClass::File(f) => {
+                f.delete();
+                return 0;
+            }
+            _ => return -1,
+        }
+    } else {
+        return -1;
+    }
+}
+
+pub fn sys_mount(
+    p_special: *const u8,
+    p_dir: *const u8,
+    p_fstype: *const u8,
+    flags: usize,
+    data: *const u8,
+) -> isize {
+    // TODO
+    let token = current_user_token();
+    let special = translated_str(token, p_special);
+    let dir = translated_str(token, p_dir);
+    let fstype = translated_str(token, p_fstype);
+    MNT_TABLE.lock().mount(special, dir, fstype, flags as u32)
+}
+
+pub fn sys_umount(p_special: *const u8, flags: usize) -> isize {
+    // TODO
+    let token = current_user_token();
+    let special = translated_str(token, p_special);
+    MNT_TABLE.lock().umount(special, flags as u32)
 }

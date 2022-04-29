@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Apr 29 18:19:13 2022
+# Make data base, printed on Fri Apr 29 19:57:44 2022
 
 # Variables
 
@@ -79,7 +81,7 @@ MANAGERPID = 2608
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-d494f9f3-7559-4544-be58-82f147bbccc5.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-e5f959b0-9fa2-4a44-89fe-4512acdea497.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -125,14 +127,14 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 3312
+GIO_LAUNCHED_DESKTOP_FILE_PID = 137392
 # automatic
 %F = $(notdir $%)
 # environment
 DISPLAY = :1
 # environment
 CONDA_EXE = /home/weihuan/anaconda3/bin/conda
-# makefile (from 'Makefile', line 5)
+# makefile (from 'Makefile', line 4)
 FAT32_PACK_DIR := /home/weihuan/WorkSpace/OS/MyOS/fat32-pack
 # environment
 GTK_IM_MODULE = fcitx
@@ -152,12 +154,21 @@ SSH_AGENT_PID = 2788
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
 GTK_MODULES = gail:atk-bridge
+<<<<<<< HEAD
 # makefile (from 'Makefile', line 10)
+=======
+# makefile (from 'Makefile', line 7)
+>>>>>>> dev
 OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/kernel
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
 HOME = /home/weihuan
+<<<<<<< HEAD
+=======
+# makefile (from 'Makefile', line 6)
+IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
+>>>>>>> dev
 # environment
 LD_LIBRARY_PATH = /usr/local/cuda-10.1/lib64
 # environment
@@ -202,8 +213,6 @@ LC_MONETARY = zh_CN.UTF-8
 .DEFAULT_GOAL := build
 # environment
 XDG_CURRENT_DESKTOP = Unity
-# makefile (from 'Makefile', line 4)
-PACK_IMG_DIR := /home/weihuan/WorkSpace/OS/MyOS/myfs-pack
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
 # environment
@@ -228,19 +237,26 @@ MFLAGS = -pqrR
 *D = $(patsubst %/,%,$(dir $*))
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
+<<<<<<< HEAD
 # makefile (from 'Makefile', line 11)
 FS_IMG := /fs.img
+=======
+# makefile (from 'Makefile', line 8)
+FS_IMG := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release/fs.img
+>>>>>>> dev
 # environment
 GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
-NO_AT_BRIDGE = 1
-# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
+<<<<<<< HEAD
 # makefile (from 'Makefile', line 13)
+=======
+# makefile (from 'Makefile', line 10)
+>>>>>>> dev
 PLATFORM = qemu
 # 'override' directive
 .SHELLSTATUS := 0
@@ -260,7 +276,7 @@ CONDA_PYTHON_EXE = /home/weihuan/anaconda3/bin/python
 QT4_IM_MODULE = fcitx
 # automatic
 ^F = $(notdir $^)
-# makefile (from 'Makefile', line 6)
+# makefile (from 'Makefile', line 5)
 USER_DIR := /home/weihuan/WorkSpace/OS/MyOS/user
 # default
 SUFFIXES := 
@@ -283,34 +299,36 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 3312
+VSCODE_PID = 137392
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Load=134/1024=13%, Rehash=0, Collisions=24/173=14%
 =======
 # Load=133/1024=13%, Rehash=0, Collisions=23/171=13%
+>>>>>>> dev
+=======
+# Load=131/1024=13%, Rehash=0, Collisions=23/168=14%
 >>>>>>> dev
 
 # Pattern-specific Variable Values
 
 # No pattern-specific variable values.
- 
-make: *** No rule to make target 'all'.  Stop.
-
 
 # Directories
 
-# . (device 66310, inode 3414746): 22 files, no impossibilities.
+# . (device 66310, inode 3414746): 18 files, no impossibilities.
 
-# 22 files, no impossibilities in 1 directories.
+# 18 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
 # No implicit rules.
+ 
 
 # Files
 
@@ -319,7 +337,11 @@ user:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 25):
+=======
+#  recipe to execute (from 'Makefile', line 22):
+>>>>>>> dev
 	@make build -C $(USER_DIR)
 
 <<<<<<< HEAD
@@ -347,7 +369,11 @@ sdcard:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 19):
+=======
+#  recipe to execute (from 'Makefile', line 16):
+>>>>>>> dev
 	@make sdcard -C $(OS_DIR)
 
 <<<<<<< HEAD
@@ -366,9 +392,13 @@ gdb:
 #  File does not exist.
 #  File has not been updated.
 <<<<<<< HEAD
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 48):
 =======
 #  recipe to execute (from 'Makefile', line 44):
+>>>>>>> dev
+=======
+#  recipe to execute (from 'Makefile', line 39):
 >>>>>>> dev
 	@make gdb -C $(OS_DIR)
 
@@ -389,12 +419,16 @@ Makefile:
 #  Implicit rule search has been done.
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #  Last modified 2022-04-18 20:18:29.160364235
 =======
 #  Last modified 2022-04-26 16:17:26.811711629
 >>>>>>> dev
 =======
 #  Last modified 2022-04-29 16:48:52.372320326
+>>>>>>> dev
+=======
+#  Last modified 2022-04-29 18:51:22.734516106
 >>>>>>> dev
 #  File has been updated.
 #  Successfully updated.
@@ -405,9 +439,13 @@ debug: fat32-oscomp
 #  File does not exist.
 #  File has not been updated.
 <<<<<<< HEAD
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 45):
 =======
 #  recipe to execute (from 'Makefile', line 41):
+>>>>>>> dev
+=======
+#  recipe to execute (from 'Makefile', line 36):
 >>>>>>> dev
 	@make debug -C $(OS_DIR)
 
@@ -416,7 +454,11 @@ build:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 16):
+=======
+#  recipe to execute (from 'Makefile', line 13):
+>>>>>>> dev
 	@make build -C $(OS_DIR)
 
 # Not a target:
@@ -431,9 +473,13 @@ run:
 #  File does not exist.
 #  File has not been updated.
 <<<<<<< HEAD
+<<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 42):
 =======
 #  recipe to execute (from 'Makefile', line 38):
+>>>>>>> dev
+=======
+#  recipe to execute (from 'Makefile', line 33):
 >>>>>>> dev
 	@make run -C $(OS_DIR)
 
@@ -442,6 +488,7 @@ fat32-oscomp: user
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 #  recipe to execute (from 'Makefile', line 51):
@@ -461,6 +508,9 @@ fat32-oscomp-img: user
 >>>>>>> dev
 #  recipe to execute (from 'Makefile', line 31):
 >>>>>>> dev
+=======
+#  recipe to execute (from 'Makefile', line 26):
+>>>>>>> dev
 	cd fat32-pack && ./createfs.sh
 	cd oscomp && ./addoscompfile2fs.sh qemu
 
@@ -475,7 +525,7 @@ fat32:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 20):
+#  recipe to execute (from 'Makefile', line 19):
 	@make fat32-img -C $(OS_DIR)
 
 disasm:
@@ -483,7 +533,7 @@ disasm:
 #  Implicit rule search has not been done.
 #  File does not exist.
 #  File has not been updated.
-#  recipe to execute (from 'Makefile', line 47):
+#  recipe to execute (from 'Makefile', line 42):
 	@make disasm -C $(OS_DIR)
 
 # files hash-table stats:
@@ -494,6 +544,7 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 # strcache buffers: 1 (0) / strings = 35 / storage = 282 B / avg = 8 B
@@ -510,9 +561,14 @@ disasm:
 # strcache buffers: 1 (0) / strings = 36 / storage = 285 B / avg = 7 B
 # current buf: size = 8162 B / used = 285 B / count = 36 / avg = 7 B
 >>>>>>> dev
+=======
+# strcache buffers: 1 (0) / strings = 32 / storage = 261 B / avg = 8 B
+# current buf: size = 8162 B / used = 261 B / count = 32 / avg = 8 B
+>>>>>>> dev
 
-# strcache performance: lookups = 63 / hit rate = 42%
+# strcache performance: lookups = 59 / hit rate = 45%
 # hash-table stats:
+<<<<<<< HEAD
 <<<<<<< HEAD
 # Load=35/8192=0%, Rehash=0, Collisions=1/60=2%
 # Finished Make data base on Thu Apr 28 14:10:24 2022
@@ -520,6 +576,10 @@ disasm:
 =======
 # Load=36/8192=0%, Rehash=0, Collisions=1/63=2%
 # Finished Make data base on Fri Apr 29 18:19:13 2022
+>>>>>>> dev
+=======
+# Load=32/8192=0%, Rehash=0, Collisions=1/59=2%
+# Finished Make data base on Fri Apr 29 19:57:44 2022
 >>>>>>> dev
 
  
