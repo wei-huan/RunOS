@@ -111,6 +111,13 @@ openat, mkdir_完成
 还差 1 / 4 的syscall没做完(7个任务)
 
 下一步：
-多线程
-继续丰富syscall
+gitlab账号有问题，问主办老师
 提交邱老师的教师证文件
+多线程
+继续丰富syscall, 比如 mount, unmount
+idle_task statistic,
+shell 退出
+shutdown
+logger 彩色优化
+logo
+多用户

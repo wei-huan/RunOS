@@ -114,10 +114,10 @@ fn set_hart_filter(hart_id: usize) {
     HART_FILTER.store(hart_id, Ordering::Relaxed);
 }
 
-extern "C" {
-    fn boot_stack();
-    fn boot_stack_top();
-}
+// extern "C" {
+//     fn boot_stack();
+//     fn boot_stack_top();
+// }
 
 pub fn show_basic_info() {
     let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
