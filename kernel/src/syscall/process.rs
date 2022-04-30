@@ -201,3 +201,15 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         // ---- release current PCB automatically
     }
 }
+
+pub fn sys_brk(brk_addr: usize) -> isize{
+    0
+}
+
+pub fn sys_munmap() -> isize{
+    0
+}
+
+pub fn sys_mmap() -> isize{
+    0
+}

@@ -78,9 +78,12 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_GETPPID => sys_getppid(),
+        SYSCALL_BRK => sys_brk(args[0]),
         SYSCALL_CLONE => sys_fork(),
+        SYSCALL_MUNMAP => sys_munmap(),
         SYSCALL_EXECVE => sys_exec(args[0] as *const u8, args[1] as *const usize),
+        SYSCALL_MMAP => sys_mmap(),
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
-        _ => -1,//panic!("Unsupported syscall_id: {}", syscall_id),
+        _ => -1, //panic!("Unsupported syscall_id: {}", syscall_id),
     }
 }
