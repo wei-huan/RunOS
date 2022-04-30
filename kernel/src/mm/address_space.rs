@@ -4,7 +4,7 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{
-    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE,
+    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE
 };
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
@@ -295,13 +295,11 @@ impl AddrSpace {
         // );
 
         // map user stack with U flags
-        let max_end_va: VirtAddr = max_end_vpn.into();
-        let mut user_stack_bottom: usize = max_end_va.into();
-        // guard page
-        user_stack_bottom += PAGE_SIZE;
-        let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
-        // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
-        // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
+        // user stack is set just below the trap_cx
+        let user_stack_high = USER_STACK_HIGH;
+        let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
+        println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
+        println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
         user_space.push_section(
             Section::new(
                 ".ustack".to_string(),

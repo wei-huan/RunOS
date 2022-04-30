@@ -97,7 +97,7 @@ run: build
 ifeq ($(PLATFORM),qemu)
 ifeq ($(SBI),opensbi)
 	@qemu-system-riscv64 \
-		-m 128M \
+		-m 512M \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
@@ -107,7 +107,7 @@ ifeq ($(SBI),opensbi)
 		-smp $(CPUS)
 else
 	@qemu-system-riscv64 \
-		-m 128M \
+		-m 512M \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
@@ -128,7 +128,7 @@ endif
 
 debug: build
 	@qemu-system-riscv64 \
-		-m 128M \
+		-m 512M \
     	-machine virt \
     	-nographic \
     	-bios $(SBI_IMG) \

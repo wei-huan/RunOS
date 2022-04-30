@@ -60,18 +60,18 @@ pub fn add_initproc_into_fs() {
     // find if there already exits
     // println!("Find if there already exits ");
     if let Some(inode) = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File) {
-        // println!("Already have init proc in FS");
+        println!("Already have init proc in FS");
         //return;
         inode.delete();
     }
 
     if let Some(inode) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
-        // println!("Already have init proc in FS");
+        println!("Already have init user_shell in FS");
         //return;
         inode.delete();
     }
 
-    // println!("Write apps(initproc & user_shell) to disk from mem ");
+    println!("Write apps(initproc & user_shell) to disk from mem ");
 
     //Write apps(initproc & user_shell) to disk from mem
     if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
