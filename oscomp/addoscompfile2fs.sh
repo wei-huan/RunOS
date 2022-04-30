@@ -1,4 +1,4 @@
-FAT32_DIR="../fat32-pack"
+FAT32_DIR=".."
 OSCOMP_TEST_DIR="./target/riscv64"
 SELF_TEST_DIR="../user/target/riscv64gc-unknown-none-elf/release"
 
