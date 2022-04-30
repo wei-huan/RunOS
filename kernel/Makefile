@@ -24,7 +24,7 @@ FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 ifeq ($(PLATFORM), k210)
 	FAT32_IMG := $(SDCARD)
 else
-	FAT32_IMG := ../fat32-pack/fat32.img
+	FAT32_IMG := ../fat32.img
 endif
 
 # KERNEL ENTRY

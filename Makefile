@@ -7,7 +7,6 @@ USER_TAR_DIR := $(USER_DIR)/target/$(TARGET)/$(MODE)
 OSCOMP_DIR := $(DIR)/oscomp
 OSCOMP_TAR_DIR := $(OSCOMP_DIR)/build/riscv64
 OS_DIR := $(DIR)/kernel
-FS_IMG := $(IMG_DIR)/fs.img
 
 PLATFORM ?= qemu
 
@@ -25,13 +24,13 @@ user:
 
 fat32-oscomp: user
 ifeq ($(PLATFORM), qemu)
-	cd fat32-pack && ./createfs.sh
-	cd oscomp && ./addoscompfile2fs.sh qemu
+	@./createfs.sh
+	@cd oscomp && ./addoscompfile2fs.sh qemu
 else
-	cd oscomp && ./addoscompfile2fs.sh k210
+	@cd oscomp && ./addoscompfile2fs.sh k210
 endif
 
-run:
+run: fat32-oscomp
 	@make run -C $(OS_DIR)
 
 debug: fat32-oscomp
