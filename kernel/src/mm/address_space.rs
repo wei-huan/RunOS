@@ -298,8 +298,8 @@ impl AddrSpace {
         // user stack is set just below the trap_cx
         let user_stack_high = USER_STACK_HIGH;
         let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
-        println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
-        println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
+        // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
+        // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
         user_space.push_section(
             Section::new(
                 ".ustack".to_string(),
