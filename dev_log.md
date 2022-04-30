@@ -105,10 +105,10 @@ gitlab账号有问题，没法提交
 fat32 在 sdcard 上运行成功
 openat, mkdir_, unlink, mount, umount完成
 还差 1 / 8 的syscall没做完(4个任务: brk, clone, mmap, unmap)
+gitlab账号问题已解决
+提交了邱老师的教师证文件
 
 下一步：
-gitlab账号有问题，问主办老师
-提交邱老师的教师证文件
 多线程
 继续丰富syscall, 比如 brk
 idle_task statistic,
@@ -117,3 +117,9 @@ shutdown
 logger 彩色优化
 logo
 多用户
+
+今天是2022年4月30日
+程序能在测评机器正常跑了
+开始写brk
+
+下一步：
