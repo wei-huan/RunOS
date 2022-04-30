@@ -88,7 +88,7 @@ $(KERNEL_BIN): kernel
 run: build
 ifeq ($(PLATFORM),qemu)
 ifeq ($(SBI),opensbi)
-	qemu-system-riscv64 \
+	@qemu-system-riscv64 \
 		-m 128M \
 		-machine virt \
 		-nographic \
@@ -98,7 +98,7 @@ ifeq ($(SBI),opensbi)
 		-device virtio-blk-device,drive=x0,bus=virtio-mmio-bus.0 \
 		-smp $(CPUS)
 else
-	qemu-system-riscv64 \
+	@qemu-system-riscv64 \
 		-m 128M \
 		-machine virt \
 		-nographic \
@@ -109,7 +109,7 @@ else
 		-smp $(CPUS)
 endif
 else
-	(which $(K210-BURNER)) || (cd .. && git clone https://github.com/sipeed/kflash.py.git && mv kflash.py tools)
+	@(which $(K210-BURNER)) || (cd .. && git clone https://github.com/sipeed/kflash.py.git && mv kflash.py tools)
 	@cp $(BOOTLOADER) $(BOOTLOADER).copy
 	@dd if=$(KERNEL_BIN) of=$(BOOTLOADER).copy bs=$(K210_BOOTLOADER_SIZE) seek=1
 	@mv $(BOOTLOADER).copy $(KERNEL_BIN)
@@ -119,7 +119,7 @@ else
 endif
 
 debug: build
-	qemu-system-riscv64 \
+	@qemu-system-riscv64 \
 		-m 128M \
     	-machine virt \
     	-nographic \
