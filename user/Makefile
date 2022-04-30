@@ -9,7 +9,13 @@ BINS := $(patsubst $(APP_DIR)/%.rs, $(TARGET_DIR)/%.bin, $(APPS))
 OBJDUMP := rust-objdump --arch-name=riscv64
 OBJCOPY := rust-objcopy --binary-architecture=riscv64
 
-elf: $(APPS)
+env:
+	@(rustup target list | grep "riscv64gc-unknown-none-elf (installed)") || rustup target add $(TARGET)
+	@cargo install cargo-binutils --vers =0.3.3
+	@rustup component add rust-src
+	@rustup component add llvm-tools-preview
+
+elf: env $(APPS)
 	@cargo build --release
 
 binary: elf

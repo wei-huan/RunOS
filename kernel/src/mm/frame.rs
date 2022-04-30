@@ -57,6 +57,9 @@ impl FIFOFrameAllocator {
         //     ppn.clear();
         // }
     }
+    pub fn add_free(&mut self, ppn: usize) {
+        self.recycled.push_back(ppn);
+    }
 }
 
 impl FrameAllocator for FIFOFrameAllocator {
@@ -124,6 +127,10 @@ pub fn frame_alloc() -> Option<Frame> {
 
 pub fn frame_dealloc(ppn: PhysPageNum) {
     FRAME_ALLOCATOR.lock().dealloc(ppn);
+}
+
+pub fn add_free(ppn: usize) {
+    FRAME_ALLOCATOR.lock().add_free(ppn);
 }
 
 #[allow(unused)]
