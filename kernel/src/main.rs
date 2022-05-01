@@ -60,7 +60,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         // fs::init_rootfs();
         logger::init();
         logger::show_basic_info();
-        // fs::list_apps();
+        fs::list_apps();
         scheduler::add_initproc();
         timer::init();
         // SMP_START will turn to true in this function
