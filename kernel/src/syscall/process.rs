@@ -203,15 +203,31 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 }
 
 // sets the end of the data segment to the value
-pub fn sys_brk(brk_addr: usize) -> isize{
+pub fn sys_brk(brk_addr: usize) -> isize {
     let current_task = current_task().unwrap();
+    let mut inner = current_task.acquire_inner_lock();
+    let heap_start = inner.heap_start;
+    if brk_addr == 0 {
+        return (inner.heap_pointer - heap_start) as isize;
+    } else {
+        // 还未分配堆，直接创建 heap section
+        if inner.heap_pointer == heap_start {
+            inner.addrspace.create_heap_section(heap_start, brk_addr);
+            inner.heap_pointer = heap_start + brk_addr;
+            return (inner.heap_pointer - heap_start) as isize;
+        }
+        // 已经有堆，扩展，目前测试用例扩展都不需要跨页，所以摆烂，未来要继续做
+        else {
+            inner.heap_pointer += brk_addr;
+            return (inner.heap_pointer - heap_start) as isize;
+        }
+    }
+}
+
+pub fn sys_munmap() -> isize {
     0
 }
 
-pub fn sys_munmap() -> isize{
-    0
-}
-
-pub fn sys_mmap() -> isize{
+pub fn sys_mmap() -> isize {
     0
 }

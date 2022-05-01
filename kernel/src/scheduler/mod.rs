@@ -51,9 +51,9 @@ pub fn add_initproc_into_fs() {
     extern "C" {
         fn _app_names();
     }
-    let mut num_app_ptr = _num_app as usize as *mut usize;
+    let num_app_ptr = _num_app as usize as *mut usize;
     // let start = _app_names as usize as *const u8;
-    let mut app_start = unsafe { core::slice::from_raw_parts_mut(num_app_ptr.add(1), 3) };
+    let app_start = unsafe { core::slice::from_raw_parts_mut(num_app_ptr.add(1), 3) };
 
     open("/", "mnt", OpenFlags::CREATE, DiskInodeType::Directory);
 

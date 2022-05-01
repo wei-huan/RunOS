@@ -4,7 +4,7 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{
-    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE
+    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE,
 };
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
@@ -370,6 +370,18 @@ impl AddrSpace {
             satp::write(satp);
             asm!("sfence.vma");
         }
+    }
+    // size 最终会按页对齐
+    pub fn create_heap_section(&mut self, heap_start: usize, size: usize) {
+        // heap_start 本身在task创建时已经按页对齐了
+        let start_va = heap_start.into();
+        let end_va = (heap_start + size).into();
+        self.insert_framed_area(
+            ".heap".to_string(),
+            start_va,
+            end_va,
+            Permission::R | Permission::W | Permission::U,
+        )
     }
 }
 

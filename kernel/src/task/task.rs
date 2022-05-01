@@ -33,6 +33,7 @@ pub struct TaskControlBlockInner {
     pub trap_cx_ppn: PhysPageNum,
     pub ustack_bottom: usize,
     pub heap_start: usize,
+    pub heap_pointer: usize,
     pub task_cx: TaskContext,
     pub task_status: TaskStatus,
     pub addrspace: AddrSpace,
@@ -94,6 +95,7 @@ impl TaskControlBlock {
                 trap_cx_ppn,
                 ustack_bottom: ustack_base,
                 heap_start,
+                heap_pointer: heap_start,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
                 addrspace,
@@ -214,6 +216,8 @@ impl TaskControlBlock {
         inner.trap_cx_ppn = trap_cx_ppn;
         // update heap_start
         inner.heap_start = heap_start;
+        // update heap_pointer
+        inner.heap_pointer = heap_start;
         // initialize trap_cx
         let mut trap_cx = TrapContext::app_init_context(
             entry_point,
@@ -257,6 +261,7 @@ impl TaskControlBlock {
                 trap_cx_ppn,
                 ustack_bottom: parent_inner.ustack_bottom,
                 heap_start: parent_inner.heap_start,
+                heap_pointer: parent_inner.heap_pointer,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
                 addrspace,
