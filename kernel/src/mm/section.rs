@@ -139,4 +139,10 @@ impl Section {
             }
         }
     }
+    pub fn get_section_range(&self) -> (usize, usize) {
+        (
+            VirtAddr::from(self.vpn_range.get_start()).into(),
+            VirtAddr::from(self.vpn_range.get_end()).into(),
+        )
+    }
 }

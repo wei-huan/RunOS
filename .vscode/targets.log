@@ -5,9 +5,8 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
-# Make data base, printed on Sun May  1 14:39:14 2022
+# Make data base, printed on Sun May  1 19:04:17 2022
 
 # Variables
 
@@ -80,7 +79,7 @@ MANAGERPID = 2640
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-59d6d0da-a6c7-4449-b627-afeed14b0759.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-054ffe94-4d13-476a-860d-cb4c6294312d.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -118,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 6358
+GIO_LAUNCHED_DESKTOP_FILE_PID = 114044
 # automatic
 %F = $(notdir $%)
 # environment
@@ -226,6 +225,8 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -238,7 +239,6 @@ MAKEFILES :=
 # environment
 LC_NUMERIC = zh_CN.UTF-8
 # automatic
- 
 <F = $(notdir $<)
 # environment
 LC_MEASUREMENT = zh_CN.UTF-8
@@ -273,13 +273,13 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 6358
+VSCODE_PID = 114044
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=133/1024=13%, Rehash=0, Collisions=28/176=16%
+# Load=134/1024=13%, Rehash=0, Collisions=28/177=16%
 
 # Pattern-specific Variable Values
 
@@ -287,6 +287,7 @@ LANG = C
 
 # Directories
 
+ 
 # . (device 66310, inode 3414746): 21 files, no impossibilities.
 
 # 21 files, no impossibilities in 1 directories.
@@ -364,11 +365,11 @@ all: user
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-01 14:34:53.791138285
+#  Last modified 2022-05-01 17:02:59.488663753
 #  File has been updated.
 #  Successfully updated.
 
-debug: fat32-oscomp
+debug:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
@@ -409,7 +410,7 @@ clean:
 	@make clean -C $(USER_DIR)
 	@make clean -C $(OS_DIR)
 
-fat32-oscomp: user
+fat32-oscomp:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
@@ -439,7 +440,7 @@ disasm:
 	@make disasm -C $(OS_DIR)
 
 # files hash-table stats:
-# Load=16/1024=2%, Rehash=0, Collisions=2/43=5%
+# Load=16/1024=2%, Rehash=0, Collisions=2/41=5%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
@@ -449,9 +450,9 @@ disasm:
 # strcache buffers: 1 (0) / strings = 35 / storage = 289 B / avg = 8 B
 # current buf: size = 8162 B / used = 289 B / count = 35 / avg = 8 B
 
-# strcache performance: lookups = 66 / hit rate = 46%
+# strcache performance: lookups = 64 / hit rate = 45%
 # hash-table stats:
-# Load=35/8192=0%, Rehash=0, Collisions=1/66=2%
-# Finished Make data base on Sun May  1 14:39:14 2022
+# Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
+# Finished Make data base on Sun May  1 19:04:17 2022
 
  

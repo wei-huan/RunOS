@@ -7,6 +7,7 @@ use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times}
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use bitflags::*;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
@@ -218,9 +219,36 @@ pub fn sys_brk(brk_addr: usize) -> isize {
         }
         // 已经有堆，扩展，目前测试用例扩展都不需要跨页，所以摆烂，未来要继续做
         else {
-            inner.heap_pointer += brk_addr;
-            return (inner.heap_pointer - heap_start) as isize;
+            let (_, top) = inner.addrspace.get_section_range(".heap");
+            let new_top = inner.heap_pointer + brk_addr;
+            if new_top < top {
+                return (inner.heap_pointer - heap_start) as isize;
+            } else {
+                // 超出界限，需要分配新的页
+                return (inner.heap_pointer - heap_start) as isize;
+            }
         }
+    }
+}
+
+bitflags! {
+    pub struct MmapProts: usize {
+        const PROT_NONE = 0;
+        const PROT_READ = 1;
+        const PROT_WRITE = 2;
+        const PROT_EXEC = 4;
+        const PROT_GROWSDOWN = 0x01000000;
+        const PROT_GROWSUP = 0x02000000;
+    }
+}
+
+bitflags! {
+    pub struct MmapFlags: usize {
+        const MAP_FILE = 0;
+        const MAP_SHARED= 0x01;
+        const MAP_PRIVATE = 0x02;
+        const MAP_FIXED = 0x10;
+        const MAP_ANONYMOUS = 0x20;
     }
 }
 

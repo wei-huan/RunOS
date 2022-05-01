@@ -414,6 +414,18 @@ impl AddrSpace {
             Permission::R | Permission::W | Permission::U,
         )
     }
+    // return start_va usize, end_va usize
+    #[allow(unused)]
+    pub fn get_section_range(&self, name: &str) -> (usize, usize) {
+        let sect_iterator = self.sections.iter();
+        for sect in sect_iterator {
+            if sect.name == name {
+                return sect.get_section_range();
+            }
+        }
+        // NULL
+        return (0, 0);
+    }
     // size 最终会按页对齐
     pub fn create_mmap_section(&mut self, mmap_start: usize, size: usize, permission: Permission) {
         let start_va = mmap_start.into();
