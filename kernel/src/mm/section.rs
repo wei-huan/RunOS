@@ -116,7 +116,6 @@ impl Section {
         }
     }
     /// data: start-aligned but maybe with shorter length
-    /// assume that all frames were cleared before
     pub fn clear(&mut self, page_table: &mut PageTable) {
         assert_eq!(self.map_type, MapType::Framed);
         let mut current_vpn = self.vpn_range.get_start();

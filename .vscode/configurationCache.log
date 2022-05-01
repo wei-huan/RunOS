@@ -1,1 +1,1 @@
-{"buildTargets":["build","debug","disasm","fat32","fat32-oscomp","fs","gdb","run","sdcard","user"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}
+{"buildTargets":["all","build","clean","debug","disasm","fat32","fat32-oscomp","fs","gdb","run","sdcard","user"],"launchTargets":[],"customConfigurationProvider":{"workspaceBrowse":{"browsePath":[],"compilerArgs":[]},"fileIndex":[]}}

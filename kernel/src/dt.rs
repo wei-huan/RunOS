@@ -25,18 +25,18 @@ pub fn fdt_print(fdt: *mut u8) {
     print_node(fdt.find_node("/").unwrap(), 0);
 }
 
-// #[cfg(feature = "k210")]
-// fn fdt_get_timerfreq(fdt_ptr: *const u8) {
-//     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
-//     let hart_id = hart_id();
-//     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
-//     let timebase_frequency = current_cpu.clock_frequency() / 60;
-//     TIMER_FREQ.store(timebase_frequency, Ordering::Release);
-//     println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
-// }
+#[cfg(feature = "k210")]
+fn fdt_get_timerfreq(fdt_ptr: *const u8) {
+    let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
+    let hart_id = hart_id();
+    let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
+    let timebase_frequency = current_cpu.clock_frequency() / 60;
+    TIMER_FREQ.store(timebase_frequency, Ordering::Release);
+    println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
+}
 
 
-#[cfg(not(feature = "k210"))]
+// #[cfg(feature = "qemu")]
 fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let hart_id = hart_id();

@@ -100,14 +100,15 @@ impl log::Log for MyLogger {
 pub fn init() {
     set_hart_filter(8);
     log::set_logger(&MyLogger).expect("failed to init logging");
-    log::set_max_level(match option_env!("LOG") {
-        Some("ERROR") => LevelFilter::Error,
-        Some("WARN") => LevelFilter::Warn,
-        Some("INFO") => LevelFilter::Info,
-        Some("DEBUG") => LevelFilter::Debug,
-        Some("TRACE") => LevelFilter::Trace,
-        _ => LevelFilter::Off,
-    });
+    // log::set_max_level(match option_env!("LOG") {
+    //     Some("ERROR") => LevelFilter::Error,
+    //     Some("WARN") => LevelFilter::Warn,
+    //     Some("INFO") => LevelFilter::Info,
+    //     Some("DEBUG") => LevelFilter::Debug,
+    //     Some("TRACE") => LevelFilter::Trace,
+    //     _ => LevelFilter::Off,
+    // });
+    log::set_max_level(LevelFilter::Trace);
 }
 
 fn set_hart_filter(hart_id: usize) {

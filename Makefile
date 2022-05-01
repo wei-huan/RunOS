@@ -13,11 +13,11 @@ PLATFORM ?= qemu
 build:
 	@make build -C $(OS_DIR)
 
-sdcard:
-	@make sdcard -C $(OS_DIR)
+# sdcard:
+# 	@make sdcard -C $(OS_DIR)
 
-fat32:
-	@make fat32-img -C $(OS_DIR)
+# fat32:
+# 	@make fat32-img -C $(OS_DIR)
 
 user:
 	@make build -C $(USER_DIR)
@@ -30,7 +30,7 @@ else
 	@cd oscomp && ./addoscompfile2fs.sh k210
 endif
 
-run: fat32-oscomp
+run: user
 	@make run -C $(OS_DIR)
 
 debug: fat32-oscomp
@@ -42,4 +42,13 @@ gdb:
 disasm:
 	@make disasm -C $(OS_DIR)
 
-.PHONY: build sdcard user fs run debug gdb disasm fat32-oscomp fat32
+all: user
+	@make all -C $(OS_DIR)
+
+clean:
+	@rm -f fat32.img
+	@rm -rf ./fs
+	@make clean -C $(USER_DIR)
+	@make clean -C $(OS_DIR)
+
+.PHONY: build sdcard user fs run debug gdb disasm fat32-oscomp fat32 clean

@@ -34,28 +34,30 @@ pub fn boot_all_harts(my_hartid: usize) {
     }
 }
 
-#[cfg(all(feature = "opensbi", feature = "k210"))]
+// #[cfg(all(feature = "opensbi", feature = "k210"))]
+// pub fn boot_all_harts(my_hartid: usize) {
+//     #[cfg(feature = "k210")]
+//     extern "C" {
+//         fn _warm_start();
+//     }
+//     BOOT_HARTID.store(my_hartid, Ordering::Relaxed);
+//     SMP_START.store(true, Ordering::Relaxed);
+//     let ncpu = CPU_NUMS.load(Ordering::Acquire);
+//     for i in 0..ncpu {
+//         if i != my_hartid {
+//             // priv: 1 for supervisor; 0 for user;
+//             hart_start(i, _warm_start as usize, 1).unwrap();
+//         }
+//     }
+// }
+
+#[cfg(feature = "k210")]
 pub fn boot_all_harts(my_hartid: usize) {
-    #[cfg(feature = "k210")]
-    extern "C" {
-        fn _warm_start();
-    }
     BOOT_HARTID.store(my_hartid, Ordering::Relaxed);
     SMP_START.store(true, Ordering::Relaxed);
     let ncpu = CPU_NUMS.load(Ordering::Acquire);
-    for i in 0..ncpu {
-        if i != my_hartid {
-            // priv: 1 for supervisor; 0 for user;
-            hart_start(i, _warm_start as usize, 1).unwrap();
-        }
+    for i in 1..ncpu {
+        let mask: usize = 1 << i;
+        send_ipi(&mask as *const _ as usize);
     }
 }
-
-// #[cfg(not(feature = "opensbi"))]
-// pub fn boot_all_harts(my_hartid: usize) {
-//     let ncpu = CPU_NUMS.load(Ordering::Acquire);
-//     for i in 1..ncpu {
-//         let mask: usize = 1 << i;
-//         send_ipi(&mask as *const _ as usize);
-//     }
-// }

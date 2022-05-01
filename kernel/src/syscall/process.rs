@@ -201,3 +201,17 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         // ---- release current PCB automatically
     }
 }
+
+// sets the end of the data segment to the value
+pub fn sys_brk(brk_addr: usize) -> isize{
+    let current_task = current_task().unwrap();
+    0
+}
+
+pub fn sys_munmap() -> isize{
+    0
+}
+
+pub fn sys_mmap() -> isize{
+    0
+}

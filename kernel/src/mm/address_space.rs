@@ -4,7 +4,7 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{
-    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_SIZE,
+    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE
 };
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
@@ -197,7 +197,7 @@ impl AddrSpace {
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
-    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize) {
+    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize) {
         // println!("create_user_space");
         let mut user_space = Self::new_empty();
         // map trampoline
@@ -276,8 +276,8 @@ impl AddrSpace {
         user_space.clear_bss_pages();
 
         // // map user heap with U flags
-        // let max_end_va: VirtAddr = max_end_vpn.into();
-        // let mut user_heap_bottom: usize = max_end_va.into();
+        let max_end_va: VirtAddr = max_end_vpn.into();
+        let heap_start: usize = max_end_va.into();
         // //guard page
         // user_heap_bottom += PAGE_SIZE;
         // let user_heap_top: usize = user_heap_bottom + USER_HEAP_SIZE;
@@ -295,11 +295,9 @@ impl AddrSpace {
         // );
 
         // map user stack with U flags
-        let max_end_va: VirtAddr = max_end_vpn.into();
-        let mut user_stack_bottom: usize = max_end_va.into();
-        // guard page
-        user_stack_bottom += PAGE_SIZE;
-        let user_stack_high = user_stack_bottom + USER_STACK_SIZE;
+        // user stack is set just below the trap_cx
+        let user_stack_high = USER_STACK_HIGH;
+        let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
         // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
         // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
         user_space.push_section(
@@ -327,6 +325,7 @@ impl AddrSpace {
         // unsafe { asm!("fence.i") }
         (
             user_space,
+            heap_start,
             user_stack_high,
             elf.header.pt2.entry_point() as usize,
         )
