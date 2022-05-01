@@ -124,10 +124,26 @@ logo
 
 下一步：
 写完brk, mmap, munmap
+多线程
+idle_task statistic,
+shell 退出
+shutdown
+logger 彩色优化
+logo
+多用户
 
 今天是2022年4月30日
-brk 完成
-
+brk, mmap, munmap 完成, 但是是很鸡贼的写完的，很多合法性检查都没做
+有个问题，为什么init_proc, shell变得这么慢, 是因为复制回文件系统了吗
 
 下一步：
+brk, mmap, munmap 完善
 多线程 clone
+idle_task statistic,
+调度逻辑优化, 直接返回栈顶有点离谱
+shell 退出
+slab 缓存器
+shutdown
+logger 彩色优化
+logo
+多用户
