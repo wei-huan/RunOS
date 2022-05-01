@@ -202,7 +202,9 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
     }
 }
 
+// sets the end of the data segment to the value
 pub fn sys_brk(brk_addr: usize) -> isize{
+    let current_task = current_task().unwrap();
     0
 }
 

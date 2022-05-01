@@ -32,6 +32,7 @@ pub struct TaskControlBlockInner {
     pub entry_point: usize, // 用户程序入口点 exec会改变
     pub trap_cx_ppn: PhysPageNum,
     pub ustack_bottom: usize,
+    pub heap_start: usize,
     pub task_cx: TaskContext,
     pub task_status: TaskStatus,
     pub addrspace: AddrSpace,
@@ -75,7 +76,8 @@ impl TaskControlBlock {
     // only for initproc
     pub fn new(elf_data: &[u8]) -> Self {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, ustack_base, entry_point) = AddrSpace::create_user_space(elf_data);
+        let (addrspace, heap_start, ustack_base, entry_point) =
+            AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
@@ -91,6 +93,7 @@ impl TaskControlBlock {
                 entry_point,
                 trap_cx_ppn,
                 ustack_bottom: ustack_base,
+                heap_start,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
                 addrspace,
@@ -130,7 +133,8 @@ impl TaskControlBlock {
     }
     pub fn exec(&self, elf_data: &[u8], args: Vec<String>) {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addr_space, mut user_sp, entry_point) = AddrSpace::create_user_space(elf_data);
+        let (addr_space, heap_start, mut user_sp, entry_point) =
+            AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addr_space
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
@@ -208,6 +212,8 @@ impl TaskControlBlock {
         inner.addrspace = addr_space;
         // update trap_cx ppn
         inner.trap_cx_ppn = trap_cx_ppn;
+        // update heap_start
+        inner.heap_start = heap_start;
         // initialize trap_cx
         let mut trap_cx = TrapContext::app_init_context(
             entry_point,
@@ -250,6 +256,7 @@ impl TaskControlBlock {
                 entry_point: parent_inner.entry_point,
                 trap_cx_ppn,
                 ustack_bottom: parent_inner.ustack_bottom,
+                heap_start: parent_inner.heap_start,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
                 addrspace,
