@@ -124,3 +124,10 @@ logo
 
 下一步：
 写完brk, mmap, munmap
+
+今天是2022年4月30日
+brk 完成
+
+
+下一步：
+多线程 clone

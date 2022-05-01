@@ -224,10 +224,19 @@ pub fn sys_brk(brk_addr: usize) -> isize {
     }
 }
 
-pub fn sys_munmap() -> isize {
-    0
+pub fn sys_mmap(
+    start: usize,
+    length: usize,
+    prot: usize,
+    flags: usize,
+    fd: isize,
+    offset: usize,
+) -> isize {
+    let task = current_task().unwrap();
+    task.mmap(start, length, prot, flags, fd, offset)
 }
 
-pub fn sys_mmap() -> isize {
-    0
+pub fn sys_munmap(start: usize, length: usize) -> isize {
+    let task = current_task().unwrap();
+    task.munmap(start, length)
 }

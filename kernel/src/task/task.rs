@@ -2,9 +2,13 @@
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
 use super::{pid_alloc, PidHandle};
-use crate::config::TRAP_CONTEXT;
+use crate::config::{MMAP_BASE, TRAP_CONTEXT};
+use crate::fs::File;
 use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
-use crate::mm::{kernel_token, translated_refmut, AddrSpace, PhysPageNum, VirtAddr, KERNEL_SPACE};
+use crate::mm::{
+    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, Permission, PhysPageNum,
+    UserBuffer, VirtAddr, KERNEL_SPACE,
+};
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
@@ -42,6 +46,7 @@ pub struct TaskControlBlockInner {
     pub exit_code: i32,
     pub fd_table: FDTable,
     pub current_path: String,
+    pub mmap_area_num: usize,
 }
 
 impl TaskControlBlockInner {
@@ -120,6 +125,7 @@ impl TaskControlBlock {
                     )),
                 ],
                 current_path: String::from("/"),
+                mmap_area_num: 0,
             }),
         };
         // prepare TrapContext in user space
@@ -270,6 +276,7 @@ impl TaskControlBlock {
                 exit_code: 0,
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
+                mmap_area_num: parent_inner.mmap_area_num,
             }),
         });
         // add child
@@ -293,5 +300,70 @@ impl TaskControlBlock {
     // initproc 不会调用 sys_getppid
     pub fn getppid(&self) -> usize {
         self.get_parent().unwrap().pid.0
+    }
+    // 假设每次新 mmap 的区域和过往不重叠, 目前只支持创建一个mmap区域
+    pub fn mmap(
+        &self,
+        mut start: usize,
+        length: usize,
+        prot: usize,
+        flags: usize,
+        fd: isize,
+        offset: usize,
+    ) -> isize {
+        let mut inner = self.acquire_inner_lock();
+        let token = inner.get_user_token();
+        let fd_table = inner.fd_table.clone();
+        if fd as usize >= fd_table.len() {
+            return -1;
+        }
+        inner.mmap_area_num += 1;
+        // prot<<1 is equal to  meaning of Permission, 1<<4 means user
+        let map_flags = (((prot & 0b111) << 1) + (1 << 4)) as u8;
+        // 如果没有 mmap section 就创建 mmap section
+        if start == 0 {
+            inner.addrspace.create_mmap_section(
+                MMAP_BASE,
+                length,
+                Permission::from_bits(map_flags).unwrap(),
+            );
+            start = MMAP_BASE;
+        } else {
+            inner.addrspace.create_mmap_section(
+                start,
+                length,
+                Permission::from_bits(map_flags).unwrap(),
+            );
+        }
+        if let Some(file) = &fd_table[fd as usize] {
+            match &file.fclass {
+                FileClass::File(f) => {
+                    f.set_offset(offset);
+                    if !f.readable() {
+                        return -1;
+                    }
+                    //println!{"The va_start is 0x{:X}, offset of file is {}", va_start.0, offset};
+                    let read_len = f.read(UserBuffer::new(translated_byte_buffer(
+                        token,
+                        start as *const u8,
+                        length,
+                    )));
+                    //println!{"read {} bytes", read_len};
+                    return start as isize;
+                }
+                _ => {
+                    return -1;
+                }
+            };
+        } else {
+            return -1;
+        };
+    }
+    pub fn munmap(&self, start: usize, length: usize) -> isize {
+        let mut inner = self.acquire_inner_lock();
+        inner
+            .addrspace
+            .remove_mmap_area_with_start_vpn(VirtAddr::from(start).into());
+        0
     }
 }
