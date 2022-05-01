@@ -64,9 +64,9 @@ endif
 
 env:
 	@rustup target add riscv64imac-unknown-none-elf
-	@cargo install cargo-binutils --vers =0.3.3
-	@rustup component add rust-src
-	@rustup component add llvm-tools-preview
+# @cargo install cargo-binutils --vers =0.3.3
+# @rustup component add rust-src
+# @rustup component add llvm-tools-preview
 
 build: env switch-check $(KERNEL_BIN)
 

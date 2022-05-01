@@ -135,9 +135,10 @@ logo
 今天是2022年4月30日
 brk, mmap, munmap 完成, 但是是很鸡贼的写完的，很多合法性检查都没做
 有个问题，为什么init_proc, shell变得这么慢, 是因为复制回文件系统了吗
+brk 实现 heap 的动态扩容
 
 下一步：
-brk, mmap, munmap 完善
+sbrk, mmap, munmap 完善
 多线程 clone
 文件系统
 idle_task statistic,

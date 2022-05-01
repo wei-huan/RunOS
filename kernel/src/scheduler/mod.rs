@@ -56,7 +56,7 @@ pub fn add_initproc_into_fs() {
     let app_start = unsafe { core::slice::from_raw_parts_mut(num_app_ptr.add(1), 3) };
 
     // find if there already exits
-    if let Some(inode) = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File) {
+    if let Some(_) = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File) {
         // println!("Already have initproc in FS");
         // inode.delete();
     } else {
@@ -78,7 +78,7 @@ pub fn add_initproc_into_fs() {
         }
     }
 
-    if let Some(inode) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
+    if let Some(_) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
         // println!("Already have init user_shell in FS");
         // inode.delete();
     } else {

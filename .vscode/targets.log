@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun May  1 19:04:17 2022
+# Make data base, printed on Sun May  1 21:08:16 2022
 
 # Variables
 
@@ -287,10 +287,10 @@ LANG = C
 
 # Directories
 
- 
 # . (device 66310, inode 3414746): 21 files, no impossibilities.
 
 # 21 files, no impossibilities in 1 directories.
+ 
 
 # Implicit Rules
 
@@ -453,6 +453,6 @@ disasm:
 # strcache performance: lookups = 64 / hit rate = 45%
 # hash-table stats:
 # Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
-# Finished Make data base on Sun May  1 19:04:17 2022
+# Finished Make data base on Sun May  1 21:08:16 2022
 
  

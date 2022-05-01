@@ -1,6 +1,6 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{open, DiskInodeType, OpenFlags};
-use crate::mm::{translated_ref, translated_refmut, translated_str};
+use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times};
@@ -204,6 +204,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 }
 
 // sets the end of the data segment to the value
+// return heap size
 pub fn sys_brk(brk_addr: usize) -> isize {
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
@@ -220,15 +221,30 @@ pub fn sys_brk(brk_addr: usize) -> isize {
         // 已经有堆，扩展，目前测试用例扩展都不需要跨页，所以摆烂，未来要继续做
         else {
             let (_, top) = inner.addrspace.get_section_range(".heap");
-            let new_top = inner.heap_pointer + brk_addr;
-            if new_top < top {
-                return (inner.heap_pointer - heap_start) as isize;
-            } else {
+            let new_top = inner.heap_start + brk_addr;
+            if new_top >= top {
                 // 超出界限，需要分配新的页
-                return (inner.heap_pointer - heap_start) as isize;
+                inner
+                    .addrspace
+                    .modify_section_end(".heap", (VirtAddr::from(new_top).ceil()).into());
             }
+            inner.heap_pointer = new_top;
+            return (inner.heap_pointer - heap_start) as isize;
         }
     }
+}
+
+// sets the end of the data segment to the value
+// increment can be negative
+// return heap size
+pub fn sys_sbrk(increment: usize) -> isize {
+    let current_task = current_task().unwrap();
+    let mut inner = current_task.acquire_inner_lock();
+    if increment == 0 {
+        return inner.heap_pointer as isize;
+    }
+    // todo
+    0
 }
 
 bitflags! {

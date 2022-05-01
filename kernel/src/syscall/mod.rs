@@ -31,6 +31,7 @@ const SYSCALL_UNAME: usize = 160;
 const SYSCALL_GET_TIMEOFDAY: usize = 169;
 const SYSCALL_GETPID: usize = 172;
 const SYSCALL_GETPPID: usize = 173;
+const SYSCALL_SBRK: usize = 213;
 const SYSCALL_BRK: usize = 214;
 const SYSCALL_MUNMAP: usize = 215;
 const SYSCALL_CLONE: usize = 220;
@@ -78,6 +79,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_GETPPID => sys_getppid(),
+        SYSCALL_SBRK => sys_sbrk(args[0]),
         SYSCALL_BRK => sys_brk(args[0]),
         SYSCALL_CLONE => sys_fork(),
         SYSCALL_MUNMAP => sys_munmap(args[0] as usize, args[1] as usize),

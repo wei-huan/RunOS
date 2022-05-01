@@ -1,6 +1,7 @@
 use super::PageTableEntry;
 use crate::config::{PAGE_SIZE, PAGE_SIZE_BITS};
 use core::fmt::{self, Debug, Formatter};
+use core::iter::Step;
 
 const PA_WIDTH_SV39: usize = 56;
 const VA_WIDTH_SV39: usize = 39;
@@ -181,6 +182,22 @@ impl VirtPageNum {
     }
 }
 
+impl Step for VirtPageNum {
+    fn steps_between(start: &Self, end: &Self) -> Option<usize> {
+        Some(end.0 - start.0)
+    }
+    fn forward_checked(start: Self, count: usize) -> Option<Self> {
+        Some(VirtPageNum::from(start.0 + count))
+    }
+    fn backward_checked(start: Self, count: usize) -> Option<Self> {
+        if start.0 - count >= 0 {
+            Some(VirtPageNum::from(start.0 - count))
+        } else {
+            panic!("Negative VirtPageNum!")
+        }
+    }
+}
+
 #[allow(unused)]
 pub fn addr_test() {
     let addr: usize = 0x123456789abcdef;
@@ -210,6 +227,12 @@ impl StepByOne for PhysPageNum {
     }
 }
 
+// impl Step for VirtPageNum {
+//     fn step(&mut self) {
+//         self.0 += 1;
+//     }
+// }
+
 #[derive(Copy, Clone)]
 pub struct SimpleRange<T>
 where
@@ -231,6 +254,12 @@ where
     }
     pub fn get_end(&self) -> T {
         self.r
+    }
+    pub fn set_start(&mut self, new_start: T) {
+        self.l = new_start;
+    }
+    pub fn set_end(&mut self, new_end: T) {
+        self.r = new_end;
     }
 }
 impl<T> IntoIterator for SimpleRange<T>
