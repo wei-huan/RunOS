@@ -1,6 +1,6 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{open, DiskInodeType, OpenFlags};
-use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr};
+use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times};
@@ -212,6 +212,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 }
 
 // sets the end of the data segment to the value
+// brk_addr can‘t be negative, so it would not shrink to zero
 // return heap size
 pub fn sys_brk(brk_addr: usize) -> isize {
     let current_task = current_task().unwrap();
@@ -222,19 +223,20 @@ pub fn sys_brk(brk_addr: usize) -> isize {
     } else {
         // 还未分配堆，直接创建 heap section
         if inner.heap_pointer == heap_start {
-            inner.addrspace.create_heap_section(heap_start, brk_addr);
+            inner.addrspace.alloc_heap_section(heap_start, brk_addr);
             inner.heap_pointer = heap_start + brk_addr;
             return (inner.heap_pointer - heap_start) as isize;
         }
-        // 已经有堆，扩展，目前测试用例扩展都不需要跨页，所以摆烂，未来要继续做
+        // 已经有堆，扩展
         else {
             let (_, top) = inner.addrspace.get_section_range(".heap");
+            let top_vpn: VirtPageNum = VirtAddr::from(top).into();
             let new_top = inner.heap_start + brk_addr;
-            if new_top >= top {
-                // 超出界限，需要分配新的页
-                inner
-                    .addrspace
-                    .modify_section_end(".heap", (VirtAddr::from(new_top).ceil()).into());
+            let new_top_vpn: VirtPageNum = VirtAddr::from(new_top).floor().into();
+            if top_vpn != new_top_vpn {
+                // 如果超出界限，需要分配新的页
+                // 如果缩小到的新虚拟页号变小，需要回收页
+                inner.addrspace.modify_section_end(".heap", new_top_vpn);
             }
             inner.heap_pointer = new_top;
             return (inner.heap_pointer - heap_start) as isize;
@@ -245,14 +247,43 @@ pub fn sys_brk(brk_addr: usize) -> isize {
 // sets the end of the data segment to the value
 // increment can be negative
 // return heap size
+// todo test, No test yet
 pub fn sys_sbrk(increment: usize) -> isize {
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
+    let heap_start = inner.heap_start;
     if increment == 0 {
-        return inner.heap_pointer as isize;
+        return (inner.heap_pointer - heap_start) as isize;
+    } else {
+        // 还未分配堆，直接创建 heap section
+        if inner.heap_pointer == heap_start {
+            // 还没分配时增量如果是负数就不分配了, 直接返回0
+            if increment < 0 {
+                return 0;
+            }
+            inner.addrspace.alloc_heap_section(heap_start, increment);
+            inner.heap_pointer = heap_start + increment;
+            return (inner.heap_pointer - heap_start) as isize;
+        }
+        // 回收 heap 段
+        if inner.heap_pointer + increment <= inner.heap_start {
+            // todo 回收 .heap 段
+            inner.addrspace.dealloc_heap_section();
+            return 0;
+        } else {
+            let (_, top) = inner.addrspace.get_section_range(".heap");
+            let top_vpn: VirtPageNum = VirtAddr::from(top).into();
+            let new_top = inner.heap_pointer + increment;
+            let new_top_vpn: VirtPageNum = VirtAddr::from(new_top).floor().into();
+            if top_vpn != new_top_vpn {
+                // 如果超出界限，需要分配新的页
+                // 如果缩小到的新虚拟页号变小，需要回收页
+                inner.addrspace.modify_section_end(".heap", new_top_vpn);
+            }
+            inner.heap_pointer = new_top;
+            return (inner.heap_pointer - heap_start) as isize;
+        }
     }
-    // todo
-    0
 }
 
 bitflags! {
