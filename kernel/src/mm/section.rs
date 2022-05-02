@@ -139,4 +139,25 @@ impl Section {
             }
         }
     }
+    pub fn get_section_range(&self) -> (usize, usize) {
+        (
+            VirtAddr::from(self.vpn_range.get_start()).into(),
+            VirtAddr::from(self.vpn_range.get_end()).into(),
+        )
+    }
+    pub fn modify_section_end(&mut self, page_table: &mut PageTable, new_end_vpn: VirtPageNum) {
+        let end_vpn = self.vpn_range.get_end();
+        // 缩小
+        if end_vpn > new_end_vpn {
+            for vpn in VirtPageNum::from(new_end_vpn.0 + 1)..end_vpn {
+                self.unmap_one_page(page_table, vpn);
+            }
+        }
+        // 扩大
+        else if end_vpn < new_end_vpn {
+            for vpn in VirtPageNum::from(end_vpn.0 + 1)..new_end_vpn {
+                self.map_one_page(page_table, vpn);
+            }
+        }
+    }
 }

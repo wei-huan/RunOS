@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
+#![feature(step_trait)]
 
 extern crate alloc;
 extern crate fat32;

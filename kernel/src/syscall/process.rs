@@ -1,12 +1,13 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{open, DiskInodeType, OpenFlags};
-use crate::mm::{translated_ref, translated_refmut, translated_str};
+use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr};
 use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times};
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use bitflags::*;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
@@ -203,15 +204,83 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 }
 
 // sets the end of the data segment to the value
-pub fn sys_brk(brk_addr: usize) -> isize{
+// return heap size
+pub fn sys_brk(brk_addr: usize) -> isize {
     let current_task = current_task().unwrap();
+    let mut inner = current_task.acquire_inner_lock();
+    let heap_start = inner.heap_start;
+    if brk_addr == 0 {
+        return (inner.heap_pointer - heap_start) as isize;
+    } else {
+        // 还未分配堆，直接创建 heap section
+        if inner.heap_pointer == heap_start {
+            inner.addrspace.create_heap_section(heap_start, brk_addr);
+            inner.heap_pointer = heap_start + brk_addr;
+            return (inner.heap_pointer - heap_start) as isize;
+        }
+        // 已经有堆，扩展，目前测试用例扩展都不需要跨页，所以摆烂，未来要继续做
+        else {
+            let (_, top) = inner.addrspace.get_section_range(".heap");
+            let new_top = inner.heap_start + brk_addr;
+            if new_top >= top {
+                // 超出界限，需要分配新的页
+                inner
+                    .addrspace
+                    .modify_section_end(".heap", (VirtAddr::from(new_top).ceil()).into());
+            }
+            inner.heap_pointer = new_top;
+            return (inner.heap_pointer - heap_start) as isize;
+        }
+    }
+}
+
+// sets the end of the data segment to the value
+// increment can be negative
+// return heap size
+pub fn sys_sbrk(increment: usize) -> isize {
+    let current_task = current_task().unwrap();
+    let mut inner = current_task.acquire_inner_lock();
+    if increment == 0 {
+        return inner.heap_pointer as isize;
+    }
+    // todo
     0
 }
 
-pub fn sys_munmap() -> isize{
-    0
+bitflags! {
+    pub struct MmapProts: usize {
+        const PROT_NONE = 0;
+        const PROT_READ = 1;
+        const PROT_WRITE = 2;
+        const PROT_EXEC = 4;
+        const PROT_GROWSDOWN = 0x01000000;
+        const PROT_GROWSUP = 0x02000000;
+    }
 }
 
-pub fn sys_mmap() -> isize{
-    0
+bitflags! {
+    pub struct MmapFlags: usize {
+        const MAP_FILE = 0;
+        const MAP_SHARED= 0x01;
+        const MAP_PRIVATE = 0x02;
+        const MAP_FIXED = 0x10;
+        const MAP_ANONYMOUS = 0x20;
+    }
+}
+
+pub fn sys_mmap(
+    start: usize,
+    length: usize,
+    prot: usize,
+    flags: usize,
+    fd: isize,
+    offset: usize,
+) -> isize {
+    let task = current_task().unwrap();
+    task.mmap(start, length, prot, flags, fd, offset)
+}
+
+pub fn sys_munmap(start: usize, length: usize) -> isize {
+    let task = current_task().unwrap();
+    task.munmap(start, length)
 }

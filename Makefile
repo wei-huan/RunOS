@@ -22,7 +22,7 @@ build:
 user:
 	@make build -C $(USER_DIR)
 
-fat32-oscomp: user
+fat32-oscomp:
 ifeq ($(PLATFORM), qemu)
 	@./createfs.sh
 	@cd oscomp && ./addoscompfile2fs.sh qemu
@@ -33,7 +33,7 @@ endif
 run: user
 	@make run -C $(OS_DIR)
 
-debug: fat32-oscomp
+debug:
 	@make debug -C $(OS_DIR)
 
 gdb:

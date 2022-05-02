@@ -63,10 +63,10 @@ else ifeq ($(PLATFORM), k210)
 endif
 
 env:
-	@(rustup target list | grep "riscv64gc-unknown-none-elf (installed)") || rustup target add $(TARGET)
-	@cargo install cargo-binutils --vers =0.3.3
-	@rustup component add rust-src
-	@rustup component add llvm-tools-preview
+	@rustup target add riscv64imac-unknown-none-elf
+# @cargo install cargo-binutils --vers =0.3.3
+# @rustup component add rust-src
+# @rustup component add llvm-tools-preview
 
 build: env switch-check $(KERNEL_BIN)
 
@@ -84,7 +84,6 @@ build: env switch-check $(KERNEL_BIN)
 # 	@sudo dd if=$(FS_IMG) of=$(SDCARD)
 
 kernel:
-	@rustup target add riscv64gc-unknown-none-elf
 	@cp src/linker-$(PLATFORM).ld src/linker.ld
 	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
 	@rm src/linker.ld

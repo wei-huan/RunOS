@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun May  1 13:43:45 2022
+# Make data base, printed on Mon May  2 15:07:36 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:55116
+JOURNAL_STREAM = 8:66565
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ VSCODE_VERBOSE_LOGGING = true
 # makefile (from 'Makefile', line 7)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 2640
+MANAGERPID = 2568
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-59d6d0da-a6c7-4449-b627-afeed14b0759.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-b6321a0d-b1ef-4a21-a586-8c79df83b031.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/bin:/usr/local/cuda-11.6/bin:/home/weihuan/Tools/riscv64-un
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2863,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2863
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2787,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2787
 # makefile (from 'Makefile', line 6)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
@@ -105,7 +105,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 14dcaf1f69234583a633450339f43b95
+INVOCATION_ID = 3315d7a74cd0404fa3bead6d48438dab
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -117,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 6358
+GIO_LAUNCHED_DESKTOP_FILE_PID = 6856
 # automatic
 %F = $(notdir $%)
 # environment
@@ -139,7 +139,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2822
+SSH_AGENT_PID = 2746
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -225,6 +225,8 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -271,13 +273,14 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 6358
+VSCODE_PID = 6856
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=133/1024=13%, Rehash=0, Collisions=28/176=16%
+ 
+# Load=134/1024=13%, Rehash=0, Collisions=28/177=16%
 
 # Pattern-specific Variable Values
 
@@ -290,7 +293,6 @@ LANG = C
 # 21 files, no impossibilities in 1 directories.
 
 # Implicit Rules
- 
 
 # No implicit rules.
 
@@ -363,11 +365,11 @@ all: user
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-04-30 21:14:39.734803638
+#  Last modified 2022-05-01 17:02:59.488663753
 #  File has been updated.
 #  Successfully updated.
 
-debug: fat32-oscomp
+debug:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
@@ -408,7 +410,7 @@ clean:
 	@make clean -C $(USER_DIR)
 	@make clean -C $(OS_DIR)
 
-fat32-oscomp: user
+fat32-oscomp:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
 #  File does not exist.
@@ -438,7 +440,7 @@ disasm:
 	@make disasm -C $(OS_DIR)
 
 # files hash-table stats:
-# Load=16/1024=2%, Rehash=0, Collisions=2/43=5%
+# Load=16/1024=2%, Rehash=0, Collisions=2/41=5%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
@@ -448,9 +450,9 @@ disasm:
 # strcache buffers: 1 (0) / strings = 35 / storage = 289 B / avg = 8 B
 # current buf: size = 8162 B / used = 289 B / count = 35 / avg = 8 B
 
-# strcache performance: lookups = 66 / hit rate = 46%
+# strcache performance: lookups = 64 / hit rate = 45%
 # hash-table stats:
-# Load=35/8192=0%, Rehash=0, Collisions=1/66=2%
-# Finished Make data base on Sun May  1 13:43:45 2022
+# Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
+# Finished Make data base on Mon May  2 15:07:36 2022
 
  

@@ -4,7 +4,7 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{
-    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE
+    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE,
 };
 use crate::platform::MMIO;
 use alloc::string::{String, ToString};
@@ -44,6 +44,7 @@ pub fn kernel_translate(vpn: VirtPageNum) -> Option<PageTableEntry> {
 pub struct AddrSpace {
     pub page_table: PageTable,
     sections: Vec<Section>,
+    mmap_sections: Vec<Section>,
 }
 
 impl AddrSpace {
@@ -51,6 +52,7 @@ impl AddrSpace {
         Self {
             page_table: PageTable::new(),
             sections: Vec::new(),
+            mmap_sections: Vec::new(),
         }
     }
     pub fn get_token(&self) -> usize {
@@ -69,6 +71,18 @@ impl AddrSpace {
             None,
         );
     }
+    pub fn insert_mmap_area(
+        &mut self,
+        name: String,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+        permission: Permission,
+    ) {
+        self.push_mmap_section(
+            Section::new(name, start_va, end_va, MapType::Framed, permission),
+            None,
+        );
+    }
     pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
         if let Some((idx, area)) = self
             .sections
@@ -80,12 +94,30 @@ impl AddrSpace {
             self.sections.remove(idx);
         }
     }
+    pub fn remove_mmap_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
+        if let Some((idx, area)) = self
+            .sections
+            .iter_mut()
+            .enumerate()
+            .find(|(_, area)| area.vpn_range.get_start() == start_vpn)
+        {
+            area.unmap(&mut self.page_table);
+            self.mmap_sections.remove(idx);
+        }
+    }
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         section.map(&mut self.page_table);
         if let Some(data) = data {
             section.copy_data(&mut self.page_table, data, 0);
         }
         self.sections.push(section);
+    }
+    fn push_mmap_section(&mut self, mut section: Section, data: Option<&[u8]>) {
+        section.map(&mut self.page_table);
+        if let Some(data) = data {
+            section.copy_data(&mut self.page_table, data, 0);
+        }
+        self.mmap_sections.push(section);
     }
     fn push_section_with_offset(
         &mut self,
@@ -275,24 +307,10 @@ impl AddrSpace {
         // clear bss section
         user_space.clear_bss_pages();
 
-        // // map user heap with U flags
         let max_end_va: VirtAddr = max_end_vpn.into();
-        let heap_start: usize = max_end_va.into();
-        // //guard page
-        // user_heap_bottom += PAGE_SIZE;
-        // let user_heap_top: usize = user_heap_bottom + USER_HEAP_SIZE;
-        // // println!("user_heap_bottom: 0x{:X}", usize::from(user_heap_bottom));
-        // // println!("user_heap_top: 0x{:X}", usize::from(user_heap_top));
-        // user_space.push_section(
-        //     Section::new(
-        //         ".uheap".to_string(),
-        //         user_heap_bottom.into(),
-        //         user_heap_top.into(),
-        //         MapType::Framed,
-        //         Permission::R | Permission::W | Permission::U,
-        //     ),
-        //     None,
-        // );
+        let mut heap_start: usize = max_end_va.into();
+        //guard page
+        heap_start += PAGE_SIZE;
 
         // map user stack with U flags
         // user stack is set just below the trap_cx
@@ -359,6 +377,19 @@ impl AddrSpace {
                     .copy_from_slice(src_ppn.get_bytes_array());
             }
         }
+        // copy data mmap_sections
+        for area in user_space.mmap_sections.iter() {
+            let new_area = Section::from_another(area);
+            addr_space.push_section(new_area, None);
+            // copy data from another space
+            for vpn in area.vpn_range {
+                let src_ppn = user_space.translate(vpn).unwrap().ppn();
+                let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
+                dst_ppn
+                    .get_bytes_array()
+                    .copy_from_slice(src_ppn.get_bytes_array());
+            }
+        }
         addr_space
     }
     pub fn recycle_data_pages(&mut self) {
@@ -370,6 +401,44 @@ impl AddrSpace {
             satp::write(satp);
             asm!("sfence.vma");
         }
+    }
+    // size 最终会按页对齐
+    pub fn create_heap_section(&mut self, heap_start: usize, size: usize) {
+        // heap_start 本身在task创建时已经按页对齐了
+        let start_va = heap_start.into();
+        let end_va = (heap_start + size).into();
+        self.insert_framed_area(
+            ".heap".to_string(),
+            start_va,
+            end_va,
+            Permission::R | Permission::W | Permission::U,
+        )
+    }
+    // return start_va usize, end_va usize
+    pub fn get_section_range(&self, name: &str) -> (usize, usize) {
+        let sect_iterator = self.sections.iter();
+        for sect in sect_iterator {
+            if sect.name == name {
+                return sect.get_section_range();
+            }
+        }
+        // NULL
+        return (0, 0);
+    }
+    // 如果存在要找的段就调整，不存在就啥都不做
+    pub fn modify_section_end(&mut self, name: &str, new_end_vpn: VirtPageNum) {
+        let sect_iterator = self.sections.iter_mut();
+        for sect in sect_iterator {
+            if sect.name == name {
+                sect.modify_section_end(&mut self.page_table, new_end_vpn);
+            }
+        }
+    }
+    // size 最终会按页对齐
+    pub fn create_mmap_section(&mut self, mmap_start: usize, size: usize, permission: Permission) {
+        let start_va = mmap_start.into();
+        let end_va = (mmap_start + size).into();
+        self.insert_mmap_area(".mmap".to_string(), start_va, end_va, permission)
     }
 }
 
