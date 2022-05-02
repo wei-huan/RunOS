@@ -42,9 +42,17 @@ pub fn sys_getppid() -> isize {
     current_task().unwrap().getppid() as isize
 }
 
-pub fn sys_fork() -> isize {
+//  __clone(func, stack, flags, arg, ptid, tls, ctid)
+//            a0,    a1,    a2,  a3,   a4,  a5,   a6
+// 子进程返回到 func 在用户态实现
+//  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
+pub fn sys_fork(flags: usize, stack_ptr: usize, ptid: usize, ctid: usize, newtls: usize) -> isize {
     let current_task = current_task().unwrap();
     let new_task = current_task.fork();
+    if stack_ptr != 0 {
+        let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
+        trap_cx.set_sp(stack_ptr);
+    }
     let new_pid = new_task.pid.0;
     // modify trap context of new_task, because it returns immediately after switching
     let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
