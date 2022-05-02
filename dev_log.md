@@ -155,11 +155,12 @@ logo
 如果我要实现多线程，那得先把进程执行流的雷排完，不然后续问题会很大
 看了会协程，发现是语言级实现，没必要 os 搞
 clone 简陋的完成
+sbrk 完成
 
 下一步：
 调度执行流优化, 直接返回栈顶有点离谱
 slab 缓存器
-sbrk, mmap, munmap 完善
+mmap, munmap 完善
 文件系统 FAT32
 logo
 idle_task statistic,
