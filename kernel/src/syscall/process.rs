@@ -44,7 +44,7 @@ pub fn sys_getppid() -> isize {
 
 //  __clone(func, stack, flags, arg, ptid, tls, ctid)
 //            a0,    a1,    a2,  a3,   a4,  a5,   a6
-
+// 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
 pub fn sys_fork(flags: usize, stack_ptr: usize, ptid: usize, ctid: usize, newtls: usize) -> isize {
     let current_task = current_task().unwrap();
