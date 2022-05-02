@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun May  1 21:08:16 2022
+# Make data base, printed on Sun May  1 21:56:12 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2640
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-054ffe94-4d13-476a-860d-cb4c6294312d.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-440d3e6d-9862-4ff3-8e1e-4662615c3cdf.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -117,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 114044
+GIO_LAUNCHED_DESKTOP_FILE_PID = 181596
 # automatic
 %F = $(notdir $%)
 # environment
@@ -269,15 +269,16 @@ LC_IDENTIFICATION = zh_CN.UTF-8
 # environment
 LC_ADDRESS = zh_CN.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
+GIO_LAUNCHED_DESKTOP_FILE = /home/weihuan/.config/autostart/plank.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 114044
+VSCODE_PID = 181596
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
+ 
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=28/177=16%
 
@@ -290,7 +291,6 @@ LANG = C
 # . (device 66310, inode 3414746): 21 files, no impossibilities.
 
 # 21 files, no impossibilities in 1 directories.
- 
 
 # Implicit Rules
 
@@ -453,6 +453,6 @@ disasm:
 # strcache performance: lookups = 64 / hit rate = 45%
 # hash-table stats:
 # Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
-# Finished Make data base on Sun May  1 21:08:16 2022
+# Finished Make data base on Sun May  1 21:56:12 2022
 
  
