@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon May  2 15:07:36 2022
+# Make data base, printed on Mon May  2 17:20:31 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2568
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-b6321a0d-b1ef-4a21-a586-8c79df83b031.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-640aa8c5-16cb-4442-a0c0-133d8a4e747f.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -365,7 +365,7 @@ all: user
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-01 17:02:59.488663753
+#  Last modified 2022-05-02 15:41:42.670083607
 #  File has been updated.
 #  Successfully updated.
 
@@ -453,6 +453,6 @@ disasm:
 # strcache performance: lookups = 64 / hit rate = 45%
 # hash-table stats:
 # Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
-# Finished Make data base on Mon May  2 15:07:36 2022
+# Finished Make data base on Mon May  2 17:20:31 2022
 
  

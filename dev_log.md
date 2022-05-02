@@ -132,7 +132,7 @@ logger 彩色优化
 logo
 多用户
 
-今天是2022年4月30日
+今天是2022年5月1日
 brk, mmap, munmap 完成, 但是是很鸡贼的写完的，很多合法性检查都没做
 有个问题，为什么init_proc, shell变得这么慢, 是因为复制回文件系统了吗
 brk 实现 heap 的动态扩容
@@ -149,3 +149,22 @@ shutdown
 logger 彩色优化
 logo
 多用户
+
+今天是2022年5月2日
+学了学 r-core 多线程，觉得很离谱，然后发现 clone 不需要多线程
+如果我要实现多线程，那得先把进程执行流的雷排完，不然后续问题会很大
+clone 完成
+
+下一步：
+调度执行流优化, 直接返回栈顶有点离谱
+slab 缓存器
+sbrk, mmap, munmap 完善
+文件系统 FAT32
+logo
+idle_task statistic,
+shell 退出
+shutdown
+logger 彩色优化
+多线程
+多用户
+多协程
