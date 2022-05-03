@@ -170,3 +170,19 @@ shutdown
 logger 彩色优化
 多线程
 多用户
+
+今天是2022年5月3日
+shell 退出 完成
+logo 完成
+idle_task statistic 完成
+调度执行流优化 完成
+logger 彩色优化完成
+
+下一步：
+slab 缓存器
+hifive unmatched
+mmap, munmap clone 完善
+文件系统 FAT32
+shutdown
+多线程
+多用户

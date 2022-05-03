@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon May  2 17:20:31 2022
+# Make data base, printed on Tue May  3 11:47:39 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:66565
+JOURNAL_STREAM = 8:38883
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ VSCODE_VERBOSE_LOGGING = true
 # makefile (from 'Makefile', line 7)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 2568
+MANAGERPID = 2771
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-640aa8c5-16cb-4442-a0c0-133d8a4e747f.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-c976eb14-7c5e-4a26-8444-7d7a0e90a9ce.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/bin:/usr/local/cuda-11.6/bin:/home/weihuan/Tools/riscv64-un
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2787,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2787
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/3154,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/3154
 # makefile (from 'Makefile', line 6)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
@@ -105,7 +105,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 3315d7a74cd0404fa3bead6d48438dab
+INVOCATION_ID = 3ef6d954092b441fb1c105c36b22bc52
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -117,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 6856
+GIO_LAUNCHED_DESKTOP_FILE_PID = 5692
 # automatic
 %F = $(notdir $%)
 # environment
@@ -139,7 +139,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2746
+SSH_AGENT_PID = 3112
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -273,22 +273,22 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 6856
+VSCODE_PID = 5692
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
- 
 # Load=134/1024=13%, Rehash=0, Collisions=28/177=16%
 
 # Pattern-specific Variable Values
 
 # No pattern-specific variable values.
+ 
 
 # Directories
 
-# . (device 66310, inode 3414746): 21 files, no impossibilities.
+# . (device 66310, inode 23088373): 21 files, no impossibilities.
 
 # 21 files, no impossibilities in 1 directories.
 
@@ -365,7 +365,7 @@ all: user
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-02 15:41:42.670083607
+#  Last modified 2022-05-02 20:45:27.121945531
 #  File has been updated.
 #  Successfully updated.
 
@@ -453,6 +453,6 @@ disasm:
 # strcache performance: lookups = 64 / hit rate = 45%
 # hash-table stats:
 # Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
-# Finished Make data base on Mon May  2 17:20:31 2022
+# Finished Make data base on Tue May  3 11:47:39 2022
 
  

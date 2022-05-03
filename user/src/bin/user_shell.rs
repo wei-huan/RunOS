@@ -18,8 +18,11 @@ pub fn main() -> i32 {
     loop {
         print!("shell >> ");
         read_line(&mut line).unwrap();
+        if line.as_str() == "exit_shell\0" {
+            return 0;
+        }
         // autorun
-        if line.as_str() == "run_testsuites\0" {
+        else if line.as_str() == "run_testsuites\0" {
             let mut testsuits: Vec<&str> = Vec::new();
             testsuits.push("times\0");
             testsuits.push("gettimeofday\0");
