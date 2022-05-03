@@ -55,7 +55,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
-        fs::init_rootfs();
+        // fs::init_rootfs();
         logger::init();
         logger::show_basic_info();
         fs::list_apps();
