@@ -60,6 +60,10 @@ pub fn add_initproc_into_fs() {
         // println!("Already have initproc in FS");
         inode.delete();
     }
+    if let Some(inode) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
+        // println!("Already have init user_shell in FS");
+        inode.delete();
+    }
     //Write apps initproc to disk from mem
     if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
         // println!("Create initproc ");
@@ -72,11 +76,6 @@ pub fn add_initproc_into_fs() {
         // println!("Init_proc OK");
     } else {
         panic!("initproc create fail!");
-    }
-
-    if let Some(inode) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
-        // println!("Already have init user_shell in FS");
-        inode.delete();
     }
     //Write apps user_shell to disk from mem
     if let Some(inode) = open("/", "user_shell", OpenFlags::CREATE, DiskInodeType::File) {

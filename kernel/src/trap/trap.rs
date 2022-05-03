@@ -1,6 +1,7 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
 use crate::cpu::{current_trap_cx, current_user_token};
 // use crate::mm::{kernel_token, kernel_translate};
+use crate::scheduler::go_to_schedule;
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::set_next_trigger;
@@ -9,7 +10,9 @@ use riscv::register::{
     mtvec::TrapMode,
     // satp,
     scause::{self, Exception, Interrupt, Trap},
-    sepc, stval, stvec,
+    sepc,
+    stval,
+    stvec,
 };
 
 global_asm!(include_str!("trap.S"));
@@ -30,8 +33,8 @@ pub fn kernel_trap_handler() {
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             // log::trace!("Supervisor Timer");
-            // set_next_trigger();
-            // go_to_schedule();
+            set_next_trigger();
+            go_to_schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
             log::trace!("boot hart");

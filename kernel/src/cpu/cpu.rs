@@ -12,6 +12,9 @@ pub struct Cpu {
     pub current: Option<Arc<TaskControlBlock>>, // The task running on this cpu, or None.
     intr_depth: usize,                          // 中断嵌套深度
     intr_status: bool,                          // 本层中断状态
+    // statistics
+    pub task_cnt: usize,                        // 有任务次数
+    pub idle_cnt: usize,                        // 没有任务次数
 }
 
 impl Cpu {
@@ -20,6 +23,8 @@ impl Cpu {
             current: None,
             intr_depth: 0,
             intr_status: false,
+            task_cnt: 0,
+            idle_cnt: 0,
         }
     }
     pub fn take_current(&mut self) -> Option<Arc<TaskControlBlock>> {

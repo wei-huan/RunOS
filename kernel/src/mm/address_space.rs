@@ -155,17 +155,17 @@ impl AddrSpace {
         // map trampoline
         kernel_space.map_trampoline();
         // map kernel sections
-        println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        println!(
-            ".trampoline [{:#x}, {:#x})",
-            strampoline as usize, etrampoline as usize
-        );
-        println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
-        println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(
-            ".bss [{:#x}, {:#x})",
-            sbss_with_stack as usize, ebss as usize
-        );
+        // println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        // println!(
+        //     ".trampoline [{:#x}, {:#x})",
+        //     strampoline as usize, etrampoline as usize
+        // );
+        // println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+        // println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+        // println!(
+        //     ".bss [{:#x}, {:#x})",
+        //     sbss_with_stack as usize, ebss as usize
+        // );
         // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(

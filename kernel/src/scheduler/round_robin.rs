@@ -1,6 +1,6 @@
 use super::Scheduler;
 use super::__schedule_new;
-use crate::cpu::take_my_cpu; //
+use crate::cpu::take_my_cpu;
 use crate::sync::interrupt_off;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc};
@@ -32,6 +32,8 @@ impl Scheduler for RoundRobinScheduler {
             // add task cx to current cpu
             let mut cpu = take_my_cpu();
             cpu.current = Some(task);
+            // cpu task count + 1
+            cpu.task_cnt += 1;
             // release cpu manually
             drop(cpu);
             // schedule new task

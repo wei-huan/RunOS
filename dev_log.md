@@ -173,10 +173,10 @@ logger 彩色优化
 
 今天是2022年5月3日
 shell 退出 完成
-改造 init_proc, 如果没有子进程自己也退出
 logo 完成
 idle_task statistic 完成
 调度执行流优化 完成
+改造 init_proc, 如果没有子进程自己也退出
 logger 彩色优化完成
 
 下一步：
