@@ -31,12 +31,12 @@ do
     sudo cp -r ./build/riscv64/${inode} ${FAT32_DIR}/fs/${inode}
 done
 
-# for programname in $(ls ../user/src/bin)
-# do
-#     if [ $programname == "initproc.rs" ] || [ $programname == "user_shell.rs" ]
-#     then
-#     sudo cp ${SELF_TEST_DIR}/${programname%.rs} ${FAT32_DIR}/fs/${programname%.rs}
-#     fi
-# done
+for programname in $(ls ../user/src/bin)
+do
+    if [ $programname == "initproc.rs" ] || [ $programname == "user_shell.rs" ]
+    then
+    sudo cp ${SELF_TEST_DIR}/${programname%.rs} ${FAT32_DIR}/fs/${programname%.rs}
+    fi
+done
 
 sudo umount ${FAT32_DIR}/fs

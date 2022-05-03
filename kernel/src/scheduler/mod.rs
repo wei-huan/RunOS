@@ -100,7 +100,7 @@ pub fn add_initproc_into_fs() {
 }
 
 pub fn add_initproc() {
-    add_initproc_into_fs();
+    // add_initproc_into_fs();
     add_task(INITPROC.clone());
 }
 
