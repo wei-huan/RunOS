@@ -49,7 +49,7 @@ fn clear_bss() {
 }
 
 // qemu opensbi
-#[cfg(all(feature = "qemu", feature = "opensbi"))]
+// #[cfg(all(feature = "qemu", feature = "opensbi"))]
 #[no_mangle]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
@@ -61,8 +61,8 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         // fs::init_rootfs();
         logger::init();
         logger::show_basic_info();
-        fs::list_apps();
         scheduler::add_initproc();
+        fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
@@ -79,7 +79,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 
 // k210 rustsbi
 #[no_mangle]
-// #[cfg(all(feature = "k210", feature = "rustsbi"))]
+#[cfg(all(feature = "k210", feature = "rustsbi"))]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if hartid == 0 {
         clear_bss();

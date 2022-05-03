@@ -56,26 +56,22 @@ pub fn add_initproc_into_fs() {
     let app_start = unsafe { core::slice::from_raw_parts_mut(num_app_ptr.add(1), 3) };
 
     // find if there already exits
-    if let Some(_) = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File) {
+    if let Some(inode) = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File) {
         // println!("Already have initproc in FS");
-        // inode.delete();
+        inode.delete();
+    }
+    //Write apps initproc to disk from mem
+    if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
+        // println!("Create initproc ");
+        let mut data: Vec<&'static mut [u8]> = Vec::new();
+        data.push(unsafe {
+            core::slice::from_raw_parts_mut(app_start[0] as *mut u8, app_start[1] - app_start[0])
+        });
+        // println!("Start write initproc ");
+        inode.write(UserBuffer::new(data));
+        // println!("Init_proc OK");
     } else {
-        //Write apps initproc to disk from mem
-        if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
-            // println!("Create initproc ");
-            let mut data: Vec<&'static mut [u8]> = Vec::new();
-            data.push(unsafe {
-                core::slice::from_raw_parts_mut(
-                    app_start[0] as *mut u8,
-                    app_start[1] - app_start[0],
-                )
-            });
-            // println!("Start write initproc ");
-            inode.write(UserBuffer::new(data));
-            // println!("Init_proc OK");
-        } else {
-            panic!("initproc create fail!");
-        }
+        panic!("initproc create fail!");
     }
 
     if let Some(inode) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
@@ -87,10 +83,7 @@ pub fn add_initproc_into_fs() {
         // println!("Create user_shell ");
         let mut data: Vec<&'static mut [u8]> = Vec::new();
         data.push(unsafe {
-            core::slice::from_raw_parts_mut(
-                app_start[1] as *mut u8,
-                app_start[2] - app_start[1],
-            )
+            core::slice::from_raw_parts_mut(app_start[1] as *mut u8, app_start[2] - app_start[1])
         });
         //data.extend_from_slice(  )
         // println!("Start write user_shell ");

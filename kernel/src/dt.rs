@@ -25,7 +25,7 @@ pub fn fdt_print(fdt: *mut u8) {
     print_node(fdt.find_node("/").unwrap(), 0);
 }
 
-// #[cfg(feature = "k210")]
+#[cfg(feature = "k210")]
 fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let hart_id = hart_id();
@@ -36,7 +36,7 @@ fn fdt_get_timerfreq(fdt_ptr: *const u8) {
 }
 
 
-#[cfg(feature = "qemu")]
+// #[cfg(feature = "qemu")]
 fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let hart_id = hart_id();
