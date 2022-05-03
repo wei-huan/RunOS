@@ -174,12 +174,13 @@ logger 彩色优化
 今天是2022年5月3日
 shell 退出 完成
 logo 完成
-idle_task statistic 完成
-调度执行流优化 完成
-改造 init_proc, 如果没有子进程自己也退出
-logger 彩色优化完成
+idle_task statistic 简陋完成，不支持浮点数指令是啥情况
+发现管态时间中断从trap出来没法恢复，有意思
 
 下一步：
+调度执行流优化
+改造 init_proc, 如果没有子进程自己也退出
+logger 彩色优化
 slab 缓存器
 hifive unmatched
 mmap, munmap clone 完善
