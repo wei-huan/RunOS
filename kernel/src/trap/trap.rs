@@ -32,7 +32,7 @@ pub fn kernel_trap_handler() {
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // log::trace!("Supervisor Timer");
+            log::trace!("Supervisor Timer");
             set_next_trigger();
             go_to_schedule();
         }

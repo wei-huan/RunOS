@@ -163,6 +163,6 @@ __restore:
     .endr
     # back to user stack
     ld sp, 2*8(sp)
-    # Disable timer interrupts
-    csrci sie, 0x10
+    # # Disable timer interrupts
+    # csrci sie, 0x10
     sret
