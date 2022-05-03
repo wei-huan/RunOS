@@ -108,7 +108,7 @@ pub fn init() {
     //     Some("TRACE") => LevelFilter::Trace,
     //     _ => LevelFilter::Off,
     // });
-    log::set_max_level(LevelFilter::Trace);
+    log::set_max_level(LevelFilter::Debug);
 }
 
 fn set_hart_filter(hart_id: usize) {

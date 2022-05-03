@@ -1,7 +1,7 @@
 use super::Scheduler;
 use super::__schedule_new;
 use crate::cpu::take_my_cpu;
-use crate::sync::interrupt_off;
+use crate::timer::disable_timer_interrupt;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc};
 use spin::Mutex;
@@ -20,7 +20,7 @@ impl RoundRobinScheduler {
 
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) -> ! {
-        interrupt_off();
+        disable_timer_interrupt();
         // log::trace!("Start Schedule");
         if let Some(task) = self.fetch_task() {
             // log::trace!("have task");
