@@ -47,7 +47,7 @@ all: user
 	@make all -C $(OS_DIR)
 
 clean:
-	@rm -f fat32.img
+	@rm -f fat32.img disasm.txt
 	@rm -rf ./fs
 	@make clean -C $(USER_DIR)
 	@make clean -C $(OS_DIR)

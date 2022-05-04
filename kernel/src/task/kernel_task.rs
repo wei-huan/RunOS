@@ -1,8 +1,10 @@
 // use crate::cpu::take_my_cpu;
 use crate::timer::enable_timer_interrupt;
+use crate::sync::interrupt_on;
 use core::arch::asm;
 
 pub fn idle_task() -> ! {
+    interrupt_on();
     enable_timer_interrupt();
     // statistics
     // let mut cpu = take_my_cpu();

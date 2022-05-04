@@ -176,6 +176,7 @@ shell 退出 完成
 logo 完成
 idle_task statistic 简陋完成，不支持浮点数指令是啥情况
 发现管态时间中断从trap出来没法恢复，有意思
+放弃了，真的放弃了，彻底放弃supervisor timer调度这个妖孽，返回 rcore-v3 模式, idle_task 也没必要了
 
 下一步：
 调度执行流优化
@@ -188,3 +189,6 @@ mmap, munmap clone 完善
 shutdown
 多线程
 多用户
+
+今天是2022年5月4日
+调度执行流回归 rcore-v3 模式

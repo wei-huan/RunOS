@@ -1,6 +1,7 @@
 mod round_robin;
 
 use crate::config::PAGE_SIZE;
+use crate::cpu::take_my_cpu;
 use crate::fs::{open, DiskInodeType, File, OpenFlags};
 use crate::mm::{add_free, UserBuffer};
 use crate::task::{TaskContext, TaskControlBlock};
@@ -11,7 +12,7 @@ use lazy_static::*;
 use round_robin::RoundRobinScheduler;
 
 pub trait Scheduler {
-    fn schedule(&self) -> !;
+    fn schedule(&self);
     fn add_task(&self, task: Arc<TaskControlBlock>);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;
 }
@@ -20,7 +21,7 @@ lazy_static! {
     pub static ref SCHEDULER: RoundRobinScheduler = RoundRobinScheduler::new();
 }
 
-pub fn schedule() -> ! {
+pub fn schedule() {
     SCHEDULER.schedule()
 }
 
@@ -105,7 +106,7 @@ pub fn add_initproc() {
 }
 
 #[inline(always)]
-pub fn go_to_schedule() -> ! {
+pub fn goto_schedule() -> ! {
     let schedule_task = TaskContext::goto_schedule();
     unsafe { __schedule_new(&schedule_task as *const TaskContext) };
 }
@@ -114,4 +115,20 @@ pub fn go_to_schedule() -> ! {
 pub fn save_current_and_goto_schedule(current_task_cx_ptr: *mut TaskContext) {
     let schedule_task = TaskContext::goto_schedule();
     unsafe { __schedule(current_task_cx_ptr, &schedule_task as *const TaskContext) };
+}
+
+#[inline(always)]
+pub fn go_back_to_schedule() -> ! {
+    let mut cpu = take_my_cpu();
+    let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
+    drop(cpu);
+    unsafe { __schedule_new(idle_task_cx_ptr as *const TaskContext) };
+}
+
+#[inline(always)]
+pub fn save_current_and_go_back_to_schedule(current_task_cx_ptr: *mut TaskContext) {
+    let mut cpu = take_my_cpu();
+    let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
+    drop(cpu);
+    unsafe { __schedule(current_task_cx_ptr, idle_task_cx_ptr as *const TaskContext) };
 }

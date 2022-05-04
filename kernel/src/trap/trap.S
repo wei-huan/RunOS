@@ -11,8 +11,8 @@
     .globl __kernelvec
     .align 4
 __kernelvec:
-    # Disable interrupts
-    csrci sstatus, 2
+    # # Disable interrupts
+    # csrci sstatus, 2
     // make room to save registers.
     addi sp, sp, -256
 
@@ -99,6 +99,8 @@ __kernelvec:
     .globl __restore
     .align 4
 __uservec:
+    # # Disable all interrupts
+    # csrci sstatus, 2
     // get TrapContext sp
     csrrw sp, sscratch, sp
     # now sp->*TrapContext in user space, sscratch->user stack
@@ -163,6 +165,4 @@ __restore:
     .endr
     # back to user stack
     ld sp, 2*8(sp)
-    # # Disable timer interrupts
-    # csrci sie, 0x10
     sret

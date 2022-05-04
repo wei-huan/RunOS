@@ -98,12 +98,14 @@ pub fn set_next_trigger() {
     set_timer(get_time() + timer_freq / TICKS_PER_SEC);
 }
 
+#[inline(always)]
 pub fn enable_timer_interrupt() {
     unsafe {
         sie::set_stimer();
     }
 }
 
+#[inline(always)]
 pub fn disable_timer_interrupt() {
     unsafe {
         sie::clear_stimer();

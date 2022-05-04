@@ -63,7 +63,7 @@ else ifeq ($(PLATFORM), k210)
 endif
 
 env:
-	@rustup target add riscv64imac-unknown-none-elf
+	@rustup target add riscv64gc-unknown-none-elf
 # @cargo install cargo-binutils --vers =0.3.3
 # @rustup component add rust-src
 # @rustup component add llvm-tools-preview
@@ -147,6 +147,7 @@ all: build
 	@cp $(KERNEL_BIN) $(SUBMIT_BIN)
 
 disasm: kernel
+	@ rm -f ../disasm.txt
 	@$(OBJDUMP) $(DISASM) $(KERNEL_ELF) | less >> ../disasm.txt
 
 gdb:

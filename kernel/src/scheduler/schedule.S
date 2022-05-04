@@ -13,7 +13,7 @@ __schedule_new:
     # __schedule_new(
     #     next_task_cx_ptr: *const TaskContext
     # )
-    # restore sstatus of current execution
+    # restore sstatus of next execution
     ld s0, 16(a0)
     csrw sstatus, s0
     # restore ra & s0~s11 of next execution
@@ -46,7 +46,7 @@ __schedule:
     # save sstatus of current execution
     csrr s0, sstatus
     sd s0, 16(a0)
-    # restore sstatus of current execution
+    # restore sstatus of next execution
     ld s0, 16(a1)
     csrw sstatus, s0
     # restore ra & s0~s11 of next execution

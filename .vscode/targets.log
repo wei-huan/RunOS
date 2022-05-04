@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue May  3 14:16:15 2022
+# Make data base, printed on Wed May  4 13:42:03 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:78040
+JOURNAL_STREAM = 8:50880
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ VSCODE_VERBOSE_LOGGING = true
 # makefile (from 'Makefile', line 7)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 3347
+MANAGERPID = 2677
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-bd0dd6d6-9c25-4e19-b7ef-90d98ca1540d.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0b4abb42-323f-4c8a-bc6e-e76191109c63.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/bin:/usr/local/cuda-11.6/bin:/home/weihuan/Tools/riscv64-un
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/3565,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/3565
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2905,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2905
 # makefile (from 'Makefile', line 6)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
@@ -105,7 +105,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = df94a653ed304a339c4005cda6ffdc57
+INVOCATION_ID = a2d7d66c77b6421db7f4c66990b16daf
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -117,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 5186
+GIO_LAUNCHED_DESKTOP_FILE_PID = 4552
 # automatic
 %F = $(notdir $%)
 # environment
@@ -139,7 +139,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 3524
+SSH_AGENT_PID = 2864
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -225,6 +225,8 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -271,13 +273,14 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 5186
+VSCODE_PID = 4552
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=133/1024=13%, Rehash=0, Collisions=28/176=16%
+ 
+# Load=134/1024=13%, Rehash=0, Collisions=28/177=16%
 
 # Pattern-specific Variable Values
 
@@ -285,10 +288,9 @@ LANG = C
 
 # Directories
 
- 
-# . (device 66310, inode 23088373): 21 files, no impossibilities.
+# . (device 66310, inode 23088373): 22 files, no impossibilities.
 
-# 21 files, no impossibilities in 1 directories.
+# 22 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -363,7 +365,7 @@ all: user
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-02 20:45:27.121945531
+#  Last modified 2022-05-03 19:36:28.582185253
 #  File has been updated.
 #  Successfully updated.
 
@@ -445,12 +447,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 35 / storage = 289 B / avg = 8 B
-# current buf: size = 8162 B / used = 289 B / count = 35 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 36 / storage = 300 B / avg = 8 B
+# current buf: size = 8162 B / used = 300 B / count = 36 / avg = 8 B
 
-# strcache performance: lookups = 64 / hit rate = 45%
+# strcache performance: lookups = 65 / hit rate = 44%
 # hash-table stats:
-# Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
-# Finished Make data base on Tue May  3 14:16:15 2022
+# Load=36/8192=0%, Rehash=0, Collisions=1/65=2%
+# Finished Make data base on Wed May  4 13:42:03 2022
 
  

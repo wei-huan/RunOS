@@ -8,14 +8,16 @@ mod task;
 pub use context::TaskContext;
 pub use kernel_task::idle_task;
 pub use pid::{pid_alloc, PidHandle};
-pub use task::{TaskControlBlock, TaskStatus, TaskControlBlockInner};
+pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::take_current_task;
-use crate::scheduler::{save_current_and_goto_schedule, go_to_schedule, add_task, INITPROC};
+use crate::scheduler::{
+    add_task, go_back_to_schedule, save_current_and_go_back_to_schedule, INITPROC,
+};
 use alloc::sync::Arc;
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
-pub fn exit_current_and_run_next(exit_code: i32) -> !{
+pub fn exit_current_and_run_next(exit_code: i32) {
     // take from Processor
     let task = take_current_task().unwrap();
     // **** access current TCB exclusively
@@ -43,7 +45,7 @@ pub fn exit_current_and_run_next(exit_code: i32) -> !{
     // drop task manually to maintain rc correctly
     drop(task);
     // jump to schedule cycle
-    go_to_schedule();
+    go_back_to_schedule();
 }
 
 pub fn suspend_current_and_run_next() {
@@ -61,7 +63,5 @@ pub fn suspend_current_and_run_next() {
     // push back to ready queue.
     add_task(task);
     // jump to schedule cycle
-    save_current_and_goto_schedule(task_cx_ptr);
-    // let schedule_task = TaskContext::goto_schedule();
-    // unsafe { __schedule(task_cx_ptr, &schedule_task as *const TaskContext) };
+    save_current_and_go_back_to_schedule(task_cx_ptr);
 }

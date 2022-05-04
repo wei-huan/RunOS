@@ -25,16 +25,16 @@ fn panic(info: &PanicInfo) -> ! {
 }
 
 #[allow(unused)]
-unsafe fn backtrace() {
+pub unsafe fn backtrace() {
     let mut fp: usize;
     let stop = current_stack_top();
-    println!("stop: {:#X}", stop);
+    // println!("stop: {:#X}", stop);
     asm!("mv {}, s0", out(reg) fp);
     let mut sp: usize;
     asm!("mv {}, sp", out(reg) sp);
-    println!("sp: {:#X}", sp);
+    // println!("sp: {:#X}", sp);
     println!("---START BACKTRACE---");
-    for i in 0..15 {
+    for i in 0..8 {
         if fp == stop {
             break;
         }

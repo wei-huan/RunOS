@@ -1,8 +1,7 @@
 use super::Scheduler;
-use super::__schedule_new;
+use super::__schedule;
 use crate::cpu::take_my_cpu;
-use crate::timer::disable_timer_interrupt;
-use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
+use crate::task::{TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc};
 use spin::Mutex;
 
@@ -19,27 +18,25 @@ impl RoundRobinScheduler {
 }
 
 impl Scheduler for RoundRobinScheduler {
-    fn schedule(&self) -> ! {
-        disable_timer_interrupt();
+    fn schedule(&self) {
         // log::trace!("Start Schedule");
-        if let Some(task) = self.fetch_task() {
-            // log::trace!("have task");
-            let mut task_inner = task.acquire_inner_lock();
-            let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
-            task_inner.task_status = TaskStatus::Running;
-            // release coming task PCB manually
-            drop(task_inner);
-            // add task cx to current cpu
-            let mut cpu = take_my_cpu();
-            cpu.current = Some(task);
-            // cpu task count + 1
-            cpu.task_cnt += 1;
-            // release cpu manually
-            drop(cpu);
-            // schedule new task
-            unsafe { __schedule_new(next_task_cx_ptr) }
-        } else {
-            idle_task();
+        loop {
+            if let Some(task) = self.fetch_task() {
+                log::debug!("have task");
+                let mut task_inner = task.acquire_inner_lock();
+                let next_task_cx_ptr = &task_inner.task_cx as *const TaskContext;
+                task_inner.task_status = TaskStatus::Running;
+                // release coming task PCB manually
+                drop(task_inner);
+                // add task cx to current cpu
+                let mut cpu = take_my_cpu();
+                let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
+                cpu.current = Some(task);
+                // release cpu manually
+                drop(cpu);
+                // schedule new task
+                unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
+            }
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {

@@ -13,6 +13,14 @@ pub struct TaskContext {
 }
 
 impl TaskContext {
+    pub fn zero_init() -> Self {
+        Self {
+            ra: 0,
+            sp: 0,
+            sstatus: 0,
+            s: [0; 12],
+        }
+    }
     // ra 换成 schedule, sp 换成 hart 的栈顶, 避免 incase overwhelm in schedule -> idle_task -> kernel_trap_handler -> supervisor_time -> scheduler loop
     pub fn goto_schedule() -> Self {
         let sstatus = sstatus::read();
