@@ -60,9 +60,9 @@ impl Scheduler for RoundRobinScheduler {
             .min_by_key(|queue| queue.1.lock().queue.len())
             .unwrap();
         //.unwrap_or(&self.ready_queues[0]);
-        if i == 1 {
-            log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
-        }
+        // if i == 1 {
+        //     log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
+        // }
         selected.lock().queue.push_back(task);
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
