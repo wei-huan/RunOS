@@ -47,22 +47,29 @@ impl Scheduler for RoundRobinScheduler {
                 drop(cpu);
                 // schedule new task
                 unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
+            } else {
+                // log::debug!("Hart {} have no task", hart_id());
             }
-            // log::info!("Back to Schedule");
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        let selected = self
+        let (i, selected) = self
             .ready_queues
             .iter()
-            .min_by_key(|queue| queue.lock().queue.len()).unwrap();
-            //.unwrap_or(&self.ready_queues[0]);
+            .enumerate()
+            .min_by_key(|queue| queue.1.lock().queue.len())
+            .unwrap();
+        //.unwrap_or(&self.ready_queues[0]);
+        if i == 1 {
+            log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
+        }
         selected.lock().queue.push_back(task);
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
         self.ready_queues[hart_id()].lock().queue.pop_front()
     }
     fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
+        // log::debug!("Hart {} add task {} to queue {}",hart_id(), task.pid.0, queue_id);
         self.ready_queues[queue_id].lock().queue.push_back(task);
     }
 }
