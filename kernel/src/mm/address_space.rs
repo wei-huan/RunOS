@@ -94,6 +94,7 @@ impl AddrSpace {
             self.sections.remove(idx);
         }
     }
+    #[allow(unused)]
     pub fn remove_area_with_name(&mut self, name: &str) {
         if let Some((idx, area)) = self
             .sections
@@ -235,7 +236,7 @@ impl AddrSpace {
             );
         }
         // unsafe { asm!("fence.i") }
-        println!("mapping kernel finish");
+        // println!("mapping kernel finish");
         kernel_space
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,

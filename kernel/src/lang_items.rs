@@ -18,9 +18,9 @@ fn panic(info: &PanicInfo) -> ! {
     } else {
         log::error!("Panicked: {}", info.message().unwrap());
     }
-    // unsafe {
-    //     backtrace();
-    // }
+    unsafe {
+        backtrace();
+    }
     shutdown()
 }
 
@@ -34,7 +34,7 @@ pub unsafe fn backtrace() {
     asm!("mv {}, sp", out(reg) sp);
     // println!("sp: {:#X}", sp);
     println!("---START BACKTRACE---");
-    for i in 0..8 {
+    for i in 0..15 {
         if fp == stop {
             break;
         }

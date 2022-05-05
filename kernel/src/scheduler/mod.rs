@@ -29,10 +29,10 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
-global_asm!(include_str!("schedule.S"));
+global_asm!(include_str!("switch.S"));
 extern "C" {
-    pub fn __schedule(current_task_cx_ptr: *mut TaskContext, next_task_cx_ptr: *const TaskContext);
-    pub fn __schedule_new(next_task_cx_ptr: *const TaskContext) -> !;
+    pub fn __switch(current_task_cx_ptr: *mut TaskContext, next_task_cx_ptr: *const TaskContext);
+    // pub fn __schedule_new(next_task_cx_ptr: *const TaskContext) -> !;
 }
 
 lazy_static! {
@@ -41,6 +41,39 @@ lazy_static! {
         let v = inode.read_all();
         TaskControlBlock::new(v.as_slice())
     });
+}
+
+
+pub fn add_initproc() {
+    // add_initproc_into_fs();
+    add_task(INITPROC.clone());
+}
+
+// #[inline(always)]
+// pub fn goto_schedule() -> ! {
+//     let schedule_task = TaskContext::goto_schedule();
+//     unsafe { __schedule_new(&schedule_task as *const TaskContext) };
+// }
+
+// #[inline(always)]
+// pub fn save_current_and_goto_schedule(current_task_cx_ptr: *mut TaskContext) {
+//     let schedule_task = TaskContext::goto_schedule();
+//     unsafe { __schedule(current_task_cx_ptr, &schedule_task as *const TaskContext) };
+// }
+
+// pub fn back_to_schedule() -> ! {
+//     let mut cpu = take_my_cpu();
+//     let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
+//     drop(cpu);
+//     unsafe { __schedule_new(idle_task_cx_ptr) };
+// }
+
+pub fn save_current_and_back_to_schedule(current_task_cx_ptr: *mut TaskContext) {
+    let mut cpu = take_my_cpu();
+    let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
+    drop(cpu);
+    // log::debug!("here 1_1");
+    unsafe { __switch(current_task_cx_ptr, idle_task_cx_ptr) };
 }
 
 // Write initproc & user_shell into file system to be executed
@@ -98,37 +131,4 @@ pub fn add_initproc_into_fs() {
         add_free(start_ppn);
         start_ppn += 1;
     }
-}
-
-pub fn add_initproc() {
-    // add_initproc_into_fs();
-    add_task(INITPROC.clone());
-}
-
-#[inline(always)]
-pub fn goto_schedule() -> ! {
-    let schedule_task = TaskContext::goto_schedule();
-    unsafe { __schedule_new(&schedule_task as *const TaskContext) };
-}
-
-#[inline(always)]
-pub fn save_current_and_goto_schedule(current_task_cx_ptr: *mut TaskContext) {
-    let schedule_task = TaskContext::goto_schedule();
-    unsafe { __schedule(current_task_cx_ptr, &schedule_task as *const TaskContext) };
-}
-
-#[inline(always)]
-pub fn go_back_to_schedule() -> ! {
-    let mut cpu = take_my_cpu();
-    let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
-    drop(cpu);
-    unsafe { __schedule_new(idle_task_cx_ptr as *const TaskContext) };
-}
-
-#[inline(always)]
-pub fn save_current_and_go_back_to_schedule(current_task_cx_ptr: *mut TaskContext) {
-    let mut cpu = take_my_cpu();
-    let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
-    drop(cpu);
-    unsafe { __schedule(current_task_cx_ptr, idle_task_cx_ptr as *const TaskContext) };
 }

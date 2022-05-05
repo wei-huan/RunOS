@@ -9,7 +9,7 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
 
-pub fn sys_exit(exit_code: i32) -> !{
+pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
     panic!("Unreachable in sys_exit!");
 }
@@ -249,7 +249,7 @@ pub fn sys_brk(brk_addr: usize) -> isize {
 // increment can be negative
 // return heap size
 // todo test, No test yet
-pub fn sys_sbrk(increment: usize) -> isize {
+pub fn sys_sbrk(increment: isize) -> isize {
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
     let heap_start = inner.heap_start;
@@ -262,19 +262,21 @@ pub fn sys_sbrk(increment: usize) -> isize {
             if increment < 0 {
                 return 0;
             }
-            inner.addrspace.alloc_heap_section(heap_start, increment);
-            inner.heap_pointer = heap_start + increment;
+            inner
+                .addrspace
+                .alloc_heap_section(heap_start, increment as usize);
+            inner.heap_pointer = heap_start + increment as usize;
             return (inner.heap_pointer - heap_start) as isize;
         }
         // 回收 heap 段
-        if inner.heap_pointer + increment <= inner.heap_start {
+        if inner.heap_pointer as isize + increment <= inner.heap_start as isize {
             // todo 回收 .heap 段
             inner.addrspace.dealloc_heap_section();
             return 0;
         } else {
             let (_, top) = inner.addrspace.get_section_range(".heap");
             let top_vpn: VirtPageNum = VirtAddr::from(top).into();
-            let new_top = inner.heap_pointer + increment;
+            let new_top = (inner.heap_pointer as isize + increment) as usize;
             let new_top_vpn: VirtPageNum = VirtAddr::from(new_top).floor().into();
             if top_vpn != new_top_vpn {
                 // 如果超出界限，需要分配新的页

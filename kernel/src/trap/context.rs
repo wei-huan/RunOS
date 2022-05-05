@@ -1,3 +1,4 @@
+use riscv::register::sstatus::{self, SPP};
 #[repr(C)]
 #[derive(Debug)]
 pub struct TrapContext {
@@ -20,10 +21,13 @@ impl TrapContext {
         kernel_sp: usize,
         trap_handler: usize,
     ) -> Self {
+        let mut sstatus = sstatus::read();
         // set CPU privilege to User after trapping back
+        sstatus.set_spp(SPP::User);
+        let sstatus = sstatus.bits();
         let mut cx = Self {
             x: [0; 32],
-            sstatus: 0,
+            sstatus,
             sepc: entry,
             kernel_satp,
             kernel_sp,

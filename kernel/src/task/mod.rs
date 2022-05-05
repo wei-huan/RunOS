@@ -11,10 +11,28 @@ pub use pid::{pid_alloc, PidHandle};
 pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::take_current_task;
-use crate::scheduler::{
-    add_task, go_back_to_schedule, save_current_and_go_back_to_schedule, INITPROC,
-};
+use crate::scheduler::{add_task, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
+
+pub fn suspend_current_and_run_next() {
+    // log::debug!("suspend");
+    // There must be an application running.
+    let task = take_current_task().unwrap();
+    // ---- access current TCB exclusively
+    let mut task_inner = task.acquire_inner_lock();
+    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
+    // Change status to Ready
+    task_inner.task_status = TaskStatus::Ready;
+    drop(task_inner);
+    // ---- release current PCB
+
+    // push back to ready queue.
+    add_task(task);
+    // jump to scheduling cycle
+    // log::debug!("suspend 1");
+    save_current_and_back_to_schedule(task_cx_ptr);
+    // log::debug!("back to suspend");
+}
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32) {
@@ -45,23 +63,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // drop task manually to maintain rc correctly
     drop(task);
     // jump to schedule cycle
-    go_back_to_schedule();
-}
-
-pub fn suspend_current_and_run_next() {
-    // There must be an application running.
-    let task = take_current_task().unwrap();
-    // ---- access current TCB exclusively
-    let mut task_inner = task.acquire_inner_lock();
-    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
-    // Change status to Ready
-    task_inner.task_status = TaskStatus::Ready;
-    // drop inner
-    drop(task_inner);
-    // ---- release current PCB
-
-    // push back to ready queue.
-    add_task(task);
-    // jump to schedule cycle
-    save_current_and_go_back_to_schedule(task_cx_ptr);
+    // we do not have to save task context
+    let mut _unused = TaskContext::zero_init();
+    save_current_and_back_to_schedule(&mut _unused as *mut _);
 }

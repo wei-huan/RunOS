@@ -38,7 +38,7 @@ use core::arch::global_asm;
 use core::sync::atomic::Ordering;
 
 global_asm!(include_str!("entry.asm"));
-global_asm!(include_str!("firm_apps.S"));
+// global_asm!(include_str!("firm_apps.S"));
 
 fn clear_bss() {
     extern "C" {
@@ -59,11 +59,11 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         // fs::init_rootfs();
-        logger::show_logo();
+        // logger::show_logo();
         scheduler::add_initproc();
         logger::init();
-        logger::show_basic_info();
-        fs::list_apps();
+        // logger::show_basic_info();
+        // fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);

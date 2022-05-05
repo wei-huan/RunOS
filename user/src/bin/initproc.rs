@@ -34,5 +34,7 @@ fn main() -> i32 {
     let mut line: String = String::new();
     read_line(&mut line).unwrap();
     println!("{}", line);
+
+    // loop{}
     0
 }

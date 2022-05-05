@@ -50,8 +50,8 @@ __kernelvec:
     sd t6, 240(sp)
 
     # Reenable interrupts after sret (set SPIE)
-    li t0, 1 << 5
-    csrs sstatus, t0
+    # li t0, 1 << 5
+    # csrs sstatus, t0
 
     // call the Rust trap handler in trap.rs
     call kernel_trap_handler
@@ -97,7 +97,7 @@ __kernelvec:
     .section .text.trampoline
     .globl __uservec
     .globl __restore
-    .align 4
+    .align 2
 __uservec:
     # # Disable all interrupts
     # csrci sstatus, 2
@@ -117,8 +117,8 @@ __uservec:
         .set n, n+1
     .endr
     # Disable timer interrupts, clear STIE bit
-    li t0, 1 << 5
-    csrc sie, t0
+    # li t0, 1 << 5
+    # csrc sie, t0
     # we can use t0/t1/t2 freely, because they have been saved in TrapContext
     csrr t0, sstatus
     csrr t1, sepc
@@ -153,8 +153,8 @@ __restore:
     csrw sstatus, t0
     csrw sepc, t1
     # Enable timer interrupts, set STIE bit
-    li t0, 1 << 5
-    csrs sie, t0
+    # li t0, 1 << 5
+    # csrs sie, t0
     # restore general purpose registers except x0/sp/tp
     ld x1, 1*8(sp)
     ld x3, 3*8(sp)

@@ -3,6 +3,7 @@ use crate::timer::enable_timer_interrupt;
 use crate::sync::interrupt_on;
 use core::arch::asm;
 
+#[allow(unused)]
 pub fn idle_task() -> ! {
     interrupt_on();
     enable_timer_interrupt();

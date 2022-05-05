@@ -23,7 +23,6 @@ pub fn boot_all_harts(my_hartid: usize) {
     }
     BOOT_HARTID.store(my_hartid, Ordering::Relaxed);
     SMP_START.store(true, Ordering::Relaxed);
-    // remote_fence_i();
     let ncpu = CPU_NUMS.load(Ordering::Acquire);
     for i in 0..ncpu {
         if i != my_hartid {
