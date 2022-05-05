@@ -14,8 +14,8 @@ use round_robin::RoundRobinScheduler;
 pub trait Scheduler {
     fn schedule(&self);
     fn add_task(&self, task: Arc<TaskControlBlock>);
-    fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;
+    // fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize);
 }
 
 lazy_static! {
@@ -32,6 +32,10 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
 
 pub fn add_task_to_designate_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
     SCHEDULER.add_task_to_designate_queue(task, queue_id);
+}
+
+pub fn have_ready_task() -> bool {
+    SCHEDULER.have_ready_task()
 }
 
 global_asm!(include_str!("schedule.S"));

@@ -26,6 +26,21 @@ impl RoundRobinScheduler {
         }
         Self { ready_queues }
     }
+    pub fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
+        // log::debug!("Hart {} add task {} to queue {}",hart_id(), task.pid.0, queue_id);
+        self.ready_queues[queue_id].lock().queue.push_back(task);
+    }
+    fn queue_len(&self, queue_id: usize) -> usize {
+        self.ready_queues[queue_id].lock().queue.len()
+    }
+    pub fn have_ready_task(&self) -> bool {
+        for i in 0..self.ready_queues.len() {
+            if self.queue_len(i) > 0 {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
 impl Scheduler for RoundRobinScheduler {
@@ -58,8 +73,7 @@ impl Scheduler for RoundRobinScheduler {
             .iter()
             .enumerate()
             .min_by_key(|queue| queue.1.lock().queue.len())
-            .unwrap();
-        //.unwrap_or(&self.ready_queues[0]);
+            .unwrap_or((0, &self.ready_queues[0]));
         // if i == 1 {
         //     log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
         // }
@@ -67,9 +81,5 @@ impl Scheduler for RoundRobinScheduler {
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
         self.ready_queues[hart_id()].lock().queue.pop_front()
-    }
-    fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
-        // log::debug!("Hart {} add task {} to queue {}",hart_id(), task.pid.0, queue_id);
-        self.ready_queues[queue_id].lock().queue.push_back(task);
     }
 }

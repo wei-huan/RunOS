@@ -206,15 +206,18 @@ shutdown
 
 今天是2022年5月5日
 昨天改了一天执行流，改回 rcore-v3 发现还是有和原来一样的问题，那么只能用下一招了
-每个核一个就绪队列，一个任务终身只能在一个核的就绪队列上运行
+每个核一个就绪队列，一个任务终身只能在一个核的就绪队列上运行，这种方法能跑完 testsuites，果然还是不能让
+任务在两个核上横跳
+
+改造 init_proc, 如果没有子进程自己也退出 完成
+shutdown 完成
 
 下一步：
-改造 init_proc, 如果没有子进程自己也退出
+对另一种调度 master 逻辑检查
 logger 彩色优化
 slab 缓存器
 hifive unmatched
-mmap, munmap clone 完善
 文件系统 FAT32
-shutdown
+mmap, munmap clone 完善, 对标志的检查
 多线程
 多用户

@@ -1,7 +1,7 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
-use crate::scheduler::add_task;
+use crate::scheduler::{add_task};
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
 use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times};
 use alloc::string::String;
@@ -164,16 +164,21 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
     // ---- release current PCB automatically
 }
 
-/// If there is not a child process whose pid is same as given, return -1.
-/// Else if there is a child process but it is still running, return -2.
+/// If there is not any adopt child process active on cpu or waiting in any
+/// ready_queue, return 0 to let init_proc know it is waiting for itself to exit
+/// Else If there is not a child process whose pid is same as given, return -1.
+/// Else if there is a child process but it is still running, suspend_current_and_run_next.
 pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
     if option != 0 {
         panic! {"Extended option not support yet..."};
     }
     loop {
         let task = current_task().unwrap();
-        // find a child process
+        // No any child process waiting
+        // if !have_ready_task() && !task.acquire_inner_lock().have_children() && {
 
+        // }
+        // find a child process
         // ---- access current PCB exclusively
         let mut inner = task.acquire_inner_lock();
         if !inner
@@ -203,7 +208,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             }
             return found_pid as isize;
         } else {
-            let wait_pid = task.getpid();
+            // let wait_pid = task.getpid();
             // if wait_pid >= 1 {
             //     log::debug!("Not yet, pid {} still wait", wait_pid);
             // }

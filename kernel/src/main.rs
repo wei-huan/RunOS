@@ -18,6 +18,8 @@ mod fs;
 mod lang_items;
 mod logger;
 mod mm;
+mod logo;
+
 #[cfg(feature = "opensbi")]
 mod opensbi;
 mod platform;
@@ -59,11 +61,11 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         // fs::init_rootfs();
-        // logger::show_logo();
-        logger::init();
         scheduler::add_initproc();
+        logo::show();
+        logger::init();
         logger::show_basic_info();
-        // fs::list_apps();
+        fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);

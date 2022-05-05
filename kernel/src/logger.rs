@@ -144,7 +144,7 @@ pub fn show_basic_info() {
     );
     log::info!(" Spec Version: {}.{}", spec_major, spec_minor);
     log::info!("=== MyOS Info ===");
-    log::info!("MyOS version {}", env!("CARGO_PKG_VERSION"));
+    log::info!(" MyOS version {}", env!("CARGO_PKG_VERSION"));
     // log::info!(
     //     "Boot_Stack_0: [{:#X}, {:#X})",
     //     boot_stack as usize,
@@ -155,18 +155,4 @@ pub fn show_basic_info() {
     //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4,
     //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 2
     // );
-}
-
-
-
-/// .______       __    __  .____     __   .<------ ______---------_______.
-/// |   _  \     |  |  |  | |     \  |  |   .<--- /  ____  \ ---- /       |
-/// |  |_)  |    |  |  |  | |  |\  \ |  |  .<--- /  /    \  \ ---|   (----`
-/// |      /     |  |  |  | |  | \  \|  | .<--- (  (      )  ) ---\   \
-/// |  |\  \----.|  `--'  | |  |  \  V  |  .<--- \  \____/  / -----)   |
-/// | _| `._____| \______/  |__|   \ ___| .<----- \ ______ / -|_______/
-
-pub const LOGO: &str = include_str!("logo.txt");
-pub fn show_logo() {
-    println!("{}", LOGO);
 }
