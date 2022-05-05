@@ -6,9 +6,9 @@
     ld s\n, (\n+2)*8(a1)
 .endm
     .section .text
-    .globl __switch
-__switch:
-    # __switch(
+    .globl __schedule
+__schedule:
+    # __schedule(
     #     current_task_cx_ptr: *mut TaskContext,
     #     next_task_cx_ptr: *const TaskContext
     # )

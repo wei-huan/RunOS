@@ -1,23 +1,30 @@
 use super::Scheduler;
-use super::__switch;
-use crate::cpu::take_my_cpu;
+use super::__schedule;
+use crate::cpu::{hart_id, take_my_cpu};
+use crate::dt::CPU_NUMS;
 use crate::task::{TaskContext, TaskControlBlock, TaskStatus};
-use alloc::{collections::VecDeque, sync::Arc};
+use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
+use core::sync::atomic::Ordering;
 use spin::Mutex;
 
 struct Queue {
-    queue: Mutex<VecDeque<Arc<TaskControlBlock>>>,
+    queue: VecDeque<Arc<TaskControlBlock>>,
 }
 
 pub struct RoundRobinScheduler {
-    ready_queues: Mutex<VecDeque<Queue>>,
+    ready_queues: Vec<Mutex<Queue>>,
 }
 
 impl RoundRobinScheduler {
     pub fn new() -> Self {
-        Self {
-            ready_queues: Mutex::new(VecDeque::new()),
+        let cpu_num = CPU_NUMS.load(Ordering::Acquire);
+        let mut ready_queues: Vec<Mutex<Queue>> = Vec::with_capacity(cpu_num);
+        for _ in 0..cpu_num {
+            ready_queues.push(Mutex::new(Queue {
+                queue: VecDeque::new(),
+            }));
         }
+        Self { ready_queues }
     }
 }
 
@@ -39,15 +46,23 @@ impl Scheduler for RoundRobinScheduler {
                 // release cpu manually
                 drop(cpu);
                 // schedule new task
-                unsafe { __switch(idle_task_cx_ptr, next_task_cx_ptr) }
+                unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
             }
             // log::info!("Back to Schedule");
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        self.ready_queue.lock().push_back(task);
+        let selected = self
+            .ready_queues
+            .iter()
+            .min_by_key(|queue| queue.lock().queue.len()).unwrap();
+            //.unwrap_or(&self.ready_queues[0]);
+        selected.lock().queue.push_back(task);
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
-        self.ready_queue.lock().pop_front()
+        self.ready_queues[hart_id()].lock().queue.pop_front()
+    }
+    fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
+        self.ready_queues[queue_id].lock().queue.push_back(task);
     }
 }

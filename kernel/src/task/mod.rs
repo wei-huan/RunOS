@@ -10,8 +10,8 @@ pub use kernel_task::idle_task;
 pub use pid::{pid_alloc, PidHandle};
 pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
-use crate::cpu::take_current_task;
-use crate::scheduler::{add_task, save_current_and_back_to_schedule, INITPROC};
+use crate::cpu::{take_current_task, hart_id};
+use crate::scheduler::{add_task_to_designate_queue, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
 
 pub fn suspend_current_and_run_next() {
@@ -27,7 +27,7 @@ pub fn suspend_current_and_run_next() {
     // ---- release current PCB
 
     // push back to ready queue.
-    add_task(task);
+    add_task_to_designate_queue(task, hart_id());
     // jump to scheduling cycle
     // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);

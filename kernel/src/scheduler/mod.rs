@@ -14,6 +14,7 @@ use round_robin::RoundRobinScheduler;
 pub trait Scheduler {
     fn schedule(&self);
     fn add_task(&self, task: Arc<TaskControlBlock>);
+    fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;
 }
 
@@ -29,9 +30,13 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
-global_asm!(include_str!("switch.S"));
+pub fn add_task_to_designate_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
+    SCHEDULER.add_task_to_designate_queue(task, queue_id);
+}
+
+global_asm!(include_str!("schedule.S"));
 extern "C" {
-    pub fn __switch(current_task_cx_ptr: *mut TaskContext, next_task_cx_ptr: *const TaskContext);
+    pub fn __schedule(current_task_cx_ptr: *mut TaskContext, next_task_cx_ptr: *const TaskContext);
     // pub fn __schedule_new(next_task_cx_ptr: *const TaskContext) -> !;
 }
 
@@ -42,7 +47,6 @@ lazy_static! {
         TaskControlBlock::new(v.as_slice())
     });
 }
-
 
 pub fn add_initproc() {
     // add_initproc_into_fs();
@@ -73,7 +77,7 @@ pub fn save_current_and_back_to_schedule(current_task_cx_ptr: *mut TaskContext) 
     let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
     drop(cpu);
     // log::debug!("here 1_1");
-    unsafe { __switch(current_task_cx_ptr, idle_task_cx_ptr) };
+    unsafe { __schedule(current_task_cx_ptr, idle_task_cx_ptr) };
 }
 
 // Write initproc & user_shell into file system to be executed
