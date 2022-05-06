@@ -11,6 +11,9 @@ const CPU_NUM: usize = 4;
 // Must be called with interrupts disabled,
 // to prevent race with task being moved
 // to a different CPU.
+
+
+
 #[inline]
 pub fn hart_id() -> usize {
     let id;
@@ -34,3 +37,7 @@ pub fn take_current_task() -> Option<Arc<TaskControlBlock>> {
 pub fn current_task() -> Option<Arc<TaskControlBlock>> {
     take_my_cpu().current()
 }
+
+// pub fn have_task_on_other_cpu() -> bool {
+
+// }

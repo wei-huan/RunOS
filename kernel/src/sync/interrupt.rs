@@ -10,6 +10,7 @@ pub fn interrupt_on() {
 }
 
 // disable device interrupts
+#[allow(unused)]
 #[inline(always)]
 pub fn interrupt_off() {
     unsafe {

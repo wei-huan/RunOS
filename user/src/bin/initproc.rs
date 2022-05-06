@@ -30,8 +30,11 @@ fn main() -> i32 {
 
     // use alloc::string::String;
     // use user::console::read_line;
+    // println!("Init Process");
     // let mut line: String = String::new();
     // read_line(&mut line).unwrap();
     // println!("{}", line);
+
+    // loop{}
     // 0
 }

@@ -63,7 +63,7 @@ else ifeq ($(PLATFORM), k210)
 endif
 
 env:
-	@rustup target add riscv64imac-unknown-none-elf
+	@rustup target add riscv64gc-unknown-none-elf
 # @cargo install cargo-binutils --vers =0.3.3
 # @rustup component add rust-src
 # @rustup component add llvm-tools-preview
@@ -87,7 +87,6 @@ kernel:
 	@cp src/linker-$(PLATFORM).ld src/linker.ld
 	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
 	@rm src/linker.ld
-# RUSTFLAGS="-C link-arg=-Tsrc/linker.ld -g"
 
 $(KERNEL_BIN): kernel
 	@$(OBJCOPY) $(KERNEL_ELF) --strip-all -O binary $@
@@ -97,6 +96,7 @@ ifeq ($(PLATFORM),qemu)
 ifeq ($(SBI),opensbi)
 	@qemu-system-riscv64 \
 		-m 512M \
+    	-cpu rv64 \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
@@ -107,6 +107,7 @@ ifeq ($(SBI),opensbi)
 else
 	@qemu-system-riscv64 \
 		-m 512M \
+        -cpu rv64 \
 		-machine virt \
 		-nographic \
 		-bios $(SBI_IMG) \
@@ -128,6 +129,7 @@ endif
 debug: build
 	@qemu-system-riscv64 \
 		-m 512M \
+        -cpu rv64 \
     	-machine virt \
     	-nographic \
     	-bios $(SBI_IMG) \
@@ -145,6 +147,7 @@ all: build
 	@cp $(KERNEL_BIN) $(SUBMIT_BIN)
 
 disasm: kernel
+	@ rm -f ../disasm.txt
 	@$(OBJDUMP) $(DISASM) $(KERNEL_ELF) | less >> ../disasm.txt
 
 gdb:

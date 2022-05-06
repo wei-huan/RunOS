@@ -23,13 +23,10 @@ pub fn boot_all_harts(my_hartid: usize) {
     }
     BOOT_HARTID.store(my_hartid, Ordering::Relaxed);
     SMP_START.store(true, Ordering::Relaxed);
-    // remote_fence_i();
     let ncpu = CPU_NUMS.load(Ordering::Acquire);
-    for i in 0..ncpu {
-        if i != my_hartid {
-            // priv: 1 for supervisor; 0 for user;
-            hart_start(i, _start as usize, 1).unwrap();
-        }
+    for id in (0..ncpu).filter(|i| *i != my_hartid) {
+        // priv: 1 for supervisor; 0 for user;
+        hart_start(id, _start as usize, 1).unwrap();
     }
 }
 

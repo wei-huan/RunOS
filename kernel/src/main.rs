@@ -18,6 +18,8 @@ mod fs;
 mod lang_items;
 mod logger;
 mod mm;
+mod logo;
+
 #[cfg(feature = "opensbi")]
 mod opensbi;
 mod platform;
@@ -38,7 +40,7 @@ use core::arch::global_asm;
 use core::sync::atomic::Ordering;
 
 global_asm!(include_str!("entry.asm"));
-global_asm!(include_str!("firm_apps.S"));
+// global_asm!(include_str!("firm_apps.S"));
 
 fn clear_bss() {
     extern "C" {
@@ -55,6 +57,36 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         // println!("here 0");
+        trap::init();
+        dt::init(dtb_ptr);
+        mm::boot_init();
+        // fs::init_rootfs();
+        scheduler::add_initproc();
+        logo::show();
+        logger::init();
+        logger::show_basic_info();
+        fs::list_apps();
+        timer::init();
+        // SMP_START will turn to true in this function
+        cpu::boot_all_harts(hartid);
+        // log::info!("here 4");
+        scheduler::schedule();
+    } else {
+        // log::info!("here 5");
+        trap::init();
+        mm::init();
+        timer::init();
+        scheduler::schedule();
+    }
+}
+
+// k210 rustsbi
+#[no_mangle]
+#[cfg(all(feature = "k210", feature = "rustsbi"))]
+fn os_main(hartid: usize, dtb_ptr: *mut u8) {
+    if hartid == 0 {
+        clear_bss();
+        println!("here 0");
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
@@ -76,35 +108,6 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         scheduler::schedule();
     }
 }
-
-// k210 rustsbi
-// #[no_mangle]
-// // #[cfg(all(feature = "k210", feature = "rustsbi"))]
-// fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-//     if hartid == 0 {
-//         clear_bss();
-//         println!("here 0");
-//         trap::init();
-//         dt::init(dtb_ptr);
-//         mm::boot_init();
-//         // fs::init_rootfs();
-//         logger::init();
-//         logger::show_basic_info();
-//         fs::list_apps();
-//         scheduler::add_initproc();
-//         timer::init();
-//         // SMP_START will turn to true in this function
-//         cpu::boot_all_harts(hartid);
-//         // log::info!("here 4");
-//         scheduler::schedule();
-//     } else {
-//         // log::info!("here 5");
-//         trap::init();
-//         mm::init();
-//         timer::init();
-//         scheduler::schedule();
-//     }
-// }
 
 // qemu rustsbi
 #[no_mangle]

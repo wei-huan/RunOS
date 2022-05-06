@@ -2,7 +2,7 @@ use super::current_task;
 use crate::cpu::hart_id;
 use crate::mm::kernel_token;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
-use crate::task::TaskControlBlock;
+use crate::task::{TaskContext, TaskControlBlock};
 use crate::trap::TrapContext;
 use crate::utils::get_boot_stack;
 use alloc::sync::Arc;
@@ -12,6 +12,10 @@ pub struct Cpu {
     pub current: Option<Arc<TaskControlBlock>>, // The task running on this cpu, or None.
     intr_depth: usize,                          // 中断嵌套深度
     intr_status: bool,                          // 本层中断状态
+    idle_task_cx: TaskContext,
+    // statistics
+    pub task_cnt: usize, // 有任务次数
+    pub idle_cnt: usize, // 没有任务次数
 }
 
 impl Cpu {
@@ -20,7 +24,13 @@ impl Cpu {
             current: None,
             intr_depth: 0,
             intr_status: false,
+            idle_task_cx: TaskContext::zero_init(),
+            task_cnt: 0,
+            idle_cnt: 0,
         }
+    }
+    pub fn get_idle_task_cx_ptr(&mut self) -> *mut TaskContext {
+        &mut self.idle_task_cx as *mut _
     }
     pub fn take_current(&mut self) -> Option<Arc<TaskControlBlock>> {
         self.current.take()
@@ -66,10 +76,7 @@ pub fn current_token() -> usize {
 }
 
 pub fn current_trap_cx() -> &'static mut TrapContext {
-    current_task()
-        .unwrap()
-        .acquire_inner_lock()
-        .get_trap_cx()
+    current_task().unwrap().acquire_inner_lock().get_trap_cx()
 }
 
 #[allow(unused)]

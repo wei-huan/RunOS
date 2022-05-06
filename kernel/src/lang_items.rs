@@ -18,21 +18,21 @@ fn panic(info: &PanicInfo) -> ! {
     } else {
         log::error!("Panicked: {}", info.message().unwrap());
     }
-    // unsafe {
-    //     backtrace();
-    // }
+    unsafe {
+        backtrace();
+    }
     shutdown()
 }
 
 #[allow(unused)]
-unsafe fn backtrace() {
+pub unsafe fn backtrace() {
     let mut fp: usize;
     let stop = current_stack_top();
-    println!("stop: {:#X}", stop);
+    // println!("stop: {:#X}", stop);
     asm!("mv {}, s0", out(reg) fp);
     let mut sp: usize;
     asm!("mv {}, sp", out(reg) sp);
-    println!("sp: {:#X}", sp);
+    // println!("sp: {:#X}", sp);
     println!("---START BACKTRACE---");
     for i in 0..15 {
         if fp == stop {

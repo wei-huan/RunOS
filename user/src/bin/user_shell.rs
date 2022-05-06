@@ -18,8 +18,11 @@ pub fn main() -> i32 {
     loop {
         print!("shell >> ");
         read_line(&mut line).unwrap();
+        if line.as_str() == "exit_shell\0" {
+            return 0;
+        }
         // autorun
-        if line.as_str() == "run_testsuites\0" {
+        else if line.as_str() == "run_testsuites\0" {
             let mut testsuits: Vec<&str> = Vec::new();
             testsuits.push("times\0");
             testsuits.push("gettimeofday\0");
@@ -70,6 +73,7 @@ pub fn main() -> i32 {
         } else {
             let pid = fork();
             if pid == 0 {
+                // println!("here_3");
                 // child process
                 if exec(line.as_str(), &[0 as *const u8]) == -1 {
                     println!("Error when executing!");
@@ -77,6 +81,7 @@ pub fn main() -> i32 {
                 }
                 unreachable!();
             } else {
+                // println!("here_4");
                 let mut exit_code: i32 = 0;
                 let exit_pid = waitpid(pid as usize, &mut exit_code);
                 assert_eq!(pid, exit_pid);

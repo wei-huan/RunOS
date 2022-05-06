@@ -15,7 +15,7 @@ struct UTSName {
 impl UTSName {
     pub fn new() -> Self {
         Self {
-            sysname: UTSName::str2u8("MyOS"),
+            sysname: UTSName::str2u8("RunOS"),
             nodename: UTSName::str2u8("Golden Wheel"),
             release: UTSName::str2u8("0.1.0-riscv64"),
             version: UTSName::str2u8("#1 SMP Golden Wheel 0.1.0 (2022-04-24)"),

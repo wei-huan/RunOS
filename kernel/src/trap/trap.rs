@@ -1,15 +1,18 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token};
+use crate::cpu::{current_trap_cx, current_user_token, hart_id};
 // use crate::mm::{kernel_token, kernel_translate};
+// use crate::lang_items::backtrace;
 use crate::syscall::syscall;
-use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
+use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, TIME_TO_SCHEDULE};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use riscv::register::{
     mtvec::TrapMode,
     // satp,
     scause::{self, Exception, Interrupt, Trap},
-    sepc, stval, stvec,
+    sepc,
+    stval,
+    stvec,
 };
 
 global_asm!(include_str!("trap.S"));
@@ -26,11 +29,17 @@ pub fn set_kernel_trap_entry() {
 
 #[no_mangle]
 pub fn kernel_trap_handler() {
+    // unsafe {
+    //     backtrace();
+    // }
     let scause = scause::read();
     match scause.cause() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // log::trace!("Supervisor Timer");
-            // set_next_trigger();
+            log::trace!("Supervisor Timer");
+            set_next_trigger();
+            unsafe {
+                TIME_TO_SCHEDULE[hart_id()] = true;
+            }
             // go_to_schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
@@ -83,12 +92,14 @@ fn set_user_trap_entry() {
 #[no_mangle]
 pub fn user_trap_handler() -> ! {
     set_kernel_trap_entry();
+    // unsafe {
+    //     backtrace();
+    // }
     let scause = scause::read();
     let stval = stval::read();
-    // log::debug!("kstack ptr: 0x{:X}", current_trap_cx().kernel_sp);
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
-            // log::debug!("UserEnvCall");
+            log::trace!("UserEnvCall");
             let mut cx = current_trap_cx();
             // jump to syscall next instruction anyway, avoid re-trigger
             cx.sepc += 4;
@@ -122,7 +133,7 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // log::debug!("User Timer");
+            log::trace!("User Timer");
             set_next_trigger();
             suspend_current_and_run_next();
         }
@@ -134,6 +145,7 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
+    // log::debug!("before trap_return");
     trap_return();
 }
 

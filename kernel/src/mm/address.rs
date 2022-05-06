@@ -190,7 +190,7 @@ impl Step for VirtPageNum {
         Some(VirtPageNum::from(start.0 + count))
     }
     fn backward_checked(start: Self, count: usize) -> Option<Self> {
-        if start.0 - count >= 0 {
+        if start.0 >= count {
             Some(VirtPageNum::from(start.0 - count))
         } else {
             panic!("Negative VirtPageNum!")

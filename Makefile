@@ -22,7 +22,7 @@ build:
 user:
 	@make build -C $(USER_DIR)
 
-fat32-oscomp:
+fat32-oscomp: user
 ifeq ($(PLATFORM), qemu)
 	@./createfs.sh
 	@cd oscomp && ./addoscompfile2fs.sh qemu
@@ -30,7 +30,7 @@ else
 	@cd oscomp && ./addoscompfile2fs.sh k210
 endif
 
-run: user
+run:
 	@make run -C $(OS_DIR)
 
 debug:
@@ -46,7 +46,7 @@ all: user
 	@make all -C $(OS_DIR)
 
 clean:
-	@rm -f fat32.img
+	@rm -f fat32.img disasm.txt
 	@rm -rf ./fs
 	@make clean -C $(USER_DIR)
 	@make clean -C $(OS_DIR)

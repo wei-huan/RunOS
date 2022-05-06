@@ -94,6 +94,18 @@ impl AddrSpace {
             self.sections.remove(idx);
         }
     }
+    #[allow(unused)]
+    pub fn remove_area_with_name(&mut self, name: &str) {
+        if let Some((idx, area)) = self
+            .sections
+            .iter_mut()
+            .enumerate()
+            .find(|(_, area)| area.name == name)
+        {
+            area.unmap(&mut self.page_table);
+            self.sections.remove(idx);
+        }
+    }
     pub fn remove_mmap_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
         if let Some((idx, area)) = self
             .sections
@@ -144,17 +156,17 @@ impl AddrSpace {
         // map trampoline
         kernel_space.map_trampoline();
         // map kernel sections
-        println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
-        println!(
-            ".trampoline [{:#x}, {:#x})",
-            strampoline as usize, etrampoline as usize
-        );
-        println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
-        println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
-        println!(
-            ".bss [{:#x}, {:#x})",
-            sbss_with_stack as usize, ebss as usize
-        );
+        // println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
+        // println!(
+        //     ".trampoline [{:#x}, {:#x})",
+        //     strampoline as usize, etrampoline as usize
+        // );
+        // println!(".rodata [{:#x}, {:#x})", srodata as usize, erodata as usize);
+        // println!(".data [{:#x}, {:#x})", sdata as usize, edata as usize);
+        // println!(
+        //     ".bss [{:#x}, {:#x})",
+        //     sbss_with_stack as usize, ebss as usize
+        // );
         // println!("mapping .text section");
         kernel_space.push_section(
             Section::new(
@@ -224,7 +236,7 @@ impl AddrSpace {
             );
         }
         // unsafe { asm!("fence.i") }
-        println!("mapping kernel finish");
+        // println!("mapping kernel finish");
         kernel_space
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
@@ -403,7 +415,7 @@ impl AddrSpace {
         }
     }
     // size 最终会按页对齐
-    pub fn create_heap_section(&mut self, heap_start: usize, size: usize) {
+    pub fn alloc_heap_section(&mut self, heap_start: usize, size: usize) {
         // heap_start 本身在task创建时已经按页对齐了
         let start_va = heap_start.into();
         let end_va = (heap_start + size).into();
@@ -413,6 +425,18 @@ impl AddrSpace {
             end_va,
             Permission::R | Permission::W | Permission::U,
         )
+    }
+    // size 最终会按页对齐
+    pub fn dealloc_heap_section(&mut self) {
+        if let Some((idx, area)) = self
+            .sections
+            .iter_mut()
+            .enumerate()
+            .find(|(_, area)| area.name == ".heap")
+        {
+            area.unmap(&mut self.page_table);
+            self.sections.remove(idx);
+        }
     }
     // return start_va usize, end_va usize
     pub fn get_section_range(&self, name: &str) -> (usize, usize) {

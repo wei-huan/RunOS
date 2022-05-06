@@ -158,14 +158,82 @@ clone 简陋的完成
 sbrk 完成
 
 下一步：
+logo
 调度执行流优化, 直接返回栈顶有点离谱
 slab 缓存器
-mmap, munmap 完善
+hifive unmatched
+mmap, munmap clone 完善
 文件系统 FAT32
-logo
 idle_task statistic,
 shell 退出
 shutdown
 logger 彩色优化
+多线程
+多用户
+
+今天是2022年5月3日
+shell 退出 完成
+logo 完成
+idle_task statistic 简陋完成，不支持浮点数指令是啥情况
+发现管态时间中断从trap出来没法恢复，有意思
+放弃了，真的放弃了，彻底放弃supervisor timer调度这个妖孽，返回 rcore-v3 模式, idle_task 也没必要了
+
+下一步：
+调度执行流优化
+改造 init_proc, 如果没有子进程自己也退出
+logger 彩色优化
+slab 缓存器
+hifive unmatched
+mmap, munmap clone 完善
+文件系统 FAT32
+shutdown
+多线程
+多用户
+
+今天是2022年5月4日
+调度执行流回归 rcore-v3 模式
+
+下一步：
+改造 init_proc, 如果没有子进程自己也退出
+logger 彩色优化
+slab 缓存器
+hifive unmatched
+mmap, munmap clone 完善
+文件系统 FAT32
+shutdown
+多线程
+多用户
+
+今天是2022年5月5日
+昨天改了一天执行流，改回 rcore-v3 发现还是有和原来一样的问题，那么只能用下一招了
+每个核一个就绪队列，一个任务终身只能在一个核的就绪队列上运行，这种方法能跑完 testsuites，果然还是不能让
+任务在两个核上横跳
+
+改造 init_proc, 如果没有子进程自己也退出 完成
+shutdown 完成
+
+下一步：
+对另一种调度 master 逻辑检查
+logger 彩色优化
+slab 缓存器
+hifive unmatched
+文件系统 FAT32
+mmap, munmap clone 完善, 对标志的检查
+多线程
+多用户
+
+今天是2022年5月6日
+多核应该是彻底完成了。还是多就绪队列稳定，难顶。负载均衡再说吧，体系结构不太懂，不好说。
+
+改造 init_proc, 如果没有子进程自己也退出，这个子进程不太好说，因为检查这个要跨核，很麻烦，不如输入 shutdown 命令
+
+接下来的任务应该轻松一些了
+
+下一步：
+logger 彩色优化
+slab 缓存器
+hifive unmatched
+文件系统 FAT32
+mmap, munmap clone 完善, 对标志的检查
 多线程
 多用户
