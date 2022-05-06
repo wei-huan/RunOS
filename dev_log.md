@@ -221,3 +221,19 @@ hifive unmatched
 mmap, munmap clone 完善, 对标志的检查
 多线程
 多用户
+
+今天是2022年5月6日
+多核应该是彻底完成了。还是多就绪队列稳定，难顶。负载均衡再说吧，体系结构不太懂，不好说。
+
+改造 init_proc, 如果没有子进程自己也退出，这个子进程不太好说，因为检查这个要跨核，很麻烦，不如输入 shutdown 命令
+
+接下来的任务应该轻松一些了
+
+下一步：
+logger 彩色优化
+slab 缓存器
+hifive unmatched
+文件系统 FAT32
+mmap, munmap clone 完善, 对标志的检查
+多线程
+多用户
