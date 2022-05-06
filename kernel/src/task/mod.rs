@@ -1,16 +1,16 @@
 mod context;
-mod kernel_stack;
 mod idle_task;
+mod kernel_stack;
 mod pid;
 mod recycle_allocator;
 mod task;
 
 pub use context::TaskContext;
-pub use idle_task::idle_task;
+pub use idle_task::{idle_task, TIME_TO_SCHEDULE};
 pub use pid::{pid_alloc, PidHandle};
 pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
-use crate::cpu::{take_current_task, hart_id};
+use crate::cpu::{hart_id, take_current_task};
 use crate::scheduler::{add_task_to_designate_queue, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
 

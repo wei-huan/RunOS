@@ -2,6 +2,7 @@ use super::Scheduler;
 use super::__schedule;
 use crate::cpu::{hart_id, take_my_cpu};
 use crate::dt::CPU_NUMS;
+use crate::sync::interrupt_off;
 use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use core::sync::atomic::Ordering;
@@ -46,7 +47,7 @@ impl RoundRobinScheduler {
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) {
         loop {
-            // interrupt_off();
+            interrupt_off();
             if let Some(task) = self.fetch_task() {
                 // if hart_id() == 1 {
                 //     log::debug!("have task");
@@ -68,7 +69,7 @@ impl Scheduler for RoundRobinScheduler {
                 // schedule new task
                 unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
             } else {
-                // idle_task();
+                idle_task();
                 // log::debug!("Hart {} have no task", hart_id());
             }
         }

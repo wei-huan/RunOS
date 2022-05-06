@@ -1,9 +1,9 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token};
+use crate::cpu::{current_trap_cx, current_user_token, hart_id};
 // use crate::mm::{kernel_token, kernel_translate};
 // use crate::lang_items::backtrace;
 use crate::syscall::syscall;
-use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
+use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, TIME_TO_SCHEDULE};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use riscv::register::{
@@ -37,6 +37,9 @@ pub fn kernel_trap_handler() {
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             log::trace!("Supervisor Timer");
             set_next_trigger();
+            unsafe {
+                TIME_TO_SCHEDULE[hart_id()] = true;
+            }
             // go_to_schedule();
         }
         Trap::Interrupt(Interrupt::SupervisorSoft) => {
