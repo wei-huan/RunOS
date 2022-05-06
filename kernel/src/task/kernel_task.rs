@@ -5,8 +5,6 @@ use core::arch::asm;
 
 #[allow(unused)]
 pub fn idle_task() -> ! {
-    interrupt_on();
-    enable_timer_interrupt();
     // statistics
     // let mut cpu = take_my_cpu();
     // cpu idle count + 1
@@ -22,6 +20,8 @@ pub fn idle_task() -> ! {
     // println!("task_cnt: {}", task_cnt);
     // let cpu_usage: f32 = task_cnt / (idle_cnt + task_cnt);
     // println!("CPU Usage: {:<3}", cpu_usage);
+    interrupt_on();
+    enable_timer_interrupt();
     log::debug!("NP");  // No Process
     loop {
         unsafe { asm!("wfi") };
