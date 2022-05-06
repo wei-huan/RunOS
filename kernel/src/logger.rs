@@ -43,10 +43,10 @@ impl log::Log for MyLogger {
             return false;
         }
         let mut _mod_path = metadata.target();
-        _mod_path = if _mod_path == "MyOS" {
+        _mod_path = if _mod_path == "RunOS" {
             "kernel"
         } else {
-            _mod_path.trim_start_matches("MyOS::")
+            _mod_path.trim_start_matches("RunOS::")
         };
         true
     }
@@ -62,10 +62,10 @@ impl log::Log for MyLogger {
             .module_path_static()
             .or_else(|| record.module_path())
             .unwrap_or("<n/a>");
-        mod_path = if mod_path == "MyOS" {
+        mod_path = if mod_path == "RunOS" {
             "kernel"
         } else {
-            mod_path.trim_start_matches("MyOS::")
+            mod_path.trim_start_matches("RunOS::")
         };
         let hart_id = hart_id();
         let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
@@ -143,8 +143,8 @@ pub fn show_basic_info() {
         impl_minor
     );
     log::info!(" Spec Version: {}.{}", spec_major, spec_minor);
-    log::info!("=== MyOS Info ===");
-    log::info!(" MyOS version {}", env!("CARGO_PKG_VERSION"));
+    log::info!("=== RunOS Info ===");
+    log::info!(" RunOS version {}", env!("CARGO_PKG_VERSION"));
     // log::info!(
     //     "Boot_Stack_0: [{:#X}, {:#X})",
     //     boot_stack as usize,
