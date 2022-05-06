@@ -7,6 +7,7 @@ USER_TAR_DIR := $(USER_DIR)/target/$(TARGET)/$(MODE)
 OSCOMP_DIR := $(DIR)/oscomp
 OSCOMP_TAR_DIR := $(OSCOMP_DIR)/build/riscv64
 OS_DIR := $(DIR)/kernel
+FS_IMG := $(IMG_DIR)/fs.img
 
 PLATFORM ?= qemu
 
