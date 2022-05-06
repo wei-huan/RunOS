@@ -13,6 +13,9 @@ pub struct Cpu {
     intr_depth: usize,                          // 中断嵌套深度
     intr_status: bool,                          // 本层中断状态
     idle_task_cx: TaskContext,
+    // statistics
+    pub task_cnt: usize, // 有任务次数
+    pub idle_cnt: usize, // 没有任务次数
 }
 
 impl Cpu {
@@ -22,6 +25,8 @@ impl Cpu {
             intr_depth: 0,
             intr_status: false,
             idle_task_cx: TaskContext::zero_init(),
+            task_cnt: 0,
+            idle_cnt: 0,
         }
     }
     pub fn get_idle_task_cx_ptr(&mut self) -> *mut TaskContext {

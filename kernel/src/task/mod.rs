@@ -1,12 +1,12 @@
 mod context;
 mod kernel_stack;
-mod kernel_task;
+mod idle_task;
 mod pid;
 mod recycle_allocator;
 mod task;
 
 pub use context::TaskContext;
-pub use kernel_task::idle_task;
+pub use idle_task::idle_task;
 pub use pid::{pid_alloc, PidHandle};
 pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
