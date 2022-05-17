@@ -12,8 +12,8 @@ pub fn idle_task() {
     cpu.idle_cnt += 1;
     // let idle_cnt: f32 = cpu.idle_cnt as f32;
     // let task_cnt: f32 = cpu.task_cnt as f32;
-    let idle_cnt = cpu.idle_cnt;
-    let task_cnt = cpu.task_cnt;
+    // let idle_cnt = cpu.idle_cnt;
+    // let task_cnt = cpu.task_cnt;
     drop(cpu);
     // log::debug!("idle_cnt: {}", idle_cnt);
     // log::debug!("task_cnt: {}", task_cnt);
