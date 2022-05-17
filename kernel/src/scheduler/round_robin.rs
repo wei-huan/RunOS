@@ -34,6 +34,7 @@ impl RoundRobinScheduler {
     fn queue_len(&self, queue_id: usize) -> usize {
         self.ready_queues[queue_id].lock().queue.len()
     }
+    #[allow(unused)]
     pub fn have_ready_task(&self) -> bool {
         for i in 0..self.ready_queues.len() {
             if self.queue_len(i) > 0 {

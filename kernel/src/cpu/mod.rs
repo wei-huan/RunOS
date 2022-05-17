@@ -17,37 +17,20 @@ pub static SMP_START: AtomicBool = AtomicBool::new(false);
 pub static BOOT_HARTID: AtomicUsize = AtomicUsize::new(0);
 
 // #[cfg(all(feature = "opensbi", feature = "qemu"))]
-pub fn boot_all_harts(my_hartid: usize) {
-    extern "C" {
-        fn _start();
-    }
-    BOOT_HARTID.store(my_hartid, Ordering::Relaxed);
-    SMP_START.store(true, Ordering::Relaxed);
-    let ncpu = CPU_NUMS.load(Ordering::Acquire);
-    for id in (0..ncpu).filter(|i| *i != my_hartid) {
-        // priv: 1 for supervisor; 0 for user;
-        hart_start(id, _start as usize, 1).unwrap();
-    }
-}
-
-// #[cfg(all(feature = "opensbi", feature = "k210"))]
 // pub fn boot_all_harts(my_hartid: usize) {
-//     #[cfg(feature = "k210")]
 //     extern "C" {
-//         fn _warm_start();
+//         fn _start();
 //     }
 //     BOOT_HARTID.store(my_hartid, Ordering::Relaxed);
 //     SMP_START.store(true, Ordering::Relaxed);
 //     let ncpu = CPU_NUMS.load(Ordering::Acquire);
-//     for i in 0..ncpu {
-//         if i != my_hartid {
-//             // priv: 1 for supervisor; 0 for user;
-//             hart_start(i, _warm_start as usize, 1).unwrap();
-//         }
+//     for id in (0..ncpu).filter(|i| *i != my_hartid) {
+//         // priv: 1 for supervisor; 0 for user;
+//         hart_start(id, _start as usize, 1).unwrap();
 //     }
 // }
 
-#[cfg(feature = "k210")]
+// #[cfg(feature = "k210")]
 pub fn boot_all_harts(my_hartid: usize) {
     BOOT_HARTID.store(my_hartid, Ordering::Relaxed);
     SMP_START.store(true, Ordering::Relaxed);

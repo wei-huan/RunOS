@@ -25,7 +25,7 @@ extern "C" {
     fn ebss();
     fn ekernel();
     fn strampoline();
-    fn etrampoline();
+    // fn etrampoline();
 }
 
 lazy_static! {

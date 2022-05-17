@@ -23,6 +23,7 @@ impl TaskContext {
             s: [0; 12],
         }
     }
+    #[allow(unused)]
     // ra 换成 schedule, sp 换成 hart 的栈顶, 避免 incase overwhelm in schedule -> idle_task -> kernel_trap_handler -> supervisor_time -> scheduler loop
     pub fn goto_schedule() -> Self {
         // let sstatus = sstatus::read();

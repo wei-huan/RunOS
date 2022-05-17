@@ -73,9 +73,9 @@ impl TaskControlBlockInner {
     pub fn get_work_path(&self) -> String {
         self.current_path.clone()
     }
-    pub fn have_children(&self) -> bool {
-        self.children.len() > 0
-    }
+    // pub fn have_children(&self) -> bool {
+    //     self.children.len() > 0
+    // }
 }
 
 impl TaskControlBlock {

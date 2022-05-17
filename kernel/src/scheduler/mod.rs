@@ -53,7 +53,7 @@ lazy_static! {
 }
 
 pub fn add_initproc() {
-    // add_initproc_into_fs();
+    add_initproc_into_fs();
     add_task_to_designate_queue(INITPROC.clone(), 0);
 }
 
@@ -126,7 +126,7 @@ pub fn add_initproc_into_fs() {
         data.push(unsafe {
             core::slice::from_raw_parts_mut(app_start[1] as *mut u8, app_start[2] - app_start[1])
         });
-        //data.extend_from_slice(  )
+        //data.extend_from_slice()
         // println!("Start write user_shell ");
         inode.write(UserBuffer::new(data));
         // println!("User_shell OK");
