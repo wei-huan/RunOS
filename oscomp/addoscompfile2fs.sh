@@ -40,3 +40,4 @@ do
 done
 
 sudo umount ${FAT32_DIR}/fs
+sudo rm -rf ${FAT32_DIR}/fs

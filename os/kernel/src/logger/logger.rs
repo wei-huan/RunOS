@@ -1,7 +1,6 @@
-
 use crate::{
     cpu::hart_id,
-    dt::{CPU_NUMS, TIMER_FREQ},
+    dt::TIMER_FREQ,
     timer::get_time,
     utils::{micros, time_parts},
 };
@@ -47,7 +46,6 @@ impl log::Log for MyLogger {
         };
         true
     }
-
     fn log(&self, record: &log::Record) {
         if !self.enabled(record.metadata()) {
             return;
@@ -105,7 +103,6 @@ pub fn init() {
         Some("TRACE") => LevelFilter::Trace,
         _ => LevelFilter::Off,
     });
-
     // log::set_max_level(LevelFilter::Debug);
 }
 

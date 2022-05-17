@@ -19,8 +19,6 @@ BOOTLOADER := $(SBI_IMG)
 # LOG
 LOG ?= DEBUG
 
-# FS
-FS_IMG := ../user/target/$(TARGET)/$(MODE)/fs.img
 # FAT32
 ifeq ($(PLATFORM), k210)
 	FAT32_IMG := $(SDCARD)

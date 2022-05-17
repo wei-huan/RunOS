@@ -1,4 +1,5 @@
 mod logger;
+mod new;
 
 use crate::dt::{CPU_NUMS, TIMER_FREQ};
 #[cfg(not(feature = "rustsbi"))]
@@ -6,6 +7,8 @@ use crate::opensbi::{impl_id, impl_version, spec_version};
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::{impl_id, impl_version, spec_version};
 use core::sync::atomic::Ordering;
+
+pub use logger::init;
 
 // extern "C" {
 //     fn boot_stack();
