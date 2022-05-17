@@ -2,7 +2,7 @@
 # target toolchain
 TARGET := riscv64gc-unknown-none-elf
 MODE := release
-KERNEL_ELF := target/$(TARGET)/$(MODE)/os
+KERNEL_ELF := target/$(TARGET)/$(MODE)/kernel
 KERNEL_BIN := $(KERNEL_ELF).bin
 SDCARD := /dev/sda
 APPS := ../user/src/bin/*
