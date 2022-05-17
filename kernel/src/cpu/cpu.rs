@@ -7,6 +7,7 @@ use crate::trap::TrapContext;
 use crate::utils::get_boot_stack;
 use alloc::sync::Arc;
 
+
 // Per-CPU state
 pub struct Cpu {
     pub current: Option<Arc<TaskControlBlock>>, // The task running on this cpu, or None.
