@@ -17,8 +17,8 @@ mod dt;
 mod fs;
 mod lang_items;
 mod logger;
-mod mm;
 mod logo;
+mod mm;
 
 #[cfg(feature = "opensbi")]
 mod opensbi;
