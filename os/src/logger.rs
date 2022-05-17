@@ -1,11 +1,17 @@
+#[cfg(not(feature = "rustsbi"))]
+use crate::opensbi::{impl_id, impl_version, spec_version};
+#[cfg(feature = "rustsbi")]
+use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
     cpu::hart_id,
-    dt::TIMER_FREQ,
+    dt::{CPU_NUMS, MEM_SIZE, MEM_START, TIMER_FREQ},
     timer::get_time,
     utils::{micros, time_parts},
 };
 use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use log::*;
+use owo_colors::OwoColorize;
+use riscv::register::satp;
 
 pub struct ColorEscape(pub &'static str);
 
@@ -108,4 +114,53 @@ pub fn init() {
 
 fn set_hart_filter(hart_id: usize) {
     HART_FILTER.store(hart_id, Ordering::Relaxed);
+}
+
+// extern "C" {
+//     fn boot_stack();
+//     fn boot_stack_top();
+// }
+
+pub fn show_basic_info() {
+    let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
+    let mem_size = MEM_SIZE.load(Ordering::Relaxed);
+    let mem_start = MEM_START.load(Ordering::Relaxed);
+    let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+    log::info!("{}", "=== Machine Info ===".blue());
+    log::info!(" Total CPUs: {}", n_cpus);
+    log::info!(" RAM: {} MiB @ {:#X}", mem_size, mem_start as usize);
+    log::info!(" Timer Clock: {}Hz", timebase_frequency);
+    log::info!("{}", "=== SBI Implementation ===".blue());
+    let (impl_major, impl_minor) = {
+        let version = impl_version();
+        (version >> 16, version & 0xFFFF)
+    };
+    let (spec_major, spec_minor) = {
+        let version = spec_version();
+        (version.major, version.minor)
+    };
+    log::info!(
+        " Implementor: {:?} (version: {}.{})",
+        impl_id(),
+        impl_major.green(),
+        impl_minor.green()
+    );
+    log::info!(
+        " Spec Version: {}.{}",
+        spec_major.green(),
+        spec_minor.green()
+    );
+    log::info!("{}", "=== RunOS Info ===".blue());
+    log::info!(" RunOS version {}", env!("CARGO_PKG_VERSION").green());
+    log::info!(" Paging scheme: {:?}", satp::read().mode());
+    // log::info!(
+    //     "Boot_Stack_0: [{:#X}, {:#X})",
+    //     boot_stack as usize,
+    //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4
+    // );
+    // log::info!(
+    //     "Boot_Stack_1: [{:#X}, {:#X})",
+    //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 4,
+    //     boot_stack as usize + (boot_stack_top as usize - boot_stack as usize) / 2
+    // );
 }

@@ -7,6 +7,7 @@
 extern crate alloc;
 extern crate fat32;
 extern crate fdt;
+extern crate owo_colors;
 
 #[macro_use]
 mod console;
@@ -61,8 +62,8 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         // fs::init_rootfs();
-        scheduler::add_initproc();
         logo::show();
+        scheduler::add_initproc();
         logger::init();
         logger::show_basic_info();
         fs::list_apps();

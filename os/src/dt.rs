@@ -7,6 +7,8 @@ use fdt::node::FdtNode;
 use fdt::Fdt;
 
 pub static CPU_NUMS: AtomicUsize = AtomicUsize::new(2);
+pub static MEM_SIZE: AtomicUsize = AtomicUsize::new(0);
+pub static MEM_START: AtomicUsize = AtomicUsize::new(0);
 pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(403000000 / 62);
 pub static FDT: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
 // pub static MODEL: AtomicPtr<&str> = AtomicPtr::new(ptr::null_mut());
@@ -54,6 +56,30 @@ fn fdt_get_ncpu(fdt_ptr: *const u8) {
     // println!("n_cpus: {}", n_cpus);
 }
 
+fn fdt_get_ram(fdt_ptr: *const u8) {
+    let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
+    let (mem_size, mem_start) = {
+        let memory = fdt
+            .memory()
+            .regions()
+            .find(|region| {
+                // let start = region.starting_address as usize;
+                // let end = region.starting_address as usize + region.size.unwrap();
+                // let kstart_phys = unsafe {
+                //     let start = kernel_patching::kernel_start();
+                //     kernel_section_v2p(VirtualAddress::from_ptr(start)).as_usize()
+                // };
+                // start <= kstart_phys && kstart_phys <= end
+                true
+            })
+            .unwrap();
+
+        (memory.size.unwrap() / 1024 / 1024, memory.starting_address)
+    };
+    MEM_SIZE.store(mem_size, Ordering::Release);
+    MEM_START.store(mem_start as usize, Ordering::Release);
+}
+
 #[allow(unused)]
 pub fn fdt_get_model(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
@@ -80,5 +106,6 @@ pub fn init(dtb_ptr: *const u8) {
     FDT.store(dtb_ptr as *mut u8, Ordering::Release);
     fdt_get_ncpu(dtb_ptr);
     fdt_get_timerfreq(dtb_ptr);
+    fdt_get_ram(dtb_ptr);
     // fdt_get_model(dtb_ptr);
 }
