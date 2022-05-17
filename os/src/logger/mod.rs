@@ -1,5 +1,4 @@
 mod logger;
-mod new;
 
 use crate::dt::{CPU_NUMS, TIMER_FREQ};
 #[cfg(not(feature = "rustsbi"))]
