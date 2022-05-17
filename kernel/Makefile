@@ -60,13 +60,13 @@ else ifeq ($(PLATFORM), k210)
 	@(which last-k210) || (rm -f last-qemu && touch last-k210 && make clean)
 endif
 
-env:
-	@rustup target add riscv64gc-unknown-none-elf
+# env:
+# 	@rustup target add riscv64gc-unknown-none-elf
 # @cargo install cargo-binutils --vers =0.3.3
 # @rustup component add rust-src
 # @rustup component add llvm-tools-preview
 
-build: env switch-check $(KERNEL_BIN)
+build: switch-check $(KERNEL_BIN) # env
 
 # fat32-img:
 # 	@cd ../fat32-pack && ./createfs.sh
@@ -83,7 +83,7 @@ build: env switch-check $(KERNEL_BIN)
 
 kernel:
 	@cp src/linker-$(PLATFORM).ld src/linker.ld
-	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)"
+	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)" --offline
 	@rm src/linker.ld
 
 $(KERNEL_BIN): kernel
