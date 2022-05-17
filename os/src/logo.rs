@@ -6,7 +6,9 @@
 /// |  |\  \----|  `--'  ||  | \  '  |      .<---_\__\____/ / ______) /
 /// | _| `._____|\______/ |__|  \____|     .<---___\______ /_________/
 
+use owo_colors::OwoColorize;
+
 pub const LOGO: &str = include_str!("logo.txt");
 pub fn show() {
-    println!("{}", LOGO);
+    println!("{}", LOGO.yellow());
 }

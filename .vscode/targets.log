@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue May 17 10:46:09 2022
+# Make data base, printed on Tue May 17 15:25:39 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2586
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-4a2284cb-a635-465d-bab8-175925630c99.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-53b77ed6-4938-4a94-b3ea-a6d35a737b5d.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -145,7 +145,7 @@ ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
 GTK_MODULES = gail:atk-bridge
 # makefile (from 'Makefile', line 9)
-OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/kernel
+OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/os/kernel
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
@@ -229,6 +229,8 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -278,11 +280,10 @@ CONDA_PREFIX = /home/weihuan/anaconda3
 VSCODE_PID = 4082
 # environment
 _CE_CONDA = 
- 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=135/1024=13%, Rehash=0, Collisions=28/178=16%
+# Load=136/1024=13%, Rehash=0, Collisions=28/179=16%
 
 # Pattern-specific Variable Values
 
@@ -290,6 +291,7 @@ LANG = C
 
 # Directories
 
+ 
 # . (device 66310, inode 23088373): 21 files, no impossibilities.
 
 # 21 files, no impossibilities in 1 directories.
@@ -367,7 +369,7 @@ all: user
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-06 20:47:39.562458
+#  Last modified 2022-05-17 15:25:19.904873629
 #  File has been updated.
 #  Successfully updated.
 
@@ -449,12 +451,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 35 / storage = 289 B / avg = 8 B
-# current buf: size = 8162 B / used = 289 B / count = 35 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 36 / storage = 292 B / avg = 8 B
+# current buf: size = 8162 B / used = 292 B / count = 36 / avg = 8 B
 
-# strcache performance: lookups = 64 / hit rate = 45%
+# strcache performance: lookups = 64 / hit rate = 43%
 # hash-table stats:
-# Load=35/8192=0%, Rehash=0, Collisions=1/64=2%
-# Finished Make data base on Tue May 17 10:46:09 2022
+# Load=36/8192=0%, Rehash=0, Collisions=1/64=2%
+# Finished Make data base on Tue May 17 15:25:39 2022
 
  
