@@ -20,7 +20,7 @@ k210-hal = { git = "https://github.com/wyfcyx/k210-hal" }
 k210-soc = { git = "https://github.com/wyfcyx/k210-soc" }
 # myfs = { path = "../myfs" }
 fat32 = { path = "../fat32" }
-log = "0.4.14"
+log = {path = "../dep/log"}
 fdt = {path = "../dep/fdt"}
 owo-colors = {path = "../dep/owo-colors"}
 
