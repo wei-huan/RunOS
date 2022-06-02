@@ -40,7 +40,7 @@ use crate::cpu::SMP_START;
 use crate::cpu::hart_id;
 use crate::owo_colors::OwoColorize;
 use core::arch::global_asm;
-// use core::sync::atomic::Ordering;
+use core::sync::atomic::Ordering;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("firm_apps.S"));
