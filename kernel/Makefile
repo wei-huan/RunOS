@@ -83,7 +83,7 @@ build: switch-check $(KERNEL_BIN) # env
 
 kernel:
 	@cp src/linker-$(PLATFORM).ld src/linker.ld
-	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)" --offline
+	@cargo build --$(MODE) --features "platform-$(PLATFORM)" --features "$(SBI)" #--offline
 	@rm src/linker.ld
 
 $(KERNEL_BIN): kernel

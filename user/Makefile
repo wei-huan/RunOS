@@ -16,7 +16,7 @@ OBJCOPY := rust-objcopy --binary-architecture=riscv64
 # 	@rustup component add llvm-tools-preview
 
 elf: $(APPS) # env
-	@cargo build --release --offline
+	@cargo build --release #--offline
 
 binary: elf
 	@$(foreach elf, $(ELFS), $(OBJCOPY) $(elf) --strip-all -O binary $(patsubst $(TARGET_DIR)/%, $(TARGET_DIR)/%.bin, $(elf));)
