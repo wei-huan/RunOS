@@ -255,13 +255,25 @@ mmap, munmap clone 完善, 对标志的检查
 多线程
 多用户
 
+
 今天是2022年5月18日
 
 下一步：
 hifive unmatched
 文件系统 FAT32
 slab 缓存器
-改造 init_proc
+mmap, munmap clone 完善, 对标志的检查
+多线程
+多用户
+
+今天是2022年6月2日
+写文档
+
+下一步：
+写文档
+文件系统 FAT32
+slab 缓存器
+hifive unmatched
 mmap, munmap clone 完善, 对标志的检查
 多线程
 多用户
