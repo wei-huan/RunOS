@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue May 17 15:25:39 2022
+# Make data base, printed on Thu Jun  2 15:29:16 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:61656
+JOURNAL_STREAM = 8:66652
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -67,7 +67,7 @@ MAKELEVEL := 0
 # environment
 MANDATORY_PATH = /usr/share/gconf/ubuntu.mandatory.path
 # environment
-XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+XDG_DATA_DIRS = /usr/share/ubuntu:/home/weihuan/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
 DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # environment
@@ -75,11 +75,11 @@ VSCODE_VERBOSE_LOGGING = true
 # makefile (from 'Makefile', line 7)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 2586
+MANAGERPID = 2668
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-53b77ed6-4938-4a94-b3ea-a6d35a737b5d.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-6e7463fa-5f11-4a55-9d78-14342fd71579.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/bin:/usr/local/cuda-11.6/bin:/home/weihuan/Tools/riscv64-un
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2810,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2810
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2900,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2900
 # makefile (from 'Makefile', line 6)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
@@ -105,7 +105,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = d49a998d452c49d68d349dfdfcbcb287
+INVOCATION_ID = 564375c677884064af9c506fd3edf40c
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -117,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 4082
+GIO_LAUNCHED_DESKTOP_FILE_PID = 33772
 # automatic
 %F = $(notdir $%)
 # environment
@@ -139,13 +139,13 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 2769
+SSH_AGENT_PID = 2859
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
 GTK_MODULES = gail:atk-bridge
 # makefile (from 'Makefile', line 9)
-OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/os/kernel
+OS_DIR := /home/weihuan/WorkSpace/OS/MyOS/kernel
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
@@ -155,7 +155,7 @@ LD_LIBRARY_PATH = /usr/local/cuda-10.1/lib64
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/57fd6d0195bb9b9d1b49f6da5db789060795de47
+VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/c3511e6c69bb39013c4a4b7b9566ec1ca73fc4d5
 # environment
 LOGNAME = weihuan
 # environment
@@ -213,7 +213,7 @@ MAKE_COMMAND := make
 # environment
 LANGUAGE = en_US:en
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.67.0-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.67.2-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -228,8 +228,6 @@ FS_IMG := /fs.img
 GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
-# environment
-NO_AT_BRIDGE = 1
 # environment
 QT_ACCESSIBILITY = 1
 # environment
@@ -273,17 +271,17 @@ LC_IDENTIFICATION = zh_CN.UTF-8
 # environment
 LC_ADDRESS = zh_CN.UTF-8
 # environment
-GIO_LAUNCHED_DESKTOP_FILE = /home/weihuan/.config/autostart/plank.desktop
+GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 4082
+VSCODE_PID = 33772
 # environment
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=136/1024=13%, Rehash=0, Collisions=28/179=16%
+# Load=135/1024=13%, Rehash=0, Collisions=28/178=16%
 
 # Pattern-specific Variable Values
 
@@ -292,9 +290,9 @@ LANG = C
 # Directories
 
  
-# . (device 66310, inode 23088373): 21 files, no impossibilities.
+# . (device 66310, inode 23088373): 22 files, no impossibilities.
 
-# 21 files, no impossibilities in 1 directories.
+# 22 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -369,7 +367,7 @@ all: user
 # Not a target:
 Makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-05-17 15:25:19.904873629
+#  Last modified 2022-06-02 15:02:21.795564197
 #  File has been updated.
 #  Successfully updated.
 
@@ -451,12 +449,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 36 / storage = 292 B / avg = 8 B
-# current buf: size = 8162 B / used = 292 B / count = 36 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 37 / storage = 296 B / avg = 8 B
+# current buf: size = 8162 B / used = 296 B / count = 37 / avg = 8 B
 
-# strcache performance: lookups = 64 / hit rate = 43%
+# strcache performance: lookups = 65 / hit rate = 43%
 # hash-table stats:
-# Load=36/8192=0%, Rehash=0, Collisions=1/64=2%
-# Finished Make data base on Tue May 17 15:25:39 2022
+# Load=37/8192=0%, Rehash=0, Collisions=1/65=2%
+# Finished Make data base on Thu Jun  2 15:29:16 2022
 
  

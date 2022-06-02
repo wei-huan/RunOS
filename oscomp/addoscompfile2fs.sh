@@ -10,9 +10,8 @@ else
     FAT32_IMG="/dev/sda"
 fi
 
-# sudo chmod -R 777 ${FAT32_IMG}
 sudo umount ${FAT32_IMG}
-# mkfs.vfat -F 32 ${FAT32_IMG}
+# sudo mkfs.vfat -F 32 ${FAT32_IMG}
 
 # 如果文件夹存在
 if test -e ${FAT32_DIR}/fs
