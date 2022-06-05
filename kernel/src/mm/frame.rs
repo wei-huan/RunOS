@@ -2,7 +2,6 @@ extern crate alloc;
 extern crate spin;
 use super::address::{PhysAddr, PhysPageNum};
 use crate::config::MEMORY_END;
-// use crate::sync::Mutex;
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 use core::fmt::{self, Debug, Formatter};

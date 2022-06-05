@@ -15,7 +15,6 @@ pub trait Scheduler {
     fn schedule(&self);
     fn add_task(&self, task: Arc<TaskControlBlock>);
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>>;
-    // fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize);
 }
 
 lazy_static! {

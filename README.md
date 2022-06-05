@@ -2,6 +2,8 @@
 
 [![Author](https://shields.io/badge/Author-wei_huan-red "Author")](https://github.com/wei-huan)[![LICENSE](https://img.shields.io/github/license/JoeyBling/hexo-theme-yilia-plus "LICENSE")](./LICENSE "LICENSE")[![Build Status](https://travis-ci.com/JoeyBling/yilia-plus-demo.svg?branch=master)](https://github.com/wei-huan/RunOS)
 
+[toc]
+
 
 
 一款用Rust语言写的多核 RISC-V (RV64GC) 架构的内核.
@@ -9,6 +11,10 @@
 
 
 本项目是在rCore-Tutorial-v3项目的基础上,借鉴了UltraOS设计的支持多核的操作系统内核,改进了调度实现,实现了真正的多核同步运行.
+
+
+
+**说明: 虽然RunOS看着和rCore-Tutorial-v3差不多,但是提供了多核支持,其实内部改动也很多,实现的同时也在rCore-Tutorial-v3仓库题了PR,帮助修复了Bug.**
 
 
 
@@ -65,6 +71,14 @@ make run PLATFORM=k210 SBI=rustsbi LOG=INFO
 
 
 
+## 文档
+
+[多核设计](./docs/多核设计.md)
+
+[调度逻辑](./docs/调度逻辑.md)
+
+[文件系统](./docs/文件系统.md)
+
 
 
 ## 演示
@@ -80,6 +94,8 @@ make run PLATFORM=k210 SBI=rustsbi LOG=INFO
 ### k210
 
 ![k210](/home/weihuan/WorkSpace/OS/MyOS/picture/k210.gif)
+
+
 
 
 
