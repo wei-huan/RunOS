@@ -88,7 +88,7 @@ make run PLATFORM=k210 SBI=rustsbi LOG=INFO
 
 ### qemu
 
-![qemu](/home/weihuan/WorkSpace/OS/MyOS/picture/qemu.gif)
+![qemu](./picture/qemu.gif)
 
 
 
@@ -96,7 +96,7 @@ make run PLATFORM=k210 SBI=rustsbi LOG=INFO
 
 ### k210
 
-![k210](/home/weihuan/WorkSpace/OS/MyOS/picture/k210.gif)
+![k210](./picture/k210.gif)
 
 
 
