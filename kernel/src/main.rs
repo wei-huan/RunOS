@@ -86,6 +86,39 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 
 // k210 rustsbi
 // #[no_mangle]
+// // #[cfg(all(feature = "k210", feature = "rustsbi"))]
+// fn os_main(hartid: usize, dtb_ptr: *mut u8) {
+//     if hartid == 0 {
+//         clear_bss();
+//         // println!("here 0");
+//         trap::init();
+//         dt::init(dtb_ptr);
+//         mm::boot_init();
+//         // fs::init_rootfs();
+//         logo::show();
+//         logger::init();
+//         logger::show_basic_info();
+//         fs::list_apps();
+//         timer::init();
+//         scheduler::add_initproc();
+//         // SMP_START will turn to true in this function
+//         cpu::boot_all_harts(hartid);
+//         // log::info!("here 4");
+//         scheduler::schedule();
+//     } else {
+//         log::info!(
+//             "{}",
+//             alloc::format!("Hart {} successfully booted", hart_id()).green()
+//         );
+//         trap::init();
+//         mm::init();
+//         timer::init();
+//         scheduler::schedule();
+//     }
+// }
+
+// // qemu rustsbi
+// #[no_mangle]
 // #[cfg(all(feature = "k210", feature = "rustsbi"))]
 // fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 //     if hartid == 0 {

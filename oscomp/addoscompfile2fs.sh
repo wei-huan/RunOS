@@ -11,7 +11,7 @@ else
 fi
 
 sudo umount ${FAT32_IMG}
-# sudo mkfs.vfat -F 32 ${FAT32_IMG}
+sudo mkfs.vfat -F 32 ${FAT32_IMG}
 
 # 如果文件夹存在
 if test -e ${FAT32_DIR}/fs

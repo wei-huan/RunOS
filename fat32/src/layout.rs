@@ -321,7 +321,7 @@ impl ShortDirEntry {
         let min: u32 = ((self.creation_time & 0x07E0) >> 5) as u32;
         let sec: u32 = ((self.creation_time & 0x001F) << 1) as u32; // 秒数需要*2
         let long_sec: u64 =
-            ((((year - 1970) * 365 + month * 30 + day) * 24 + hour) * 3600 + min * 60 + sec) as u64;
+            ((((year - 1980) * 365 + month * 30 + day) * 24 + hour) * 3600 + min * 60 + sec) as u64;
         (year, month, day, hour, min, sec, long_sec)
     }
 
@@ -334,7 +334,7 @@ impl ShortDirEntry {
         let min: u32 = ((self.modification_time & 0x07E0) >> 5) as u32;
         let sec: u32 = ((self.modification_time & 0x001F) << 1) as u32; // 秒数需要*2
         let long_sec: u64 =
-            ((((year - 1970) * 365 + month * 30 + day) * 24 + hour) * 3600 + min * 60 + sec) as u64;
+            ((((year - 1980) * 365 + month * 30 + day) * 24 + hour) * 3600 + min * 60 + sec) as u64;
         (year, month, day, hour, min, sec, long_sec)
     }
 
@@ -347,7 +347,7 @@ impl ShortDirEntry {
         let min: u32 = 0;
         let sec: u32 = 0; // 没有相关信息，默认0
         let long_sec: u64 =
-            ((((year - 1970) * 365 + month * 30 + day) * 24 + hour) * 3600 + min * 60 + sec) as u64;
+            ((((year - 1980) * 365 + month * 30 + day) * 24 + hour) * 3600 + min * 60 + sec) as u64;
         (year, month, day, hour, min, sec, long_sec)
     }
 

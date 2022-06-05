@@ -4,11 +4,10 @@ use riscv::asm::wfi;
 
 pub static mut TIME_TO_SCHEDULE: [bool; 4] = [false; 4];
 
-#[allow(unused)]
 pub fn idle_task() {
     // statistics
     let mut cpu = take_my_cpu();
-    // cpu idle count + 1
+    // cpu idle count + 1;
     cpu.idle_cnt += 1;
     // let idle_cnt: f32 = cpu.idle_cnt as f32;
     // let task_cnt: f32 = cpu.task_cnt as f32;
