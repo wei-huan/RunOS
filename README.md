@@ -24,7 +24,6 @@
 - 更灵活的调度逻辑
 - CPU,内存资源统计
 - Fat32文件系统的简易实现
-- Slab缓存
 - 32个syscall实现
 
 
@@ -82,6 +81,10 @@ make run PLATFORM=k210 SBI=rustsbi LOG=INFO
 
 
 ## 演示
+
+演示的git文件过大可能无法加载,查看请打开picture文件夹的源文件.
+
+
 
 ### qemu
 
