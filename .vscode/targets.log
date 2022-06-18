@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sat Jun 11 14:13:14 2022
+# Make data base, printed on Sat Jun 18 14:08:50 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:127732
+JOURNAL_STREAM = 8:66550
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ VSCODE_VERBOSE_LOGGING = true
 # makefile (from 'Makefile', line 7)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 3530
+MANAGERPID = 3187
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-bd0a8850-685e-4cc5-8035-7c21dab34976.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-d63c6bca-878f-4702-8beb-2667e5a37956.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -93,7 +93,7 @@ PATH = /home/weihuan/bin:/usr/local/cuda-11.3/bin:/home/weihuan/Tools/riscv64-un
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/3762,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/3762
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/3416,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/3416
 # makefile (from 'Makefile', line 6)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
@@ -105,7 +105,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 5ec89abadcab4392b34412431489bca7
+INVOCATION_ID = 6764a6f3d87649b8a700062c4b2fb5f2
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -117,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 15218
+GIO_LAUNCHED_DESKTOP_FILE_PID = 5759
 # automatic
 %F = $(notdir $%)
 # environment
@@ -139,7 +139,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 3721
+SSH_AGENT_PID = 3375
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -155,7 +155,7 @@ LD_LIBRARY_PATH = /usr/local/cuda-11.3/lib64
 # environment
 LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/c3511e6c69bb39013c4a4b7b9566ec1ca73fc4d5
+VSCODE_CODE_CACHE_PATH = /home/weihuan/.config/Code/CachedData/4af164ea3a06f701fe3e89a2bcbb421d2026b68f
 # environment
 LOGNAME = weihuan
 # environment
@@ -213,7 +213,7 @@ MAKE_COMMAND := make
 # environment
 LANGUAGE = en_US:en
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.67.2-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-2f293be5-1.68.0-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -275,7 +275,7 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 15218
+VSCODE_PID = 5759
 # environment
 _CE_CONDA = 
 # environment
@@ -455,6 +455,6 @@ disasm:
 # strcache performance: lookups = 67 / hit rate = 41%
 # hash-table stats:
 # Load=39/8192=0%, Rehash=0, Collisions=1/67=1%
-# Finished Make data base on Sat Jun 11 14:13:14 2022
+# Finished Make data base on Sat Jun 18 14:08:50 2022
 
  

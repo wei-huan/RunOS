@@ -42,8 +42,8 @@ pub trait File: Send + Sync {
 
 pub use finfo::{Dirent, FdSet, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN, *};
 pub use inode::{
-    /* find_par_inode_id, */ ch_dir, clear_cache, init_rootfs, list_apps, list_files, open,
-    DiskInodeType, OSInode, OpenFlags,
+    ch_dir, clear_cache, init_rootfs, list_apps, list_files, open, DiskInodeType, OSInode,
+    OpenFlags,
 };
 pub use mount::MNT_TABLE;
 pub use pipe::{make_pipe, Pipe};

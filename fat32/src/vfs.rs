@@ -4,7 +4,6 @@ use super::{
     layout::*,
     BlockDevice,
     CacheMode,
-    //print
 };
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -36,7 +35,6 @@ impl VFile {
         short_sector: usize,
         short_offset: usize,
         long_pos_vec: Vec<(usize, usize)>,
-        //first_cluster: u32,
         attribute: u8,
         _size: u32,
         fs: Arc<RwLock<FAT32Manager>>,
@@ -778,7 +776,6 @@ impl VFile {
         let mut offset = 0;
         loop {
             if (offset / DIRENT_SZ) % 5 == 0 {
-                // print!("\n");
             }
             let mut tmp_dirent = ShortDirEntry::empty();
             let read_sz = self.read_short_dirent(|short_ent: &ShortDirEntry| {
@@ -840,20 +837,4 @@ impl VFile {
         //self.fs.write().cache_write_back();
         return all_clusters.len();
     }
-
-    /* WAITING */
-    #[allow(unused)]
-    fn remove_file() {}
-
-    /* WAITING */
-    #[allow(unused)]
-    fn remove_dir() {}
 }
-
-/* WAITING */
-#[allow(unused)]
-pub fn fcopy() {}
-
-/* WAITING */
-#[allow(unused)]
-pub fn fmove() {}

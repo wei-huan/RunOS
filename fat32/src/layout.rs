@@ -7,7 +7,6 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
-//use riscv::interrupt::free;
 
 const LEAD_SIGNATURE: u32 = 0x41615252;
 const SECOND_SIGNATURE: u32 = 0x61417272;
@@ -516,9 +515,6 @@ impl ShortDirEntry {
         if current_off >= end {
             return 0;
         }
-        //println!("first cluster = {}",self.first_cluster());
-        // DEBUG: 如果一开始就不在第一个簇，如果buffer不大，会多次进入函数，这里可能会有问题
-        // let cluster_index = manager_reader.cluster_of_offset(offset);
         let (c_clu, c_sec, _) =
             self.get_pos(offset, manager, &manager_reader.get_fat(), block_device);
         //println!("curr_clu = {} sec = {}", c_clu, c_sec);
@@ -527,19 +523,6 @@ impl ShortDirEntry {
         };
         let mut current_cluster = c_clu;
         let mut current_sector = c_sec;
-        /*
-        let mut current_cluster = fat_reader.get_cluster_at(
-            self.first_cluster(),
-            manager_reader.cluster_of_offset(offset) ,
-            Arc::clone(block_device)
-        );
-        println!("in read_at, after get_cluster_at, current_cluster = {}", current_cluster);
-
-        //这里出了问题！！！
-        let mut current_sector = manager_reader.first_sector_of_cluster(current_cluster) + current_off / bytes_per_sector;
-        println!("in read_at current_sector={}", current_sector);
-        */
-
         let mut read_size = 0usize;
         loop {
             // 将偏移量向上对齐扇区大小（一般是512
@@ -579,18 +562,13 @@ impl ShortDirEntry {
             current_off = end_current_block;
             if current_off % bytes_per_cluster == 0 {
                 // 读完一个簇
-                //println!("in read_at");
                 current_cluster =
                     fat_reader.get_next_cluster(current_cluster, Arc::clone(block_device));
                 if current_cluster >= END_CLUSTER {
                     break;
                 } //没有下一个簇
-                  //println!("read at current_cluster = {}", current_cluster);
                   // 计算所在扇区
                 current_sector = manager_reader.first_sector_of_cluster(current_cluster);
-                //println!("read at current_sector = {}", current_sector);
-                //let mut guess = String::new();
-                //std::io::stdin().read_line(&mut guess).expect("Failed to read line");
             } else {
                 current_sector += 1; //没读完一个簇，直接进入下一扇区
             }
@@ -623,28 +601,11 @@ impl ShortDirEntry {
         } else {
             end = (offset + buf.len()).min(self.size as usize);
         }
-        //println!("current offset:{}; end = {}",offset, end);
-        //if current_off >= end {
-        //    return 0;
-        //}
-        //println!("in write_at first_cluster:{}",self.first_cluster());
-        // DEBUG: 如果一开始就不在第一个簇！！
-        /*
-        let mut current_cluster = fat_reader.get_cluster_at(
-            self.first_cluster(),
-            manager_reader.cluster_of_offset(offset) ,
-            Arc::clone(block_device)
-        );
-        //println!("in write_at curr_cluster:{}",current_cluster);
-        let mut current_sector = manager_reader.first_sector_of_cluster(current_cluster) + current_off / bytes_per_sector;
-        */
         let (c_clu, c_sec, _) =
             self.get_pos(offset, manager, &manager_reader.get_fat(), block_device);
         let mut current_cluster = c_clu;
         let mut current_sector = c_sec;
         let mut write_size = 0usize;
-        //println!("in write_at curr_sec:{}",current_sector);
-
         loop {
             // 将偏移量向上对齐扇区大小（一般是512
             let mut end_current_block = (current_off / bytes_per_sector + 1) * bytes_per_sector;
@@ -686,18 +647,13 @@ impl ShortDirEntry {
             current_off = end_current_block;
             if current_off % bytes_per_cluster == 0 {
                 // 读完一个簇
-                //println!("finish writing a cluster");
                 current_cluster =
                     fat_reader.get_next_cluster(current_cluster, Arc::clone(block_device));
                 if current_cluster >= END_CLUSTER {
                     panic!("END_CLUSTER");
                 } //没有下一个簇
                   // 计算所在扇区
-                  //println!("write at current_cluster = {}", current_cluster);
                 current_sector = manager_reader.first_sector_of_cluster(current_cluster);
-                //println!("write at current_sector = {}", current_sector);
-                //let mut guess = String::new();
-                //std::io::stdin().read_line(&mut guess).expect("Failed to read line");
             } else {
                 current_sector += 1; //没读完一个簇，直接进入下一扇区
             }
@@ -1053,8 +1009,6 @@ impl FAT {
         assert_ne!(start_cluster, 0);
         loop {
             let next_cluster = self.get_next_cluster(curr_cluster, block_device.clone());
-            //println!("in fianl cl {};{}", curr_cluster, next_cluster);
-            //assert_ne!(next_cluster, 0);
             if next_cluster >= END_CLUSTER || next_cluster == 0 {
                 return curr_cluster & 0x0FFFFFFF;
             } else {
@@ -1073,8 +1027,6 @@ impl FAT {
         loop {
             v_cluster.push(curr_cluster & 0x0FFFFFFF);
             let next_cluster = self.get_next_cluster(curr_cluster, block_device.clone());
-            //println!("in all, curr = {}, next = {}", curr_cluster, next_cluster);
-            //assert_ne!(next_cluster, 0);
             if next_cluster >= END_CLUSTER || next_cluster == 0 {
                 return v_cluster;
             } else {
