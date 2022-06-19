@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Jun 19 14:26:17 2022
+# Make data base, printed on Sun Jun 19 16:10:28 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 2547
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-8bc3d1c2-8636-4c10-8b5c-d1183ca3f076.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-56d9f77e-0432-418a-9fde-fb656ce03e6e.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -283,9 +283,9 @@ _CE_CONDA =
 # environment
 LANG = C
 # variable set hash-table stats:
- 
 # Load=136/1024=13%, Rehash=0, Collisions=28/179=16%
 
+ 
 # Pattern-specific Variable Values
 
 # No pattern-specific variable values.
@@ -451,12 +451,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 38 / storage = 306 B / avg = 8 B
-# current buf: size = 8162 B / used = 306 B / count = 38 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 38 / storage = 304 B / avg = 8 B
+# current buf: size = 8162 B / used = 304 B / count = 38 / avg = 8 B
 
 # strcache performance: lookups = 66 / hit rate = 42%
 # hash-table stats:
 # Load=38/8192=0%, Rehash=0, Collisions=1/66=2%
-# Finished Make data base on Sun Jun 19 14:26:17 2022
+# Finished Make data base on Sun Jun 19 16:10:28 2022
 
  

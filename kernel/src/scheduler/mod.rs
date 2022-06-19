@@ -45,14 +45,17 @@ extern "C" {
 
 lazy_static! {
     pub static ref INITPROC: Arc<TaskControlBlock> = Arc::new({
+        println!("open start");
         let inode = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File).unwrap();
+        println!("open finish");
         let v = inode.read_all();
         TaskControlBlock::new(v.as_slice())
     });
 }
 
 pub fn add_initproc() {
-    add_initproc_into_fs();
+    println!("here1-0");
+    // add_initproc_into_fs();
     add_task_to_designate_queue(INITPROC.clone(), 0);
 }
 

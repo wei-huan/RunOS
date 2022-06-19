@@ -302,18 +302,13 @@ lazy_static! {
     // 通过 ROOT_INODE 可以实现对 fat32 的操作
     pub static ref ROOT_INODE: Arc<VFile> = {
         // 此处载入文件系统
+        println!("open fs");
         let runfs = Arc::new(RwLock::new(RunFileSystem::new(BLOCK_DEVICE.clone())));
+        println!("get root_dir");
         let root_dir = Arc::new(runfs.read().root_vfile(&runfs));
         root_dir
     };
 }
-
-/*
-lazy_static! {
-    // 目录栈
-    pub static ref DIR_STACK: Vec<Arc<Inode>> = vec![ROOT_INODE.clone()];
-}
-*/
 
 pub fn init_rootfs() {
     // println!("[fs] build rootfs ... start");
@@ -406,8 +401,7 @@ pub fn open(
         }
     };
     let mut pathv: Vec<&str> = path.split('/').collect();
-    // println!("[open] pathv = {:?}", pathv);
-    // print!("\n");
+    println!("[open] pathv = {:?}", pathv);
     // shell应当保证此处输入的path不为空
     let (readable, writable) = flags.read_write();
     if flags.contains(OpenFlags::CREATE) {
@@ -437,6 +431,7 @@ pub fn open(
             if flags.contains(OpenFlags::TRUNC) {
                 // inode.clear();
             }
+            println!("open finish");
             Arc::new(OSInode::new(readable, writable, inode))
         })
     }
