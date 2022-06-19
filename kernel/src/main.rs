@@ -5,7 +5,7 @@
 #![feature(step_trait)]
 
 extern crate alloc;
-extern crate fat32;
+extern crate runfs;
 extern crate fdt;
 extern crate owo_colors;
 

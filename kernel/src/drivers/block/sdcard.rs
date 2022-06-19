@@ -2,7 +2,6 @@
 #![allow(non_camel_case_types)]
 #![allow(unused)]
 
-use spin::Mutex;
 use super::BlockDevice;
 use crate::sync::UPSafeCell;
 use core::convert::TryInto;
@@ -18,6 +17,8 @@ use k210_soc::{
     sysctl,
 };
 use lazy_static::*;
+use runfs::IOError;
+use spin::Mutex;
 
 pub struct SDCard<SPI> {
     spi: SPI,
@@ -750,16 +751,12 @@ impl SDCardWrapper {
 }
 
 impl BlockDevice for SDCardWrapper {
-    fn read_block(&self, block_id: usize, buf: &mut [u8]) {
-        self.0
-            .lock()
-            .read_sector(buf, block_id as u32)
-            .unwrap();
+    fn read_block(&self, block_id: usize, buf: &mut [u8]) -> Result<(), IOError> {
+        self.0.lock().read_sector(buf, block_id as u32).unwrap();
+        Ok(())
     }
-    fn write_block(&self, block_id: usize, buf: &[u8]) {
-        self.0
-            .lock()
-            .write_sector(buf, block_id as u32)
-            .unwrap();
+    fn write_block(&self, block_id: usize, buf: &[u8]) -> Result<(), IOError> {
+        self.0.lock().write_sector(buf, block_id as u32).unwrap();
+        Ok(())
     }
 }

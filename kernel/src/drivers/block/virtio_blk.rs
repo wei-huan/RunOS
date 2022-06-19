@@ -5,6 +5,7 @@ use crate::mm::{
 };
 use alloc::vec::Vec;
 use lazy_static::*;
+use runfs::IOError;
 use spin::Mutex;
 use virtio_drivers::{VirtIOBlk, VirtIOHeader};
 
@@ -29,17 +30,19 @@ impl VirtIOBlock {
 }
 
 impl BlockDevice for VirtIOBlock {
-    fn read_block(&self, block_id: usize, buf: &mut [u8]) {
+    fn read_block(&self, block_id: usize, buf: &mut [u8]) -> Result<(), IOError> {
         self.0
             .lock()
             .read_block(block_id, buf)
             .expect("Error when reading VirtIOBlk");
+        Ok(())
     }
-    fn write_block(&self, block_id: usize, buf: &[u8]) {
+    fn write_block(&self, block_id: usize, buf: &[u8]) -> Result<(), IOError> {
         self.0
             .lock()
             .write_block(block_id, buf)
             .expect("Error when writing VirtIOBlk");
+        Ok(())
     }
 }
 
