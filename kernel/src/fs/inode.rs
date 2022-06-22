@@ -389,6 +389,8 @@ pub fn open(
     flags: OpenFlags,
     type_: DiskInodeType,
 ) -> Option<Arc<OSInode>> {
+    log::debug!("work_path {}", work_path);
+    log::debug!("path {}", path);
     // DEBUG: 相对路径
     let cur_inode = {
         if work_path == "/" {
@@ -408,7 +410,7 @@ pub fn open(
             // create file
             log::debug!("path: {:?}", path);
             let pos = path.rfind("/").unwrap_or(0);
-            let (prev_path, name) = path.split_at(pos + 1);
+            let (prev_path, name) = path.split_at(pos);
             log::debug!("prev_path: {:?}", prev_path);
             if let Some(temp_inode) = cur_inode.find_vfile_bypath(prev_path) {
                 let attribute = {
@@ -425,28 +427,25 @@ pub fn open(
             }
         }
     } else {
-        // println!("start find");
-        cur_inode.find_vfile_byname(path).map(|inode| {
-            // println!("found");
+        cur_inode.find_vfile_bypath(path).map(|inode| {
             if flags.contains(OpenFlags::TRUNC) {
                 // inode.clear();
             }
             // println!("open finish");
-            Arc::new(OSInode::new(readable, writable, Arc::new(inode)))
+            Arc::new(OSInode::new(readable, writable, inode))
         })
         // let inode = cur_inode.find_vfile_byname("initproc").unwrap();
         // Some(Arc::new(OSInode::new(readable, writable, Arc::new(inode))))
     }
 }
 
+/// 切换工作路径, 成功, 返回inode_id, 否则返回-1
 pub fn ch_dir(work_path: &str, path: &str) -> isize {
-    // 切换工作路径
-    // 切换成功，返回inode_id，否则返回-1
     let cur_inode = {
         if work_path == "/" || (path.len() > 0 && path.chars().nth(0).unwrap() == '/') {
             ROOT_INODE.clone()
         } else {
-            //println!("in cd, work_path = {:?}", work_path);
+            //log::debug!("in cd, work_path = {:?}", work_path);
             ROOT_INODE.find_vfile_bypath(work_path).unwrap()
         }
     };
@@ -484,7 +483,6 @@ impl File for OSInode {
         total_read_size
     }
     fn write(&self, buf: UserBuffer) -> usize {
-        //println!("ino_write");
         let mut inner = self.inner.lock();
         let mut total_write_size = 0usize;
         for slice in buf.buffers.iter() {

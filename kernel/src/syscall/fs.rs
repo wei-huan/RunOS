@@ -112,13 +112,12 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
         }
     } else {
         let fd_usz = dirfd as usize;
-        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+        if fd_usz >= inner.fd_table.len() || fd_usz > FD_LIMIT {
             return -1;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
             match &file.fclass {
                 FileClass::File(f) => {
-                    //let oflags = OpenFlags::from_bits(flags).unwrap();
                     // 需要新建文件
                     if oflags.contains(OpenFlags::CREATE) {
                         if let Some(tar_f) = f.create(path.as_str(), DiskInodeType::File) {
@@ -129,7 +128,6 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
                             ));
                             return fd as isize;
                         } else {
-                            //panic!("open failed");
                             return -1;
                         }
                     }
@@ -142,7 +140,6 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
                         ));
                         fd as isize
                     } else {
-                        //panic!("open failed");
                         return -1;
                     }
                 }
@@ -216,6 +213,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
 }
 
 pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
+    log::debug!("sys_fstat fd: {}", fd);
     let token = current_user_token();
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
@@ -362,7 +360,6 @@ pub fn sys_chdir(path: *const u8) -> isize {
 }
 
 pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
-    //return 0;
     //println!("=====================================");
     let token = current_user_token();
     let task = current_task().unwrap();
@@ -373,7 +370,7 @@ pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
     let mut total_len: usize = 0;
     // 使用UserBuffer结构，以便于跨页读写
     let mut userbuf = UserBuffer::new(buf_vec);
-    let mut dirent = Dirent::empty();
+    let mut dirent = Dirent::default();
     if fd == AT_FDCWD {
         let work_path = inner.current_path.clone();
         if let Some(file) = open(
