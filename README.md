@@ -111,3 +111,6 @@ make run PLATFORM=k210 SBI=rustsbi LOG=INFO
 李程浩, 宫浩辰, 任翔宇(UltraOS开发团队)
 
 OpenSbi开发团队
+
+## 版本信息
+最后一代使用 fat32 文件系统的 os
