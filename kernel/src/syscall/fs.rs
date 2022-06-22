@@ -88,7 +88,6 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
-    // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
     let path = translated_str(token, path);
     let mut inner = task.acquire_inner_lock();
 
@@ -100,6 +99,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             oflags,
             DiskInodeType::File,
         ) {
+            log::debug!("open path: {:#?}", path);
             let fd = inner.alloc_fd();
             inner.fd_table[fd] = Some(FileDescripter::new(
                 oflags.contains(OpenFlags::CLOEXEC),
@@ -107,7 +107,6 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             ));
             fd as isize
         } else {
-            //panic!("open failed");
             -1
         }
     } else {
@@ -116,9 +115,10 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             return -1;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
+            log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
             match &file.fclass {
                 FileClass::File(f) => {
-                    //let oflags = OpenFlags::from_bits(flags).unwrap();
+                    log::debug!("FileClass: File");
                     // 需要新建文件
                     if oflags.contains(OpenFlags::CREATE) {
                         if let Some(tar_f) = f.create(path.as_str(), DiskInodeType::File) {
@@ -129,7 +129,6 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
                             ));
                             return fd as isize;
                         } else {
-                            //panic!("open failed");
                             return -1;
                         }
                     }
@@ -142,7 +141,6 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
                         ));
                         fd as isize
                     } else {
-                        //panic!("open failed");
                         return -1;
                     }
                 }
