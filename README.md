@@ -111,3 +111,5 @@ make run PLATFORM=k210 SBI=rustsbi LOG=INFO
 李程浩, 宫浩辰, 任翔宇(UltraOS开发团队)
 
 OpenSbi开发团队
+
+## 版本信息
