@@ -37,19 +37,19 @@ pub const S_IROTH: u32 = 0o0004; //others have read permission
 pub const S_IWOTH: u32 = 0o0002; //others have write permission
 pub const S_IXOTH: u32 = 0o0001; //others have execute permission
 
-#[derive(Debug)]
 #[repr(C)]
+#[derive(Debug)]
 pub struct Dirent {
     pub d_ino: usize,
-    pub d_off: isize,  //到下一个dirent的偏移？？？/ 在目录中的偏移
-    pub d_reclen: u16, //当前dirent长度？？？/ 文件名的长度
+    pub d_off: isize,  // 到下一个dirent的偏移？？？/ 在目录中的偏移
+    pub d_reclen: u16, // 当前dirent长度？？？/ 文件名的长度
     pub d_type: u8,
     pub d_name: [u8; NAME_LIMIT],
 }
 
-impl Dirent {
-    pub fn empty() -> Self {
-        Self {
+impl Default for Dirent {
+    fn default() -> Dirent {
+        Dirent {
             d_ino: 0,
             d_off: 0,
             d_reclen: size_of::<Self>() as u16,
@@ -57,14 +57,15 @@ impl Dirent {
             d_name: [0; NAME_LIMIT],
         }
     }
+}
 
+impl Dirent {
     pub fn new(name: &str, inode: usize, offset: isize, _reclen: u16, d_type: u8) -> Self {
         let mut dirent = Self {
             d_ino: inode,
             d_off: offset,
-            d_reclen: size_of::<Self>() as u16,
             d_type,
-            d_name: [0; NAME_LIMIT],
+            ..Self::default()
         };
         dirent.fill_name(name);
         dirent
@@ -102,6 +103,7 @@ impl Dirent {
 }
 
 #[repr(C)]
+#[derive(Default)]
 pub struct Kstat {
     st_dev: u64,   /* ID of device containing file */
     st_ino: u64,   /* Inode number */
@@ -126,47 +128,20 @@ pub struct Kstat {
 impl Kstat {
     pub fn empty() -> Self {
         Self {
-            st_dev: 0,
-            st_ino: 0,
             st_mode: 0100777,
-            st_nlink: 0,
-            st_uid: 0,
-            st_gid: 0,
-            //st_rdev :0,
-            //__pad   :0,
-            st_size: 0,
             st_blksize: 512,
-            //__pad2       :0,
-            st_blocks: 0,
-            st_atime_sec: 0,
-            st_atime_nsec: 0,
-            st_mtime_sec: 0,
-            st_mtime_nsec: 0,
-            st_ctime_sec: 0,
-            st_ctime_nsec: 0,
+            ..Self::default()
         }
     }
 
     pub fn new_abstract() -> Self {
         Self {
-            st_dev: 5, //5
+            st_dev: 5,
             st_ino: 1,
             st_mode: 0100777,
             st_nlink: 1,
-            st_uid: 0,
-            st_gid: 0,
-            //st_rdev :0x0000000400000040,
-            //__pad   :0,
-            st_size: 0,
             st_blksize: 512,
-            //__pad2       :0,
-            st_blocks: 0,
-            st_atime_sec: 0,
-            st_atime_nsec: 0,
-            st_mtime_sec: 0,
-            st_mtime_nsec: 0,
-            st_ctime_sec: 0,
-            st_ctime_nsec: 0,
+            ..Self::default()
         }
     }
 
@@ -177,20 +152,10 @@ impl Kstat {
         st_ino: u64,
         st_mode: u32,
         st_nlink: u32,
-        //st_uid  :u32,
-        //st_gid  :u32,
-        //st_rdev :u64,
-        //__pad   :u64,
         st_size: i64,
-        //st_blksize   :u32,
-        //__pad2       :i32,
-        //st_blocks    :u64,
         st_atime_sec: i64,
-        //st_atime_nsec:i64,
         st_mtime_sec: i64,
-        //st_mtime_nsec:i64,
         st_ctime_sec: i64,
-        //st_ctime_nsec:i64,
     ) {
         let st_blocks = (st_size as u64 + self.st_blksize as u64 - 1) / self.st_blksize as u64;
         *self = Self {
@@ -198,20 +163,13 @@ impl Kstat {
             st_ino,
             st_mode,
             st_nlink,
-            st_uid: 0,
-            st_gid: 0,
-            //st_rdev :0,
-            //__pad   :0,
-            st_size,
             st_blksize: 512,
-            //__pad2       :0,
+            st_mtime_sec,
+            st_ctime_sec,
+            st_size,
             st_blocks,
             st_atime_sec,
-            st_atime_nsec: 0,
-            st_mtime_sec,
-            st_mtime_nsec: 0,
-            st_ctime_sec,
-            st_ctime_nsec: 0,
+            ..Self::default()
         };
     }
 
@@ -226,8 +184,8 @@ impl Kstat {
     }
 }
 
-#[derive(Debug)]
 #[repr(C)]
+#[derive(Default, Debug)]
 pub struct NewStat {
     /* the edition that can pass bw_test */
     st_dev: u64, /* ID of device containing file */
@@ -272,24 +230,8 @@ pub struct NewStat {
 impl NewStat {
     pub fn empty() -> Self {
         Self {
-            st_dev: 0,
-            //__pad1  :0,
-            st_ino: 0,
-            st_mode: 0,
-            st_nlink: 0,
-            st_uid: 0,
-            st_gid: 0,
-            //st_rdev :0,
-            //__pad2  :0,
-            st_size: 0,
             st_blksize: 512,
-            st_blocks: 0,
-            st_atime_sec: 0,
-            st_atime_nsec: 0,
-            st_mtime_sec: 0,
-            st_mtime_nsec: 0,
-            st_ctime_sec: 0,
-            st_ctime_nsec: 0,
+            ..Self::default()
         }
     }
 
@@ -300,41 +242,25 @@ impl NewStat {
         st_ino: u64,
         st_mode: u32,
         st_nlink: u64,
-        //st_uid  :u32,
-        //st_gid  :u32,
-        //st_rdev :u64,
         st_size: i64,
-        //st_blksize   :u32,
-        //st_blocks    :u64,
         st_atime_sec: i64,
-        //st_atime_nsec:i64,
         st_mtime_sec: i64,
-        //st_mtime_nsec:i64,
         st_ctime_sec: i64,
-        //st_ctime_nsec:i64,
     ) {
         let st_blocks = (st_size as u64 + self.st_blksize as u64 - 1) / self.st_blksize as u64;
 
         *self = Self {
             st_dev,
-            //__pad1  :0,
             st_ino,
             st_mode,
             st_nlink: st_nlink as u32,
-            //st_nlink,
-            st_uid: 0,
-            st_gid: 0,
-            //st_rdev :0,
-            //__pad2  :0,
             st_size: st_size as u64,
             st_blksize: self.st_blksize, //TODO:real blksize
             st_blocks,
             st_atime_sec,
-            st_atime_nsec: 0,
-            st_mtime_sec,
-            st_mtime_nsec: 0,
             st_ctime_sec,
-            st_ctime_nsec: 0,
+            st_mtime_sec,
+            ..Self::default()
         };
     }
 
@@ -350,15 +276,12 @@ impl NewStat {
 }
 
 #[repr(C)]
+#[derive(Default, Debug)]
 pub struct FdSet {
     fd_list: [u64; 16],
 }
 
 impl FdSet {
-    pub fn new() -> Self {
-        Self { fd_list: [0; 16] }
-    }
-
     fn check_fd(fd: usize) -> bool {
         if fd < 1024 {
             return true;

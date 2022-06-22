@@ -2,9 +2,10 @@ use super::{
     get_block_cache, get_info_cache, set_start_sec, write_to_dev, BlockDevice, CacheMode, FSInfo,
     FatBS, FatExtBS, FAT,
 };
+use alloc::sync::Arc;
+//#[macro_use]
 use crate::{layout::*, VFile};
 use alloc::string::String;
-use alloc::sync::Arc;
 use alloc::vec::Vec;
 use spin::RwLock;
 
@@ -20,6 +21,8 @@ pub struct FAT32Manager {
     total_sectors: u32, //总扇区数
     vroot_dirent: Arc<RwLock<ShortDirEntry>>,
 }
+
+//type DataBlock = [u8; BLOCK_SZ];
 
 impl FAT32Manager {
     pub fn sectors_per_cluster(&self) -> u32 {
@@ -165,6 +168,10 @@ impl FAT32Manager {
         // 获取FAT写锁
         let fat_writer = self.fat.write();
         let prev_cluster = self.fsinfo.first_free_cluster(self.block_device.clone());
+        //fat_writer.set_next_cluster(current_cluster, next_cluster, self.block_device.clone());
+        //let mut cluster_vec:Vec<u32> = Vec::new();
+        //cluster_vec.push(current_cluster);
+        //let first_cluster = current_cluster;
         let first_cluster: u32 =
             fat_writer.next_free_cluster(prev_cluster, self.block_device.clone());
         let mut current_cluster = first_cluster;
@@ -182,11 +189,14 @@ impl FAT32Manager {
         // 填写最后一个表项
         fat_writer.set_end(current_cluster, self.block_device.clone());
         // 修改FSINFO
+        //let next_cluster = fat_writer.next_free_cluster(current_cluster, self.block_device.clone());
         self.fsinfo
             .write_free_clusters(free_clusters - num, self.block_device.clone());
         // 写入分配的最后一个簇
         self.fsinfo
             .write_first_free_cluster(current_cluster, self.block_device.clone());
+        //self.cache_write_back();
+        //println!("[fs]: after alloc, first free cluster = {}",self.fsinfo.first_free_cluster(self.block_device.clone()));
         Some(first_cluster)
     }
 
@@ -268,6 +278,7 @@ impl FAT32Manager {
 
     /* 计算当前偏移量在第几个簇 */
     pub fn cluster_of_offset(&self, offset: usize) -> u32 {
+        //println!("cluster_of_offset: off = {}, bytes_per_cluster = {}",offset, self.bytes_per_cluster);
         offset as u32 / self.bytes_per_cluster
     }
 
@@ -278,7 +289,7 @@ impl FAT32Manager {
     /* 将长文件名拆分，并且补全0 */
     // DEBUG
     pub fn long_name_split(&self, name: &str) -> Vec<String> {
-        let len = name.len() as u32; // 要有 \0
+        let len = name.len() as u32; // 要有\0
         let name_bytes = name.as_bytes();
         let mut name_vec: Vec<String> = Vec::new();
         // 计算需要几个目录项
@@ -359,7 +370,7 @@ impl FAT32Manager {
         short_name.push('1');
         let ext_len = extension.len();
         for i in 0..3 {
-            // fill extension
+            //fill extension
             if i >= ext_len {
                 short_name.push(0x20 as char); //填充
             } else {

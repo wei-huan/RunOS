@@ -118,14 +118,14 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
             match &file.fclass {
                 FileClass::File(f) => {
-                    log::debug!("FileClass: File");
+                    log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
                     // 需要新建文件
                     if oflags.contains(OpenFlags::CREATE) {
-                        if let Some(tar_f) = f.create(path.as_str(), DiskInodeType::File) {
+                        if let Some(new_file) = f.create(path.as_str(), DiskInodeType::File) {
                             let fd = inner.alloc_fd();
                             inner.fd_table[fd] = Some(FileDescripter::new(
                                 oflags.contains(OpenFlags::CLOEXEC),
-                                FileClass::File(tar_f),
+                                FileClass::File(new_file),
                             ));
                             return fd as isize;
                         } else {
@@ -214,6 +214,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
 }
 
 pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
+    log::debug!("sys_fstat fd: {}", fd);
     let token = current_user_token();
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
@@ -360,7 +361,6 @@ pub fn sys_chdir(path: *const u8) -> isize {
 }
 
 pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
-    //return 0;
     //println!("=====================================");
     let token = current_user_token();
     let task = current_task().unwrap();
@@ -371,7 +371,7 @@ pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
     let mut total_len: usize = 0;
     // 使用UserBuffer结构，以便于跨页读写
     let mut userbuf = UserBuffer::new(buf_vec);
-    let mut dirent = Dirent::empty();
+    let mut dirent = Dirent::default();
     if fd == AT_FDCWD {
         let work_path = inner.current_path.clone();
         if let Some(file) = open(
