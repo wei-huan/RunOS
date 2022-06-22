@@ -2,6 +2,7 @@
 
 use super::{finfo, Dirent, File, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN};
 use crate::mm::UserBuffer;
+use crate::owo_colors::OwoColorize;
 use crate::{drivers::BLOCK_DEVICE, println};
 use _core::usize;
 use alloc::sync::Arc;
@@ -134,8 +135,7 @@ impl OSInode {
 
     pub fn find(&self, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
         let inner = self.inner.lock();
-        let pathv: Vec<&str> = path.split('/').collect();
-        let vfile = inner.inode.find_vfile_bypath(pathv);
+        let vfile = inner.inode.find_vfile_bypath(path);
         if vfile.is_none() {
             return None;
         } else {
@@ -214,14 +214,14 @@ impl OSInode {
         }
         let mut pathv: Vec<&str> = path.split('/').collect();
         let (readable, writable) = (true, true);
-        if let Some(inode) = cur_inode.find_vfile_bypath(pathv.clone()) {
+        if let Some(inode) = cur_inode.find_vfile_bypath(path) {
             // already exists, clear
             inode.delete();
         }
         {
             // create file
             let name = pathv.pop().unwrap();
-            if let Some(temp_inode) = cur_inode.find_vfile_bypath(pathv.clone()) {
+            if let Some(temp_inode) = cur_inode.find_vfile_bypath(path) {
                 let attribute = {
                     match type_ {
                         DiskInodeType::Directory => FileAttributes::DIRECTORY,
@@ -302,9 +302,9 @@ lazy_static! {
     // 通过 ROOT_INODE 可以实现对 fat32 的操作
     pub static ref ROOT_INODE: Arc<VFile> = {
         // 此处载入文件系统
-        println!("open fs");
+        // println!("open fs");
         let runfs = Arc::new(RwLock::new(RunFileSystem::new(BLOCK_DEVICE.clone())));
-        println!("get root_dir");
+        // println!("get root_dir");
         let root_dir = Arc::new(runfs.read().root_vfile(&runfs));
         root_dir
     };
@@ -325,7 +325,7 @@ pub fn list_apps() {
     println!("/**** APPS ****");
     for app in ROOT_INODE.ls().unwrap() {
         if !app.1.contains(FileAttributes::DIRECTORY) {
-            println!("{}", app.0);
+            println!("{}", app.0.bright_green());
         }
     }
     println!("**************/")
@@ -339,12 +339,10 @@ pub fn list_files(work_path: &str, path: &str) {
             //println!("curr is root");
             ROOT_INODE.clone()
         } else {
-            let wpath: Vec<&str> = work_path.split('/').collect();
-            ROOT_INODE.find_vfile_bypath(wpath).unwrap()
+            ROOT_INODE.find_vfile_bypath(work_path).unwrap()
         }
     };
-    let pathv: Vec<&str> = path.split('/').collect();
-    let cur_inode = work_inode.find_vfile_bypath(pathv).unwrap();
+    let cur_inode = work_inode.find_vfile_bypath(path).unwrap();
 
     let mut file_vec = cur_inode.ls().unwrap();
     file_vec.sort();
@@ -396,23 +394,23 @@ pub fn open(
         if work_path == "/" {
             ROOT_INODE.clone()
         } else {
-            let wpath: Vec<&str> = work_path.split('/').collect();
-            ROOT_INODE.find_vfile_bypath(wpath).unwrap()
+            ROOT_INODE.find_vfile_bypath(work_path).unwrap()
         }
     };
-    let mut pathv: Vec<&str> = path.split('/').collect();
-    println!("[open] pathv = {:?}", pathv);
     // shell应当保证此处输入的path不为空
     let (readable, writable) = flags.read_write();
     if flags.contains(OpenFlags::CREATE) {
-        if let Some(inode) = cur_inode.find_vfile_bypath(pathv.clone()) {
+        if let Some(inode) = cur_inode.find_vfile_bypath(path) {
             // clear size
             inode.delete();
         }
         {
             // create file
-            let name = pathv.pop().unwrap();
-            if let Some(temp_inode) = cur_inode.find_vfile_bypath(pathv.clone()) {
+            log::debug!("path: {:?}", path);
+            let pos = path.rfind("/").unwrap_or(0);
+            let (prev_path, name) = path.split_at(pos + 1);
+            log::debug!("prev_path: {:?}", prev_path);
+            if let Some(temp_inode) = cur_inode.find_vfile_bypath(prev_path) {
                 let attribute = {
                     match type_ {
                         DiskInodeType::Directory => FileAttributes::DIRECTORY,
@@ -427,13 +425,17 @@ pub fn open(
             }
         }
     } else {
-        cur_inode.find_vfile_bypath(pathv).map(|inode| {
+        // println!("start find");
+        cur_inode.find_vfile_byname(path).map(|inode| {
+            // println!("found");
             if flags.contains(OpenFlags::TRUNC) {
                 // inode.clear();
             }
-            println!("open finish");
-            Arc::new(OSInode::new(readable, writable, inode))
+            // println!("open finish");
+            Arc::new(OSInode::new(readable, writable, Arc::new(inode)))
         })
+        // let inode = cur_inode.find_vfile_byname("initproc").unwrap();
+        // Some(Arc::new(OSInode::new(readable, writable, Arc::new(inode))))
     }
 }
 
@@ -444,13 +446,11 @@ pub fn ch_dir(work_path: &str, path: &str) -> isize {
         if work_path == "/" || (path.len() > 0 && path.chars().nth(0).unwrap() == '/') {
             ROOT_INODE.clone()
         } else {
-            let wpath: Vec<&str> = work_path.split('/').collect();
-            //println!("in cd, work_pathv = {:?}", wpath);
-            ROOT_INODE.find_vfile_bypath(wpath).unwrap()
+            //println!("in cd, work_path = {:?}", work_path);
+            ROOT_INODE.find_vfile_bypath(work_path).unwrap()
         }
     };
-    let pathv: Vec<&str> = path.split('/').collect();
-    if let Some(_tar_dir) = cur_inode.find_vfile_bypath(pathv) {
+    if let Some(_tar_dir) = cur_inode.find_vfile_bypath(path) {
         // ! 当inode_id > 2^16 时，有溢出的可能（目前不会发生。。
         0
     } else {
