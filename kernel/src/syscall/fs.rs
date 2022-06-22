@@ -100,6 +100,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             oflags,
             DiskInodeType::File,
         ) {
+            log::debug!("open path: {:#?}", path);
             let fd = inner.alloc_fd();
             inner.fd_table[fd] = Some(FileDescripter::new(
                 oflags.contains(OpenFlags::CLOEXEC),
