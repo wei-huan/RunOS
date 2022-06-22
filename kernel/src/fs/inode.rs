@@ -408,19 +408,23 @@ pub fn open(
             ROOT_INODE.find_vfile_bypath(work_path).unwrap()
         }
     };
-    // shell应当保证此处输入的path不为空
+    // shell 应当保证此处输入的 path 不为空
     let (readable, writable) = flags.read_write();
     if flags.contains(OpenFlags::CREATE) {
         if let Some(inode) = cur_inode.find_vfile_bypath(path) {
-            // clear size
             inode.delete();
         }
         {
             // create file
             log::debug!("path: {:?}", path);
-            let pos = path.rfind("/").unwrap_or(0);
-            let (prev_path, name) = path.split_at(pos);
-            log::debug!("prev_path: {:?}", prev_path);
+            let name_path: Vec<&str> = path.rsplitn(2, '/').collect();
+            log::debug!("name_path: {:?}", name_path);
+            let name = name_path[0];
+            let mut prev_path = "";
+            if name_path.len() == 2 {
+                prev_path = name_path[1]
+            }
+            log::debug!("prev_path: {:?}, name: {:?}", prev_path, name);
             if let Some(temp_inode) = cur_inode.find_vfile_bypath(prev_path) {
                 let attribute = {
                     match type_ {
