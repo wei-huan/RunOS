@@ -113,19 +113,20 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
         }
     } else {
         let fd_usz = dirfd as usize;
-        if fd_usz >= inner.fd_table.len() || fd_usz > FD_LIMIT {
+        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
             return -1;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
             match &file.fclass {
                 FileClass::File(f) => {
+                    log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
                     // 需要新建文件
                     if oflags.contains(OpenFlags::CREATE) {
-                        if let Some(tar_f) = f.create(path.as_str(), DiskInodeType::File) {
+                        if let Some(new_file) = f.create(path.as_str(), DiskInodeType::File) {
                             let fd = inner.alloc_fd();
                             inner.fd_table[fd] = Some(FileDescripter::new(
                                 oflags.contains(OpenFlags::CLOEXEC),
-                                FileClass::File(tar_f),
+                                FileClass::File(new_file),
                             ));
                             return fd as isize;
                         } else {

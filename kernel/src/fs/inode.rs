@@ -209,10 +209,11 @@ impl OSInode {
         let inner = self.inner.lock();
         let cur_inode = inner.inode.clone();
         if !cur_inode.is_dir() {
-            println!("[create]:{} is not a directory!", path);
+            log::debug!("[create]:{} is not a directory!", path);
             return None;
         }
         let mut pathv: Vec<&str> = path.split('/').collect();
+        log::debug!("pathv: {:#?}", pathv);
         let (readable, writable) = (true, true);
         if let Some(inode) = cur_inode.find_vfile_bypath(path) {
             // already exists, clear
@@ -232,7 +233,15 @@ impl OSInode {
                     .create(name, attribute)
                     .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
             } else {
-                None
+                let attribute = {
+                    match type_ {
+                        DiskInodeType::Directory => FileAttributes::DIRECTORY,
+                        DiskInodeType::File => FileAttributes::FILE,
+                    }
+                };
+                cur_inode
+                    .create(name, attribute)
+                    .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
             }
         }
     }
