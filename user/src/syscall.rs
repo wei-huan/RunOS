@@ -1,4 +1,5 @@
 #![allow(unused)]
+use alloc::string::String;
 use core::arch::asm;
 
 const SYSCALL_GETCWD: usize = 17;
@@ -49,14 +50,48 @@ fn syscall(id: usize, args: [usize; 6]) -> isize {
     ret
 }
 
-// pub fn sys_dup(fd: usize) -> isize {
-//     syscall(SYSCALL_DUP, [fd, 0, 0])
-// }
+pub fn sys_dup(fd: usize) -> isize {
+    syscall(SYSCALL_DUP, [fd, 0, 0, 0, 0, 0])
+}
+
+pub fn sys_chdir(path: &str) -> isize {
+    syscall(SYSCALL_CHDIR, [path.as_ptr() as usize, 0, 0, 0, 0, 0])
+}
+
+pub fn sys_unlinkat(fd: i32, path: &str, flags: u32) -> isize {
+    syscall(
+        SYSCALL_UNLINKAT,
+        [fd as usize, path.as_ptr() as usize, flags as usize, 0, 0, 0],
+    )
+}
 
 pub fn sys_open(path: &str, flags: u32) -> isize {
+    let path_str = String::new() + path + "\0";
     syscall(
         SYSCALL_OPENAT,
-        [path.as_ptr() as usize, flags as usize, 0, 0, 0, 0],
+        [
+            (-100 as isize) as usize,
+            path_str.as_ptr() as usize,
+            flags as usize,
+            0,
+            0,
+            0,
+        ],
+    )
+}
+
+pub fn sys_mkdir(path: &str) -> isize {
+    let path_str = String::new() + path + "\0";
+    syscall(
+        SYSCALL_MKDIRAT,
+        [
+            (-100 as isize) as usize,
+            path_str.as_ptr() as usize,
+            0,
+            0,
+            0,
+            0,
+        ],
     )
 }
 

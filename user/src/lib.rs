@@ -16,8 +16,10 @@ mod syscall;
 use buddy_system_allocator::LockedHeap;
 use syscall::*;
 
-/// 用户堆空间设置为 16 KB 即 4 个页面
-const USER_HEAP_SIZE: usize = 4096 * 4;
+const AT_FDCWD: i32 = -100;
+
+/// 用户堆空间设置为 32 KB 即 8 个页面
+const USER_HEAP_SIZE: usize = 4096 * 8;
 
 static mut HEAP_SPACE: [u8; USER_HEAP_SIZE] = [0; USER_HEAP_SIZE];
 
@@ -58,11 +60,26 @@ bitflags! {
     }
 }
 
+pub fn dup(fd: usize) -> isize {
+    sys_dup(fd)
+}
+pub fn chdir(path: &str) -> isize {
+    sys_chdir(path)
+}
+pub fn unlink(path: &str) -> isize {
+    sys_unlinkat(AT_FDCWD, path, 0)
+}
+pub fn mkdir(path: &str) -> isize {
+    sys_mkdir(path)
+}
 pub fn open(path: &str, flags: OpenFlags) -> isize {
     sys_open(path, flags.bits)
 }
 pub fn close(fd: usize) -> isize {
     sys_close(fd)
+}
+pub fn pipe(pipe_fd: &mut [usize]) -> isize {
+    sys_pipe(pipe_fd)
 }
 pub fn read(fd: usize, buf: &mut [u8]) -> isize {
     sys_read(fd, buf)
