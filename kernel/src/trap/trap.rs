@@ -128,7 +128,9 @@ pub fn user_trap_handler() -> ! {
             exit_current_and_run_next(-2);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            log::debug!("[kernel] IllegalInstruction in application, kernel killed it.");
+            log::debug!("[kernel] IllegalInstruction in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
+                stval,
+            current_trap_cx().sepc);
             // illegal instruction exit code
             exit_current_and_run_next(-3);
         }
