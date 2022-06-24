@@ -144,8 +144,10 @@ impl TaskControlBlock {
     }
     pub fn exec(&self, elf_data: &[u8], args: Vec<String>) {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addr_space, heap_start, mut user_sp, entry_point) =
+        let (addr_space, heap_start, mut user_sp, mut entry_point) =
             AddrSpace::create_user_space(elf_data);
+        log::debug!("entry point: 0x{:X?}", entry_point);
+        log::debug!("heap_start: 0x{:X?}", heap_start);
         let trap_cx_ppn = addr_space
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
@@ -153,6 +155,7 @@ impl TaskControlBlock {
 
         // push arguments on user stack
         user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
+        log::debug!("user_sp: 0x{:X?}", user_sp);
         let argv_base = user_sp;
         let mut argv: Vec<_> = (0..=args.len())
             .map(|arg| {
