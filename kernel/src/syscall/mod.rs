@@ -99,6 +99,6 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[5] as usize,
         ),
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
-        _ => -1, //panic!("Unsupported syscall_id: {}", syscall_id),
+        _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }
 }

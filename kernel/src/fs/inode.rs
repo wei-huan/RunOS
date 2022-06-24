@@ -398,8 +398,8 @@ pub fn open(
     flags: OpenFlags,
     type_: DiskInodeType,
 ) -> Option<Arc<OSInode>> {
-    log::debug!("work_path {}", work_path);
-    log::debug!("path {}", path);
+    // log::debug!("work_path {}", work_path);
+    // log::debug!("path {}", path);
     // DEBUG: 相对路径
     let cur_inode = {
         if work_path == "/" {

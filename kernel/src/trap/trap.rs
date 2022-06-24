@@ -159,6 +159,7 @@ pub fn trap_return() -> ! {
         fn __restore();
     }
     let restore_va = __restore as usize - __uservec as usize + TRAMPOLINE;
+    // log::debug!("trap return");
     unsafe {
         asm!(
             "fence.i",
