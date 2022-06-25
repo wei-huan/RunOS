@@ -48,7 +48,7 @@ impl RoundRobinScheduler {
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) {
         loop {
-            // interrupt_off();
+            interrupt_off();
             if let Some(task) = self.fetch_task() {
                 // if hart_id() == 1 {
                 //     log::trace!("have task");
@@ -70,7 +70,7 @@ impl Scheduler for RoundRobinScheduler {
                 // schedule new task
                 unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
             } else {
-                // idle_task();
+                idle_task();
                 // log::debug!("Hart {} have no task", hart_id());
             }
         }
