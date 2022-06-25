@@ -40,6 +40,7 @@ const SYSCALL_MMAP: usize = 222;
 const SYSCALL_WAIT4: usize = 260;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
+    log::trace!("syscall_id: {}", syscall_id);
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),

@@ -80,7 +80,6 @@ pub fn save_current_and_back_to_schedule(current_task_cx_ptr: *mut TaskContext) 
     let mut cpu = take_my_cpu();
     let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
     drop(cpu);
-    // log::debug!("here 1_1");
     unsafe { __schedule(current_task_cx_ptr, idle_task_cx_ptr) };
 }
 

@@ -5,10 +5,12 @@ use super::{pid_alloc, PidHandle};
 use crate::config::{MMAP_BASE, TRAP_CONTEXT};
 use crate::fs::File;
 use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
+use crate::hart_id;
 use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, Permission, PhysPageNum,
     UserBuffer, VirtAddr, KERNEL_SPACE,
 };
+use crate::task::{AuxHeader, AT_EXECFN, AT_NULL, AT_RANDOM};
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
@@ -54,7 +56,7 @@ impl TaskControlBlockInner {
         self.trap_cx_ppn.get_mut()
     }
     pub fn get_user_token(&self) -> usize {
-        self.addrspace.get_token()
+        self.addrspace.token()
     }
     fn get_status(&self) -> TaskStatus {
         self.task_status
@@ -85,7 +87,7 @@ impl TaskControlBlock {
     // only for initproc
     pub fn new(elf_data: &[u8]) -> Self {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, heap_start, ustack_base, entry_point) =
+        let (addrspace, heap_start, ustack_base, entry_point, _) =
             AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
@@ -139,70 +141,241 @@ impl TaskControlBlock {
             kernel_token(),
             kernel_stack_top,
             user_trap_handler as usize,
+            hart_id(),
         );
         task
     }
-    pub fn exec(&self, elf_data: &[u8], args: Vec<String>) {
+    // pub fn exec(&self, elf_data: &[u8], args: Vec<String>) {
+    //     // memory_set with elf program headers/trampoline/trap context/user stack
+    //     let (addr_space, heap_start, mut user_sp, mut entry_point) =
+    //         AddrSpace::create_user_space(elf_data);
+    //     log::debug!("entry point: 0x{:X?}", entry_point);
+    //     log::debug!("heap_start: 0x{:X?}", heap_start);
+    //     let trap_cx_ppn = addr_space
+    //         .translate(VirtAddr::from(TRAP_CONTEXT).into())
+    //         .unwrap()
+    //         .ppn();
+
+    //     // push arguments on user stack
+    //     user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
+    //     log::debug!("user_sp: 0x{:X?}", user_sp);
+    //     let argv_base = user_sp;
+    //     let mut argv: Vec<_> = (0..=args.len())
+    //         .map(|arg| {
+    //             translated_refmut(
+    //                 addr_space.get_token(),
+    //                 (argv_base + arg * core::mem::size_of::<usize>()) as *mut usize,
+    //             )
+    //         })
+    //         .collect();
+    //     *argv[args.len()] = 0;
+    //     for i in 0..args.len() {
+    //         user_sp -= args[i].len() + 1;
+    //         *argv[i] = user_sp;
+    //         let mut p = user_sp;
+    //         for c in args[i].as_bytes() {
+    //             *translated_refmut(addr_space.get_token(), p as *mut u8) = *c;
+    //             p += 1;
+    //         }
+    //         *translated_refmut(addr_space.get_token(), p as *mut u8) = 0;
+    //     }
+    //     // make the user_sp aligned to 8B for k210 platform
+    //     user_sp -= user_sp % core::mem::size_of::<usize>();
+
+    //     // **** access current TCB exclusively
+    //     let mut inner = self.acquire_inner_lock();
+    //     // set new entry_point
+    //     inner.entry_point = entry_point;
+    //     // substitute memory_set
+    //     inner.addrspace = addr_space;
+    //     // update trap_cx ppn
+    //     inner.trap_cx_ppn = trap_cx_ppn;
+    //     // update heap_start
+    //     inner.heap_start = heap_start;
+    //     // update heap_pointer
+    //     inner.heap_pointer = heap_start;
+    //     // initialize trap_cx
+    //     let mut trap_cx = TrapContext::app_init_context(
+    //         entry_point,
+    //         user_sp,
+    //         KERNEL_SPACE.lock().get_token(),
+    //         self.kernel_stack.get_top(),
+    //         user_trap_handler as usize,
+    //     );
+    //     trap_cx.x[10] = args.len();
+    //     trap_cx.x[11] = argv_base;
+    //     *inner.get_trap_cx() = trap_cx;
+    //     // **** release current PCB
+    // }
+    pub fn exec(self: &Arc<Self>, elf_data: &[u8], args: Vec<String>) {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addr_space, heap_start, mut user_sp, mut entry_point) =
+        let (addrspace, heap_start, mut user_sp, entry_point, mut auxv) =
             AddrSpace::create_user_space(elf_data);
-        log::debug!("entry point: 0x{:X?}", entry_point);
-        log::debug!("heap_start: 0x{:X?}", heap_start);
-        let trap_cx_ppn = addr_space
+        let token = addrspace.token();
+        let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT).into())
             .unwrap()
             .ppn();
 
-        // push arguments on user stack
-        user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
-        log::debug!("user_sp: 0x{:X?}", user_sp);
-        let argv_base = user_sp;
-        let mut argv: Vec<_> = (0..=args.len())
-            .map(|arg| {
-                translated_refmut(
-                    addr_space.get_token(),
-                    (argv_base + arg * core::mem::size_of::<usize>()) as *mut usize,
-                )
-            })
-            .collect();
-        *argv[args.len()] = 0;
-        for i in 0..args.len() {
-            user_sp -= args[i].len() + 1;
-            *argv[i] = user_sp;
+        ////////////// envp[] ///////////////////
+        let mut env: Vec<String> = Vec::new();
+        env.push(String::from("SHELL=/user_shell"));
+        env.push(String::from("PWD=/"));
+        env.push(String::from("USER=root"));
+        env.push(String::from("MOTD_SHOWN=pam"));
+        env.push(String::from("LANG=C.UTF-8"));
+        env.push(String::from(
+            "INVOCATION_ID=e9500a871cf044d9886a157f53826684",
+        ));
+        env.push(String::from("TERM=vt220"));
+        env.push(String::from("SHLVL=2"));
+        env.push(String::from("JOURNAL_STREAM=8:9265"));
+        env.push(String::from("OLDPWD=/root"));
+        env.push(String::from("_=busybox"));
+        env.push(String::from("LOGNAME=root"));
+        env.push(String::from("HOME=/"));
+        env.push(String::from("PATH=/"));
+        let mut envp: Vec<usize> = (0..=env.len()).collect();
+        envp[env.len()] = 0;
+
+        for i in 0..env.len() {
+            user_sp -= env[i].len() + 1;
+            envp[i] = user_sp;
             let mut p = user_sp;
-            for c in args[i].as_bytes() {
-                *translated_refmut(addr_space.get_token(), p as *mut u8) = *c;
+            // write chars to [user_sp, user_sp + len]
+            for c in env[i].as_bytes() {
+                *translated_refmut(token, p as *mut u8) = *c;
                 p += 1;
             }
-            *translated_refmut(addr_space.get_token(), p as *mut u8) = 0;
+            *translated_refmut(token, p as *mut u8) = 0;
         }
         // make the user_sp aligned to 8B for k210 platform
         user_sp -= user_sp % core::mem::size_of::<usize>();
+
+        ////////////// argv[] ///////////////////
+        let mut argv: Vec<usize> = (0..=args.len()).collect();
+        argv[args.len()] = 0;
+        for i in 0..args.len() {
+            user_sp -= args[i].len() + 1;
+            // println!("user_sp {:X}", user_sp);
+            argv[i] = user_sp;
+            let mut p = user_sp;
+            // write chars to [user_sp, user_sp + len]
+            for c in args[i].as_bytes() {
+                *translated_refmut(token, p as *mut u8) = *c;
+                // print!("({})",*c as char);
+                p += 1;
+            }
+            *translated_refmut(token, p as *mut u8) = 0;
+        }
+        // make the user_sp aligned to 8B for k210 platform
+        user_sp -= user_sp % core::mem::size_of::<usize>();
+
+        ////////////// platform String ///////////////////
+        let platform = "RISC-V64";
+        user_sp -= platform.len() + 1;
+        user_sp -= user_sp % core::mem::size_of::<usize>();
+        let mut p = user_sp;
+        for c in platform.as_bytes() {
+            *translated_refmut(token, p as *mut u8) = *c;
+            p += 1;
+        }
+        *translated_refmut(token, p as *mut u8) = 0;
+
+        ////////////// rand bytes ///////////////////
+        user_sp -= 16;
+        p = user_sp;
+        auxv.push(AuxHeader {
+            aux_type: AT_RANDOM,
+            value: user_sp,
+        });
+        for i in 0..0xf {
+            *translated_refmut(token, p as *mut u8) = i as u8;
+            p += 1;
+        }
+
+        ////////////// padding //////////////////////
+        user_sp -= user_sp % 16;
+
+        ////////////// auxv[] //////////////////////
+        auxv.push(AuxHeader {
+            aux_type: AT_EXECFN,
+            value: argv[0],
+        }); // file name
+        auxv.push(AuxHeader {
+            aux_type: AT_NULL,
+            value: 0,
+        }); // end
+        user_sp -= auxv.len() * core::mem::size_of::<AuxHeader>();
+        let auxv_base = user_sp;
+        // println!("[auxv]: base 0x{:X}", auxv_base);
+        for i in 0..auxv.len() {
+            // println!("[auxv]: {:?}", auxv[i]);
+            let addr = user_sp + core::mem::size_of::<AuxHeader>() * i;
+            *translated_refmut(token, addr as *mut usize) = auxv[i].aux_type;
+            *translated_refmut(token, (addr + core::mem::size_of::<usize>()) as *mut usize) =
+                auxv[i].value;
+        }
+
+        ////////////// *envp [] //////////////////////
+        user_sp -= (env.len() + 1) * core::mem::size_of::<usize>();
+        let envp_base = user_sp;
+        *translated_refmut(
+            token,
+            (user_sp + core::mem::size_of::<usize>() * (env.len())) as *mut usize,
+        ) = 0;
+        for i in 0..env.len() {
+            *translated_refmut(
+                token,
+                (user_sp + core::mem::size_of::<usize>() * i) as *mut usize,
+            ) = envp[i];
+        }
+
+        ////////////// *argv [] //////////////////////
+        user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
+        let argv_base = user_sp;
+        *translated_refmut(
+            token,
+            (user_sp + core::mem::size_of::<usize>() * (args.len())) as *mut usize,
+        ) = 0;
+        for i in 0..args.len() {
+            *translated_refmut(
+                token,
+                (user_sp + core::mem::size_of::<usize>() * i) as *mut usize,
+            ) = argv[i];
+        }
+
+        ////////////// argc //////////////////////
+        user_sp -= core::mem::size_of::<usize>();
+        *translated_refmut(token, user_sp as *mut usize) = args.len();
 
         // **** access current TCB exclusively
         let mut inner = self.acquire_inner_lock();
         // set new entry_point
         inner.entry_point = entry_point;
-        // substitute memory_set
-        inner.addrspace = addr_space;
+        // substitute addrspace
+        inner.addrspace = addrspace;
         // update trap_cx ppn
         inner.trap_cx_ppn = trap_cx_ppn;
         // update heap_start
         inner.heap_start = heap_start;
         // update heap_pointer
         inner.heap_pointer = heap_start;
+
         // initialize trap_cx
         let mut trap_cx = TrapContext::app_init_context(
             entry_point,
             user_sp,
-            KERNEL_SPACE.lock().get_token(),
+            KERNEL_SPACE.lock().token(),
             self.kernel_stack.get_top(),
             user_trap_handler as usize,
+            hart_id()
         );
         trap_cx.x[10] = args.len();
         trap_cx.x[11] = argv_base;
+        trap_cx.x[12] = envp_base;
+        trap_cx.x[13] = auxv_base;
         *inner.get_trap_cx() = trap_cx;
-        // **** release current PCB
     }
     pub fn fork(self: &Arc<TaskControlBlock>) -> Arc<TaskControlBlock> {
         // ---- hold parent PCB lock

@@ -27,6 +27,7 @@ lazy_static! {
 }
 
 pub fn take_my_cpu() -> RefMut<'static, Cpu> {
+    // log::debug!("hart id: {}", hart_id());
     CPUS[hart_id()].exclusive_access()
 }
 

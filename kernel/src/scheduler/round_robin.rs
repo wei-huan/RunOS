@@ -69,10 +69,11 @@ impl Scheduler for RoundRobinScheduler {
                 drop(cpu);
                 // schedule new task
                 unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
-            } else {
-                idle_task();
-                // log::debug!("Hart {} have no task", hart_id());
             }
+            // } else {
+            //     idle_task();
+            //     // log::debug!("Hart {} have no task", hart_id());
+            // }
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {

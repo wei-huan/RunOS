@@ -90,7 +90,7 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
-    // log::debug!("sys_exec");
+    // log::trace!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
     let mut args_vec: Vec<String> = Vec::new();
@@ -100,14 +100,13 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
             break;
         }
         args_vec.push(translated_str(token, arg_str_ptr as *const u8));
-        // println!("arg{}: {}",0, args_vec[0]);
+        // log::debug!("arg{}: {}",0, args_vec[0]);
         unsafe {
             args = args.add(1);
         }
     }
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
-    // log::debug!("sys_after");
     if let Some(app_inode) = open(
         inner.current_path.as_str(),
         path.as_str(),
@@ -117,8 +116,11 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         drop(inner);
         let all_data = app_inode.read_all();
         let task = current_task().unwrap();
+        let argc = args_vec.len();
+        // log::debug!("before task.exec");
         task.exec(all_data.as_slice(), args_vec);
-        0
+        log::debug!("after task.exec, now return");
+        argc as isize
     } else {
         -1
     }
@@ -155,7 +157,7 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
         let exit_code = child.acquire_inner_lock().exit_code;
         // ++++ release child PCB
         if (exit_code_ptr as usize) != 0 {
-            *translated_refmut(inner.addrspace.get_token(), exit_code_ptr) = exit_code << 8;
+            *translated_refmut(inner.addrspace.token(), exit_code_ptr) = exit_code << 8;
         }
         found_pid as isize
     } else {
@@ -204,7 +206,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             // ++++ release child PCB
             let ret_status = exit_code << 8;
             if (wstatus as usize) != 0 {
-                *translated_refmut(inner.addrspace.get_token(), wstatus) = ret_status;
+                *translated_refmut(inner.addrspace.token(), wstatus) = ret_status;
             }
             return found_pid as isize;
         } else {
