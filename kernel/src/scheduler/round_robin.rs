@@ -48,10 +48,10 @@ impl RoundRobinScheduler {
 impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) {
         loop {
-            interrupt_off();
+            // interrupt_off();
             if let Some(task) = self.fetch_task() {
                 // if hart_id() == 1 {
-                //     log::debug!("have task");
+                //     log::trace!("have task");
                 // }
                 let mut cpu = take_my_cpu();
                 let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
@@ -69,11 +69,10 @@ impl Scheduler for RoundRobinScheduler {
                 drop(cpu);
                 // schedule new task
                 unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
+            } else {
+                // idle_task();
+                // log::debug!("Hart {} have no task", hart_id());
             }
-            // } else {
-            //     idle_task();
-            //     // log::debug!("Hart {} have no task", hart_id());
-            // }
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {

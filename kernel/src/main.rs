@@ -67,6 +67,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         scheduler::add_initproc();
         logger::init();
         logger::show_basic_info();
+        log::info!(
+            "{}",
+            alloc::format!("Main Hart {} successfully booted", hart_id()).green()
+        );
         fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
