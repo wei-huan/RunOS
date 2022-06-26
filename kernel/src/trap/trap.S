@@ -147,6 +147,8 @@ __restore:
     csrw sscratch, a0
     mv sp, a0
     # now sp points to TrapContext in user space, start restoring based on it
+    # store hart_id
+    sd tp, 37*8(sp)
     # restore sstatus/sepc
     ld t0, 32*8(sp)
     ld t1, 33*8(sp)

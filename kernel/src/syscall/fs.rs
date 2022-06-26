@@ -14,6 +14,10 @@ use spin::MutexGuard;
 const AT_FDCWD: isize = -100;
 pub const FD_LIMIT: usize = 128;
 
+pub fn sys_ioctl() -> isize {
+    0
+}
+
 pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
@@ -100,7 +104,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             oflags,
             DiskInodeType::File,
         ) {
-            log::debug!("open path: {:#?}", path);
+            // log::debug!("open path: {:#?}", path);
             let fd = inner.alloc_fd();
             inner.fd_table[fd] = Some(FileDescripter::new(
                 oflags.contains(OpenFlags::CLOEXEC),
@@ -119,7 +123,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
         if let Some(file) = &inner.fd_table[fd_usz] {
             match &file.fclass {
                 FileClass::File(f) => {
-                    log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
+                    // log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
                     // 需要新建文件
                     if oflags.contains(OpenFlags::CREATE) {
                         if let Some(new_file) = f.create(path.as_str(), DiskInodeType::File) {

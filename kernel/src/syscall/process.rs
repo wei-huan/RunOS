@@ -1,17 +1,24 @@
 use crate::cpu::{current_task, current_user_token};
+use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
-use crate::scheduler::{add_task};
+use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
-use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times};
+use crate::timer::*;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
+use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
     panic!("Unreachable in sys_exit!");
+}
+
+pub fn sys_exit_group(exit_code: i32) -> ! {
+    exit_current_and_run_next(exit_code);
+    panic!("Unreachable in sys_exit_group!");
 }
 
 pub fn sys_yield() -> isize {
@@ -35,12 +42,58 @@ pub fn sys_times(times: *mut Times) -> isize {
     0
 }
 
+// struct timespec {
+//     time_t   tv_sec;        /* seconds */
+//     long     tv_nsec;       /* nanoseconds */
+// };
+pub fn sys_clock_get_time(clk_id: usize, tp: *mut u64) -> isize {
+    if tp as usize == 0 {
+        return 0;
+    }
+    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
+    let token = current_user_token();
+    let ticks = get_time();
+    let sec = (ticks / timer_freq) as u64;
+    let nsec = ((ticks % timer_freq) * (NSEC_PER_SEC / timer_freq)) as u64;
+    *translated_refmut(token, tp) = sec;
+    *translated_refmut(token, unsafe { tp.add(1) }) = nsec;
+    0
+}
+
+pub fn sys_set_tid_address(ptr: *mut usize) -> isize {
+    let token = current_user_token();
+    *translated_refmut(token, ptr) = current_task().unwrap().pid.0;
+    let ret = current_task().unwrap().pid.0 as isize;
+    ret
+}
+
 pub fn sys_getpid() -> isize {
     current_task().unwrap().getpid() as isize
 }
 
 pub fn sys_getppid() -> isize {
     current_task().unwrap().getppid() as isize
+}
+
+pub fn sys_getuid() -> isize {
+    0 // root user
+}
+
+pub fn sys_geteuid() -> isize {
+    0 // root user
+}
+
+pub fn sys_getgid() -> isize {
+    0 // root group
+}
+
+pub fn sys_getegid() -> isize {
+    0 // root group
+}
+
+// For user, tid is pid in kernel
+pub fn sys_gettid() -> isize {
+    current_task().unwrap().pid.0 as isize
 }
 
 //  __clone(func, stack, flags, arg, ptid, tls, ctid)

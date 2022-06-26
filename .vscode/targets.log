@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sat Jun 25 21:30:20 2022
+# Make data base, printed on Sun Jun 26 10:37:51 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:71726
+JOURNAL_STREAM = 8:67704
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ VSCODE_VERBOSE_LOGGING = true
 # makefile (from 'Makefile', line 7)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 4263
+MANAGERPID = 2758
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0d84940b-d5bc-4756-8080-3928ebaecb0b.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-2f1b1d80-d220-4e9e-bf73-2acf5653562f.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -89,11 +89,11 @@ GSETTINGS_SCHEMA_DIR = /home/weihuan/data
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
-PATH = /home/weihuan/bin:/usr/local/cuda-11.3/bin:/home/weihuan/Tools/riscv64--musl--bleeding-edge-2020.08-1/bin:/home/weihuan/Tools/riscv64-unknown-elf-toolchain-10.2.0-2020.12.8-x86_64-linux-ubuntu14/bin:/home/weihuan/anaconda3/bin:/home/weihuan/anaconda3/condabin:/usr/local/go/bin:/home/weihuan/.cargo/bin:/home/weihuan/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/weihuan/bin:/opt/riscv/bin:/home/weihuan/bin:/opt/riscv/bin
+PATH = /home/weihuan/bin:/usr/local/cuda-11.3/bin:/home/weihuan/Tools/riscv64--musl--bleeding-edge-2020.08-1/bin:/home/weihuan/anaconda3/bin:/home/weihuan/anaconda3/condabin:/usr/local/go/bin:/home/weihuan/.cargo/bin:/home/weihuan/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/weihuan/bin:/opt/riscv/bin:/home/weihuan/bin:/opt/riscv/bin
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/4500,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/4500
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2989,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2989
 # makefile (from 'Makefile', line 6)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
@@ -105,7 +105,7 @@ VSCODE_LOG_STACK = false
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 0c814b9fa99e40b4b023a7e5414eb634
+INVOCATION_ID = 3159ee5c4e5c45918f5c9984d4bd413a
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -117,7 +117,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 7572
+GIO_LAUNCHED_DESKTOP_FILE_PID = 3486
 # automatic
 %F = $(notdir $%)
 # environment
@@ -139,7 +139,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 4456
+SSH_AGENT_PID = 2947
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -229,8 +229,6 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
-NO_AT_BRIDGE = 1
-# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -277,13 +275,14 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 7572
+VSCODE_PID = 3486
 # environment
+ 
 _CE_CONDA = 
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=136/1024=13%, Rehash=0, Collisions=28/179=16%
+# Load=135/1024=13%, Rehash=0, Collisions=28/178=16%
 
 # Pattern-specific Variable Values
 
@@ -291,9 +290,9 @@ LANG = C
 
 # Directories
 
-# . (device 66310, inode 23088373): 24 files, no impossibilities.
+# . (device 66310, inode 23088373): 23 files, no impossibilities.
 
-# 24 files, no impossibilities in 1 directories.
+# 23 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -319,7 +318,6 @@ user:
 # automatic
 # | := 
 # automatic
- 
 # < := 
 # automatic
 # ^ := 
@@ -451,12 +449,12 @@ disasm:
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 39 / storage = 317 B / avg = 8 B
-# current buf: size = 8162 B / used = 317 B / count = 39 / avg = 8 B
+# strcache buffers: 1 (0) / strings = 38 / storage = 306 B / avg = 8 B
+# current buf: size = 8162 B / used = 306 B / count = 38 / avg = 8 B
 
-# strcache performance: lookups = 67 / hit rate = 41%
+# strcache performance: lookups = 66 / hit rate = 42%
 # hash-table stats:
-# Load=39/8192=0%, Rehash=0, Collisions=1/67=1%
-# Finished Make data base on Sat Jun 25 21:30:20 2022
+# Load=38/8192=0%, Rehash=0, Collisions=1/66=2%
+# Finished Make data base on Sun Jun 26 10:37:51 2022
 
  

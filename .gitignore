@@ -17,4 +17,5 @@ easy-fs-fuse/Cargo.lock
 easy-fs-fuse/target/*
 tools/
 fat32.img
+disasm.txt
 os.bin
