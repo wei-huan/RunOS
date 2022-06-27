@@ -1,17 +1,24 @@
 use crate::cpu::{current_task, current_user_token};
+use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
-use crate::scheduler::{add_task};
+use crate::scheduler::add_task;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
-use crate::timer::{get_time_sec_usec, get_time_us, get_time_val, TimeVal, Times};
+use crate::timer::*;
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
+use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     exit_current_and_run_next(exit_code);
     panic!("Unreachable in sys_exit!");
+}
+
+pub fn sys_exit_group(exit_code: i32) -> ! {
+    exit_current_and_run_next(exit_code);
+    panic!("Unreachable in sys_exit_group!");
 }
 
 pub fn sys_yield() -> isize {
@@ -35,6 +42,32 @@ pub fn sys_times(times: *mut Times) -> isize {
     0
 }
 
+// struct timespec {
+//     time_t   tv_sec;        /* seconds */
+//     long     tv_nsec;       /* nanoseconds */
+// };
+pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
+    if tp as usize == 0 {
+        return 0;
+    }
+    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
+    let token = current_user_token();
+    let ticks = get_time();
+    let sec = (ticks / timer_freq) as u64;
+    let nsec = ((ticks % timer_freq) * (NSEC_PER_SEC / timer_freq)) as u64;
+    *translated_refmut(token, tp) = sec;
+    *translated_refmut(token, unsafe { tp.add(1) }) = nsec;
+    0
+}
+
+pub fn sys_set_tid_address(ptr: *mut usize) -> isize {
+    // log::debug!("sys_set_tid_address");
+    let token = current_user_token();
+    *translated_refmut(token, ptr) = current_task().unwrap().pid.0;
+    let ret = current_task().unwrap().pid.0 as isize;
+    ret
+}
+
 pub fn sys_getpid() -> isize {
     current_task().unwrap().getpid() as isize
 }
@@ -43,11 +76,32 @@ pub fn sys_getppid() -> isize {
     current_task().unwrap().getppid() as isize
 }
 
+pub fn sys_getuid() -> isize {
+    0 // root user
+}
+
+pub fn sys_geteuid() -> isize {
+    0 // root user
+}
+
+pub fn sys_getgid() -> isize {
+    0 // root group
+}
+
+pub fn sys_getegid() -> isize {
+    0 // root group
+}
+
+// For user, tid is pid in kernel
+pub fn sys_gettid() -> isize {
+    current_task().unwrap().pid.0 as isize
+}
+
 //  __clone(func, stack, flags, arg, ptid, tls, ctid)
 //            a0,    a1,    a2,  a3,   a4,  a5,   a6
 // 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
-pub fn sys_fork(flags: usize, stack_ptr: usize, ptid: usize, ctid: usize, newtls: usize) -> isize {
+pub fn sys_fork(_flags: usize, stack_ptr: usize, _ptid: usize, ctid: usize, _newtls: usize) -> isize {
     let current_task = current_task().unwrap();
     let new_task = current_task.fork();
     // println!("here_1");
@@ -90,7 +144,7 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
-    // log::debug!("sys_exec");
+    // log::trace!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
     let mut args_vec: Vec<String> = Vec::new();
@@ -100,14 +154,13 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
             break;
         }
         args_vec.push(translated_str(token, arg_str_ptr as *const u8));
-        // println!("arg{}: {}",0, args_vec[0]);
+        // log::debug!("arg{}: {}",0, args_vec[0]);
         unsafe {
             args = args.add(1);
         }
     }
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
-    // log::debug!("sys_after");
     if let Some(app_inode) = open(
         inner.current_path.as_str(),
         path.as_str(),
@@ -117,8 +170,11 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         drop(inner);
         let all_data = app_inode.read_all();
         let task = current_task().unwrap();
+        let argc = args_vec.len();
+        // log::debug!("before task.exec");
         task.exec(all_data.as_slice(), args_vec);
-        0
+        // log::debug!("after task.exec, now return");
+        argc as isize
     } else {
         -1
     }
@@ -155,7 +211,7 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
         let exit_code = child.acquire_inner_lock().exit_code;
         // ++++ release child PCB
         if (exit_code_ptr as usize) != 0 {
-            *translated_refmut(inner.addrspace.get_token(), exit_code_ptr) = exit_code << 8;
+            *translated_refmut(inner.addrspace.token(), exit_code_ptr) = exit_code << 8;
         }
         found_pid as isize
     } else {
@@ -204,7 +260,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             // ++++ release child PCB
             let ret_status = exit_code << 8;
             if (wstatus as usize) != 0 {
-                *translated_refmut(inner.addrspace.get_token(), wstatus) = ret_status;
+                *translated_refmut(inner.addrspace.token(), wstatus) = ret_status;
             }
             return found_pid as isize;
         } else {
@@ -224,6 +280,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 // brk_addr can‘t be negative, so it would not shrink to zero
 // return heap size
 pub fn sys_brk(brk_addr: usize) -> isize {
+    // log::debug!("sys_brk");
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
     let heap_start = inner.heap_start;
@@ -326,6 +383,7 @@ pub fn sys_mmap(
     fd: isize,
     offset: usize,
 ) -> isize {
+    // log::debug!("sys_mmap");
     let task = current_task().unwrap();
     task.mmap(start, length, prot, flags, fd, offset)
 }

@@ -51,7 +51,7 @@ impl Scheduler for RoundRobinScheduler {
             interrupt_off();
             if let Some(task) = self.fetch_task() {
                 // if hart_id() == 1 {
-                //     log::debug!("have task");
+                //     log::trace!("have task");
                 // }
                 let mut cpu = take_my_cpu();
                 let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();

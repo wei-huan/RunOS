@@ -255,12 +255,12 @@ where
     pub fn get_end(&self) -> T {
         self.r
     }
-    pub fn set_start(&mut self, new_start: T) {
-        self.l = new_start;
-    }
-    pub fn set_end(&mut self, new_end: T) {
-        self.r = new_end;
-    }
+    // pub fn set_start(&mut self, new_start: T) {
+    //     self.l = new_start;
+    // }
+    // pub fn set_end(&mut self, new_end: T) {
+    //     self.r = new_end;
+    // }
 }
 impl<T> IntoIterator for SimpleRange<T>
 where

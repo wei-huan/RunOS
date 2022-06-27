@@ -15,6 +15,7 @@ mod config;
 mod cpu;
 mod drivers;
 mod dt;
+mod fpu;
 mod fs;
 mod lang_items;
 mod logger;
@@ -63,10 +64,15 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
+        fpu::init();
         logo::show();
         scheduler::add_initproc();
         logger::init();
         logger::show_basic_info();
+        log::info!(
+            "{}",
+            alloc::format!("Main Hart {} successfully booted", hart_id()).green()
+        );
         fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function

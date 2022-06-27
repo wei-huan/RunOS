@@ -7,7 +7,6 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::bitflags;
-// use core::arch::asm;
 
 bitflags! {
     pub struct PTEFlags: u8 {
@@ -95,7 +94,7 @@ impl PageTable {
             pte_frames: Vec::new(),
         }
     }
-    pub fn get_token(&self) -> usize {
+    pub fn token(&self) -> usize {
         8usize << 60 | self.root_ppn.0
     }
     pub fn find_pte(&self, vpn: VirtPageNum) -> Option<&mut PageTableEntry> {
@@ -104,7 +103,6 @@ impl PageTable {
         let mut result: Option<&mut PageTableEntry> = None;
         for (i, idx) in idxs.iter().enumerate() {
             let pte = &mut ppn.get_pte_array()[*idx];
-            // println!("{:?}", pte.ppn());
             if i == 2 {
                 result = Some(pte);
                 break;

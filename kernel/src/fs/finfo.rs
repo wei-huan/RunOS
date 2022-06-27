@@ -333,5 +333,13 @@ impl FdSet {
     }
 }
 
+
+#[repr(C)]
+pub struct IOVec {
+    pub iov_base: *mut u8,
+    pub iov_len: usize
+}
+
+
 // use crate::lang_items::Bytes;
 // impl Bytes<FdSet> for FdSet {}

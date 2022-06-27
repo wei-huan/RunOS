@@ -1,7 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, hart_id};
-// use crate::mm::{kernel_token, kernel_translate};
-// use crate::lang_items::backtrace;
+use crate::cpu::{current_trap_cx, current_user_token, hart_id, current_task};
 use crate::syscall::syscall;
 use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, TIME_TO_SCHEDULE};
 use crate::timer::set_next_trigger;
@@ -124,16 +122,21 @@ pub fn user_trap_handler() -> ! {
                 stval,
                 current_trap_cx().sepc,
             );
+            let heap_base = current_task().unwrap().acquire_inner_lock().heap_start;
+            let heap_top = current_task().unwrap().acquire_inner_lock().heap_pointer;
+            println!("heap_base = {:#x?}, heap_top = {:#x?}", heap_base, heap_top);
             // page fault exit code
             exit_current_and_run_next(-2);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            log::debug!("[kernel] IllegalInstruction in application, kernel killed it.");
+            log::debug!("[kernel] IllegalInstruction in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
+            stval,
+            current_trap_cx().sepc);
             // illegal instruction exit code
             exit_current_and_run_next(-3);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            log::trace!("User Timer");
+            // log::debug!("User Timer");
             set_next_trigger();
             suspend_current_and_run_next();
         }
@@ -159,6 +162,7 @@ pub fn trap_return() -> ! {
         fn __restore();
     }
     let restore_va = __restore as usize - __uservec as usize + TRAMPOLINE;
+    // log::debug!("trap return");
     unsafe {
         asm!(
             "fence.i",

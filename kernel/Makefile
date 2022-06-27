@@ -150,7 +150,7 @@ disasm: kernel
 
 gdb:
 	@gdb-multiarch \
-    	-ex 'file target/riscv64gc-unknown-none-elf/release/os' \
+    	-ex 'file $(KERNEL_ELF)' \
     	-ex 'set arch riscv:rv64' \
     	-ex 'target remote localhost:1234'
 

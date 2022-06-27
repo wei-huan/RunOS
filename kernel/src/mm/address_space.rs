@@ -7,6 +7,10 @@ use crate::config::{
     MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE,
 };
 use crate::platform::MMIO;
+use crate::task::{
+    AuxHeader, AT_BASE, AT_CLKTCK, AT_EGID, AT_ENTRY, AT_EUID, AT_FLAGS, AT_GID, AT_HWCAP,
+    AT_NOTELF, AT_PAGESZ, AT_PHDR, AT_PHENT, AT_PHNUM, AT_PLATFORM, AT_SECURE, AT_UID,
+};
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::arch::asm;
@@ -33,7 +37,7 @@ lazy_static! {
 }
 
 pub fn kernel_token() -> usize {
-    KERNEL_SPACE.lock().get_token()
+    KERNEL_SPACE.lock().token()
 }
 
 #[allow(unused)]
@@ -55,8 +59,8 @@ impl AddrSpace {
             mmap_sections: Vec::new(),
         }
     }
-    pub fn get_token(&self) -> usize {
-        self.page_table.get_token()
+    pub fn token(&self) -> usize {
+        self.page_table.token()
     }
     /// Assume that no conflicts.
     pub fn insert_framed_area(
@@ -241,8 +245,128 @@ impl AddrSpace {
     }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
-    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize) {
+    // pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize) {
+    //     // println!("create_user_space");
+    //     let mut user_space = Self::new_empty();
+    //     // map trampoline
+    //     user_space.map_trampoline();
+    //     // map program headers of elf, with U flag
+    //     let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
+    //     let elf_header = elf.header;
+    //     let magic = elf_header.pt1.magic;
+    //     assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
+    //     let ph_count = elf_header.pt2.ph_count();
+    //     // println!("ph_count: {}", ph_count);
+    //     let mut max_end_vpn = VirtPageNum(0);
+    //     for i in 0..ph_count {
+    //         let ph = elf.program_header(i).unwrap();
+    //         if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
+    //             // first section header is dummy, not match program header, so i + 1
+    //             let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+    //             let name = sect.get_name(&elf).unwrap();
+    //             // println!("name: {}", name);
+    //             let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
+    //             // println!("start_va: {:#X}", usize::from(start_va));
+    //             let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
+    //             // println!("end_va: {:#X}", usize::from(end_va));
+    //             let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
+    //             // println!("offset: {:#X}", offset);
+    //             let mut map_perm = Permission::U;
+    //             let ph_flags = ph.flags();
+    //             if ph_flags.is_read() {
+    //                 map_perm |= Permission::R;
+    //             }
+    //             if ph_flags.is_write() {
+    //                 map_perm |= Permission::W;
+    //             }
+    //             if ph_flags.is_execute() {
+    //                 map_perm |= Permission::X;
+    //             }
+    //             // println!("map_perm: {:#?}", map_perm);
+    //             let section = Section::new(
+    //                 name.to_string(),
+    //                 start_va,
+    //                 end_va,
+    //                 MapType::Framed,
+    //                 map_perm,
+    //             );
+    //             max_end_vpn = section.vpn_range.get_end();
+    //             // println!("range: 0x{:X}", (usize::from(end_va) - usize::from(start_va)));
+    //             // println!("start_vpn: {:?} end_vpn: {:?}", section.vpn_range.get_start(), section.vpn_range.get_end());
+    //             // println!("ph file_size: 0x{:X}", ph.file_size());
+    //             // println!("ph mem_size: 0x{:X}", ph.mem_size());
+    //             // println!("");
+    //             // user_space.push_section(
+    //             //     section,
+    //             //     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
+    //             // );
+    //             if offset == 0 {
+    //                 user_space.push_section(
+    //                     section,
+    //                     Some(
+    //                         &elf.input
+    //                             [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+    //                     ),
+    //                 );
+    //             } else {
+    //                 user_space.push_section_with_offset(
+    //                     section,
+    //                     offset,
+    //                     Some(
+    //                         &elf.input
+    //                             [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+    //                     ),
+    //                 );
+    //             }
+    //         }
+    //     }
+    //     // clear bss section
+    //     user_space.clear_bss_pages();
+
+    //     let max_end_va: VirtAddr = max_end_vpn.into();
+    //     let mut heap_start: usize = max_end_va.into();
+    //     //guard page
+    //     heap_start += PAGE_SIZE;
+
+    //     // map user stack with U flags
+    //     // user stack is set just below the trap_cx
+    //     let user_stack_high = USER_STACK_HIGH;
+    //     let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
+    //     // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
+    //     // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
+    //     user_space.push_section(
+    //         Section::new(
+    //             ".ustack".to_string(),
+    //             user_stack_bottom.into(),
+    //             user_stack_high.into(),
+    //             MapType::Framed,
+    //             Permission::R | Permission::W | Permission::U,
+    //         ),
+    //         None,
+    //     );
+
+    //     // map TrapContext
+    //     user_space.push_section(
+    //         Section::new(
+    //             ".trap_cx".to_string(),
+    //             TRAP_CONTEXT.into(),
+    //             TRAMPOLINE.into(),
+    //             MapType::Framed,
+    //             Permission::R | Permission::W,
+    //         ),
+    //         None,
+    //     );
+    //     // unsafe { asm!("fence.i") }
+    //     (
+    //         user_space,
+    //         heap_start,
+    //         user_stack_high,
+    //         elf.header.pt2.entry_point() as usize,
+    //     )
+    // }
+    pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize, Vec<AuxHeader>) {
         // println!("create_user_space");
+        let mut auxv: Vec<AuxHeader> = Vec::new();
         let mut user_space = Self::new_empty();
         // map trampoline
         user_space.map_trampoline();
@@ -254,6 +378,70 @@ impl AddrSpace {
         let ph_count = elf_header.pt2.ph_count();
         // println!("ph_count: {}", ph_count);
         let mut max_end_vpn = VirtPageNum(0);
+
+        auxv.push(AuxHeader {
+            aux_type: AT_PHENT,
+            value: elf.header.pt2.ph_entry_size() as usize,
+        }); // ELF64 header 64bytes
+        auxv.push(AuxHeader {
+            aux_type: AT_PHNUM,
+            value: ph_count as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_PAGESZ,
+            value: PAGE_SIZE as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_BASE,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_FLAGS,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_ENTRY,
+            value: elf.header.pt2.entry_point() as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_UID,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_EUID,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_GID,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_EGID,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_PLATFORM,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_HWCAP,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_CLKTCK,
+            value: 100 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_SECURE,
+            value: 0 as usize,
+        });
+        auxv.push(AuxHeader {
+            aux_type: AT_NOTELF,
+            value: 0x112d as usize,
+        });
+
+        let mut head_va = 0;
+        let mut need_data_sec = true;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
@@ -261,10 +449,16 @@ impl AddrSpace {
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                 let name = sect.get_name(&elf).unwrap();
                 // println!("name: {}", name);
+                if name == "data" {
+                    need_data_sec = false;
+                }
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
-                // println!("start_va: {:#X}", usize::from(start_va));
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
-                // println!("end_va: {:#X}", usize::from(end_va));
+                // println!(
+                //     "start_va - end_va: {:#X} - {:#X}",
+                //     usize::from(start_va),
+                //     usize::from(end_va)
+                // );
                 let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
                 // println!("offset: {:#X}", offset);
                 let mut map_perm = Permission::U;
@@ -314,13 +508,38 @@ impl AddrSpace {
                         ),
                     );
                 }
+
+                if start_va.aligned() {
+                    head_va = start_va.0;
+                }
             }
         }
+
+        if need_data_sec == true {
+            let map_perm = Permission::U | Permission::R | Permission::W;
+            let section = Section::new(
+                "data".into(),
+                0x1000.into(),
+                0x4000.into(),
+                MapType::Framed,
+                map_perm,
+            );
+            user_space.push_section(section, Some(&[0u8; 0x3000]));
+        }
+
+        let ph_head_addr = head_va + elf.header.pt2.ph_offset() as usize;
+        auxv.push(AuxHeader {
+            aux_type: AT_PHDR,
+            value: ph_head_addr as usize,
+        });
+        // println!("ph_head_addr: 0x{:#X}", ph_head_addr);
+
         // clear bss section
         user_space.clear_bss_pages();
 
         let max_end_va: VirtAddr = max_end_vpn.into();
         let mut heap_start: usize = max_end_va.into();
+
         //guard page
         heap_start += PAGE_SIZE;
 
@@ -358,6 +577,7 @@ impl AddrSpace {
             heap_start,
             user_stack_high,
             elf.header.pt2.entry_point() as usize,
+            auxv,
         )
     }
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
@@ -408,7 +628,7 @@ impl AddrSpace {
         self.sections.clear();
     }
     pub fn activate(&mut self) {
-        let satp = self.page_table.get_token();
+        let satp = self.page_table.token();
         unsafe {
             satp::write(satp);
             asm!("sfence.vma");
@@ -458,11 +678,12 @@ impl AddrSpace {
             }
         }
     }
-    // size 最终会按页对齐
-    pub fn create_mmap_section(&mut self, mmap_start: usize, size: usize, permission: Permission) {
+    // size 最终会按页对齐, 返回 end_va
+    pub fn create_mmap_section(&mut self, mmap_start: usize, size: usize, permission: Permission) -> VirtAddr {
         let start_va = mmap_start.into();
         let end_va = (mmap_start + size).into();
-        self.insert_mmap_area(".mmap".to_string(), start_va, end_va, permission)
+        self.insert_mmap_area(".mmap".to_string(), start_va, end_va, permission);
+        end_va
     }
 }
 

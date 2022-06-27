@@ -7,6 +7,7 @@ extern crate alloc;
 #[macro_use]
 extern crate bitflags;
 
+use alloc::vec::Vec;
 #[macro_use]
 pub mod console;
 mod lang_items;
@@ -16,8 +17,10 @@ mod syscall;
 use buddy_system_allocator::LockedHeap;
 use syscall::*;
 
-/// 用户堆空间设置为 16 KB 即 4 个页面
-const USER_HEAP_SIZE: usize = 4096 * 4;
+const AT_FDCWD: i32 = -100;
+
+/// 用户堆空间设置为 32 KB 即 8 个页面
+const USER_HEAP_SIZE: usize = 4096 * 8;
 
 static mut HEAP_SPACE: [u8; USER_HEAP_SIZE] = [0; USER_HEAP_SIZE];
 
@@ -34,18 +37,32 @@ pub fn handle_alloc_error(layout: core::alloc::Layout) -> ! {
 
 #[linkage = "weak"]
 #[no_mangle]
-fn main() -> i32 {
+fn main(_argc: usize, _argv: &[&str]) -> i32 {
     panic!("Cannot find main!");
 }
 
 #[no_mangle]
 #[link_section = ".text.entry"]
-pub extern "C" fn _start() -> ! {
+pub extern "C" fn _start(argc: usize, argv: usize) -> ! {
     unsafe {
         HEAP.lock()
             .init(HEAP_SPACE.as_ptr() as usize, USER_HEAP_SIZE);
     }
-    exit(main());
+    let mut v: Vec<&'static str> = Vec::new();
+    for i in 0..argc {
+        let str_start =
+            unsafe { ((argv + i * core::mem::size_of::<usize>()) as *const usize).read_volatile() };
+        let len = (0usize..)
+            .find(|i| unsafe { ((str_start + *i) as *const u8).read_volatile() == 0 })
+            .unwrap();
+        v.push(
+            core::str::from_utf8(unsafe {
+                core::slice::from_raw_parts(str_start as *const u8, len)
+            })
+            .unwrap(),
+        );
+    }
+    exit(main(argc, v.as_slice()));
 }
 
 bitflags! {
@@ -58,11 +75,26 @@ bitflags! {
     }
 }
 
+pub fn dup(fd: usize) -> isize {
+    sys_dup(fd)
+}
+pub fn chdir(path: &str) -> isize {
+    sys_chdir(path)
+}
+pub fn unlink(path: &str) -> isize {
+    sys_unlinkat(AT_FDCWD, path, 0)
+}
+pub fn mkdir(path: &str) -> isize {
+    sys_mkdir(path)
+}
 pub fn open(path: &str, flags: OpenFlags) -> isize {
     sys_open(path, flags.bits)
 }
 pub fn close(fd: usize) -> isize {
     sys_close(fd)
+}
+pub fn pipe(pipe_fd: &mut [usize]) -> isize {
+    sys_pipe(pipe_fd)
 }
 pub fn read(fd: usize, buf: &mut [u8]) -> isize {
     sys_read(fd, buf)

@@ -1,3 +1,4 @@
+mod aux;
 mod context;
 mod idle_task;
 mod kernel_stack;
@@ -5,6 +6,7 @@ mod pid;
 mod recycle_allocator;
 mod task;
 
+pub use aux::*;
 pub use context::TaskContext;
 pub use idle_task::{idle_task, TIME_TO_SCHEDULE};
 pub use pid::{pid_alloc, PidHandle};

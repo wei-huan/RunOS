@@ -108,11 +108,9 @@ __uservec:
     // save the registers.
     sd x1, 1*8(sp)
     # skip sp(x2), we will save it later
-    sd x3, 3*8(sp)
-    # skip tp(x4), application does not use it
-    # save x5~x31
-    .set n, 5
-    .rept 27
+    # save x3~x31
+    .set n, 3
+    .rept 29
         SAVE_GP %n
         .set n, n+1
     .endr
@@ -131,6 +129,8 @@ __uservec:
     ld t0, 34*8(sp)
     # load trap_handler into t1
     ld t1, 36*8(sp)
+    # load hart_id
+    ld tp, 37*8(sp)
     # move to kernel_sp
     ld sp, 35*8(sp)
     # switch to kernel space
@@ -147,6 +147,8 @@ __restore:
     csrw sscratch, a0
     mv sp, a0
     # now sp points to TrapContext in user space, start restoring based on it
+    # store hart_id
+    sd tp, 37*8(sp)
     # restore sstatus/sepc
     ld t0, 32*8(sp)
     ld t1, 33*8(sp)
@@ -155,11 +157,10 @@ __restore:
     # Enable timer interrupts, set STIE bit
     # li t0, 1 << 5
     # csrs sie, t0
-    # restore general purpose registers except x0/sp/tp
+    # restore general purpose registers except x0/sp
     ld x1, 1*8(sp)
-    ld x3, 3*8(sp)
-    .set n, 5
-    .rept 27
+    .set n, 3
+    .rept 29
         LOAD_GP %n
         .set n, n+1
     .endr
