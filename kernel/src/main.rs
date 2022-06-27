@@ -15,6 +15,7 @@ mod config;
 mod cpu;
 mod drivers;
 mod dt;
+mod fpu;
 mod fs;
 mod lang_items;
 mod logger;
@@ -63,6 +64,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
+        fpu::init();
         logo::show();
         scheduler::add_initproc();
         logger::init();

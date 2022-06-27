@@ -1,9 +1,11 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
-    ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, FileDescripter, Kstat,
+    ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, FileDescripter, IOVec, Kstat,
     OpenFlags, MNT_TABLE,
 };
-use crate::mm::{translated_byte_buffer, translated_refmut, translated_str, UserBuffer};
+use crate::mm::{
+    translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
+};
 use crate::task::TaskControlBlockInner;
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -15,6 +17,10 @@ const AT_FDCWD: isize = -100;
 pub const FD_LIMIT: usize = 128;
 
 pub fn sys_ioctl() -> isize {
+    0
+}
+
+pub fn sys_fcntl() -> isize {
     0
 }
 
@@ -48,6 +54,39 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
     }
 }
 
+pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+
+    let mut ret = 0isize;
+
+    if fd >= inner.fd_table.len() {
+        return -1;
+    }
+
+    if let Some(file) = &inner.fd_table[fd] {
+        let f: Arc<dyn File + Send + Sync>;
+        match &file.fclass {
+            FileClass::File(fi) => f = fi.clone(),
+            FileClass::Abstr(fi) => f = fi.clone(),
+        }
+        if !f.writable() {
+            return -1;
+        }
+        // release current task PCB inner manually to avoid multi-borrow
+        drop(inner);
+
+        for i in 0..iocnt {
+            let iovec = translated_ref(token, unsafe { iov.add(i) });
+            let buf = translated_byte_buffer(token, iovec.iov_base, iovec.iov_len);
+            ret += f.write(UserBuffer::new(buf)) as isize;
+        }
+    }
+
+    ret
+}
+
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
@@ -73,6 +112,39 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         -1
     }
 }
+
+pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+
+    if fd >= inner.fd_table.len() {
+        return -1;
+    }
+
+    let mut ret = 0isize;
+    if let Some(file) = &inner.fd_table[fd] {
+        let f: Arc<dyn File + Send + Sync>;
+        match &file.fclass {
+            FileClass::File(fi) => f = fi.clone(),
+            FileClass::Abstr(fi) => f = fi.clone(),
+        }
+        if !f.readable() {
+            return -1;
+        }
+        // release current task PCB inner manually to avoid multi-borrow
+        drop(inner);
+
+        for i in 0..iocnt {
+            let iovec = translated_ref(token, unsafe { iov.add(i) });
+            let buf = translated_byte_buffer(token, iovec.iov_base, iovec.iov_len);
+            ret += f.read(UserBuffer::new(buf)) as isize;
+        }
+    }
+
+    ret
+}
+
 
 // pub fn sys_open(path: *const u8, flags: u32) -> isize {
 //     let task = current_task().unwrap();

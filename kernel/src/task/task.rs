@@ -2,7 +2,7 @@
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
 use super::{pid_alloc, PidHandle};
-use crate::config::{MMAP_BASE, TRAP_CONTEXT};
+use crate::config::{MMAP_BASE, PAGE_SIZE, TRAP_CONTEXT};
 use crate::fs::File;
 use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
@@ -48,7 +48,9 @@ pub struct TaskControlBlockInner {
     pub exit_code: i32,
     pub fd_table: FDTable,
     pub current_path: String,
+    // mmap area
     pub mmap_area_num: usize,
+    pub mmap_area_top: usize,
 }
 
 impl TaskControlBlockInner {
@@ -131,6 +133,7 @@ impl TaskControlBlock {
                 ],
                 current_path: String::from("/"),
                 mmap_area_num: 0,
+                mmap_area_top: MMAP_BASE,
             }),
         };
         // prepare TrapContext in user space
@@ -369,7 +372,7 @@ impl TaskControlBlock {
             KERNEL_SPACE.lock().token(),
             self.kernel_stack.get_top(),
             user_trap_handler as usize,
-            hart_id()
+            hart_id(),
         );
         trap_cx.x[10] = args.len();
         trap_cx.x[11] = argv_base;
@@ -417,6 +420,7 @@ impl TaskControlBlock {
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_num: parent_inner.mmap_area_num,
+                mmap_area_top: parent_inner.mmap_area_top,
             }),
         });
         // add child
@@ -447,33 +451,36 @@ impl TaskControlBlock {
         mut start: usize,
         length: usize,
         prot: usize,
-        flags: usize,
+        _flags: usize,
         fd: isize,
         offset: usize,
     ) -> isize {
         let mut inner = self.acquire_inner_lock();
         let token = inner.get_user_token();
-        let fd_table = inner.fd_table.clone();
-        if fd as usize >= fd_table.len() {
-            return -1;
-        }
         inner.mmap_area_num += 1;
         // prot<<1 is equal to  meaning of Permission, 1<<4 means user
         let map_flags = (((prot & 0b111) << 1) + (1 << 4)) as u8;
+        // log::debug!("mmap start: 0x{:#X}", start);
         // 如果没有 mmap section 就创建 mmap section
         if start == 0 {
+            start = inner.mmap_area_top;
+            // log::debug!("mmap new start: 0x{:#X}", start);
+            inner.mmap_area_top = VirtAddr::from(start + length).ceil().0 * PAGE_SIZE;
             inner.addrspace.create_mmap_section(
-                MMAP_BASE,
+                start,
                 length,
                 Permission::from_bits(map_flags).unwrap(),
             );
-            start = MMAP_BASE;
         } else {
             inner.addrspace.create_mmap_section(
                 start,
                 length,
                 Permission::from_bits(map_flags).unwrap(),
             );
+        }
+        let fd_table = inner.fd_table.clone();
+        if fd < 0 || fd as usize >= fd_table.len() {
+            return start as isize;
         }
         if let Some(file) = &fd_table[fd as usize] {
             match &file.fclass {
@@ -499,7 +506,7 @@ impl TaskControlBlock {
             return -1;
         };
     }
-    pub fn munmap(&self, start: usize, length: usize) -> isize {
+    pub fn munmap(&self, start: usize, _length: usize) -> isize {
         let mut inner = self.acquire_inner_lock();
         inner
             .addrspace

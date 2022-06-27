@@ -9,8 +9,8 @@ pub fn idle_task() {
     let mut cpu = take_my_cpu();
     // cpu idle count + 1;
     cpu.idle_cnt += 1;
-    // let idle_cnt: f32 = cpu.idle_cnt as f32;
-    // let task_cnt: f32 = cpu.task_cnt as f32;
+    let idle_cnt: f32 = cpu.idle_cnt as f32;
+    let task_cnt: f32 = cpu.task_cnt as f32;
     // let idle_cnt = cpu.idle_cnt;
     // let task_cnt = cpu.task_cnt;
     drop(cpu);
@@ -18,10 +18,9 @@ pub fn idle_task() {
     // log::debug!("task_cnt: {}", task_cnt);
     // println!("idle_cnt: {}", idle_cnt);
     // println!("task_cnt: {}", task_cnt);
-    // let cpu_usage: f32 = task_cnt / (idle_cnt + task_cnt);
-    // println!("CPU Usage: {:<3}", cpu_usage);
+    let cpu_usage: f32 = task_cnt / (idle_cnt + task_cnt);
+    log::trace!("CPU Usage: {:<3}", cpu_usage);
     interrupt_on();
-    log::trace!("NP"); // No Process
     unsafe {
         while !TIME_TO_SCHEDULE[hart_id()] {
             wfi()

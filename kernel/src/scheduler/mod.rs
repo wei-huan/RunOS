@@ -33,6 +33,7 @@ pub fn add_task_to_designate_queue(task: Arc<TaskControlBlock>, queue_id: usize)
     SCHEDULER.add_task_to_designate_queue(task, queue_id);
 }
 
+#[allow(unused)]
 pub fn have_ready_task() -> bool {
     SCHEDULER.have_ready_task()
 }
@@ -85,6 +86,7 @@ pub fn save_current_and_back_to_schedule(current_task_cx_ptr: *mut TaskContext) 
 
 // Write initproc & user_shell into file system to be executed
 // And then release them to fram_allocator
+#[allow(unused)]
 pub fn add_initproc_into_fs() {
     extern "C" {
         fn _num_app();

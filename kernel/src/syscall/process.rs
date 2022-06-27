@@ -46,7 +46,7 @@ pub fn sys_times(times: *mut Times) -> isize {
 //     time_t   tv_sec;        /* seconds */
 //     long     tv_nsec;       /* nanoseconds */
 // };
-pub fn sys_clock_get_time(clk_id: usize, tp: *mut u64) -> isize {
+pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
     if tp as usize == 0 {
         return 0;
     }
@@ -61,6 +61,7 @@ pub fn sys_clock_get_time(clk_id: usize, tp: *mut u64) -> isize {
 }
 
 pub fn sys_set_tid_address(ptr: *mut usize) -> isize {
+    // log::debug!("sys_set_tid_address");
     let token = current_user_token();
     *translated_refmut(token, ptr) = current_task().unwrap().pid.0;
     let ret = current_task().unwrap().pid.0 as isize;
@@ -100,7 +101,7 @@ pub fn sys_gettid() -> isize {
 //            a0,    a1,    a2,  a3,   a4,  a5,   a6
 // 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
-pub fn sys_fork(flags: usize, stack_ptr: usize, ptid: usize, ctid: usize, newtls: usize) -> isize {
+pub fn sys_fork(_flags: usize, stack_ptr: usize, _ptid: usize, ctid: usize, _newtls: usize) -> isize {
     let current_task = current_task().unwrap();
     let new_task = current_task.fork();
     // println!("here_1");
@@ -172,7 +173,7 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         let argc = args_vec.len();
         // log::debug!("before task.exec");
         task.exec(all_data.as_slice(), args_vec);
-        log::debug!("after task.exec, now return");
+        // log::debug!("after task.exec, now return");
         argc as isize
     } else {
         -1
@@ -279,6 +280,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 // brk_addr can‘t be negative, so it would not shrink to zero
 // return heap size
 pub fn sys_brk(brk_addr: usize) -> isize {
+    // log::debug!("sys_brk");
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
     let heap_start = inner.heap_start;
@@ -381,6 +383,7 @@ pub fn sys_mmap(
     fd: isize,
     offset: usize,
 ) -> isize {
+    // log::debug!("sys_mmap");
     let task = current_task().unwrap();
     task.mmap(start, length, prot, flags, fd, offset)
 }

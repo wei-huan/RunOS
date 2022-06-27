@@ -40,7 +40,7 @@ pub trait File: Send + Sync {
     fn write(&self, buf: UserBuffer) -> usize;
 }
 
-pub use finfo::{Dirent, FdSet, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN, *};
+pub use finfo::*;
 pub use inode::{
     ch_dir, clear_cache, init_rootfs, list_apps, list_files, open, DiskInodeType, OSInode,
     OpenFlags,
