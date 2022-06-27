@@ -643,7 +643,7 @@ pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
     let path = translated_str(token, path);
     //print!("\n");
     //println!("unlink: path = {}", path);
-    let mut inner = task.acquire_inner_lock();
+    let inner = task.acquire_inner_lock();
     //println!("openat: fd = {}", dirfd);
     if let Some(file) = get_file_discpt(
         fd as isize,

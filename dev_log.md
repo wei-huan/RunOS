@@ -255,7 +255,6 @@ mmap, munmap clone 完善, 对标志的检查
 多线程
 多用户
 
-
 今天是2022年5月18日
 
 下一步：
@@ -290,3 +289,12 @@ hifive unmatched
 mmap, munmap clone 完善, 对标志的检查
 多线程
 多用户
+
+2022年6月18日 - 2022年7月1日
+提供 busybox lua 支持, 包括运行环境, 信号(signal), 各种syscall
+tm 的 busybox 好大呀, 怎么裁减, 试了各种工具链都不行, 而且居然没有 .data
+段, 还 tm 要自己给提供
+
+下一步：
+写文件系统的文档
+hifive unmatched
