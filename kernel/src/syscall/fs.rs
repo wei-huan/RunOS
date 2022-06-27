@@ -1,7 +1,7 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
     ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, FileDescripter, IOVec, Kstat,
-    OpenFlags, MNT_TABLE,
+    OSInode, OpenFlags, MNT_TABLE, S_IFDIR, S_IFREG, S_IRWXG, S_IRWXO, S_IRWXU,
 };
 use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
@@ -144,7 +144,6 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 
     ret
 }
-
 
 // pub fn sys_open(path: *const u8, flags: u32) -> isize {
 //     let task = current_task().unwrap();
@@ -291,7 +290,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
 }
 
 pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
-    log::debug!("sys_fstat fd: {}", fd);
+    log::trace!("sys_fstat fd: {}", fd);
     let token = current_user_token();
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
@@ -334,6 +333,43 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
             return -1;
         }
     }
+}
+
+fn fstat_inner(f: Arc<OSInode>, userbuf: &mut UserBuffer) -> isize {
+    let mut kstat = Kstat::empty();
+    kstat.st_mode = {
+        if f.is_dir() {
+            S_IFDIR | S_IRWXU | S_IRWXG | S_IRWXO
+        } else {
+            S_IFREG | S_IRWXU | S_IRWXG | S_IRWXO
+        }
+    };
+    kstat.st_ino = f.get_head_cluster() as u64;
+    kstat.st_size = f.get_size() as i64;
+    userbuf.write(kstat.as_bytes());
+    0
+}
+
+pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    let path = translated_str(token, path);
+
+    let buf_vec = translated_byte_buffer(token, buf, size_of::<Kstat>());
+    let mut userbuf = UserBuffer::new(buf_vec);
+
+    let cwd = if dirfd == AT_FDCWD && !path.starts_with("/") {
+        task.acquire_inner_lock().current_path.clone()
+    } else {
+        String::from("/")
+    };
+
+    let ret = if let Some(osfile) = open(&cwd, &path, OpenFlags::RDONLY, DiskInodeType::Directory) {
+        fstat_inner(osfile, &mut userbuf)
+    } else {
+        -1
+    };
+    ret
 }
 
 pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
@@ -598,4 +634,28 @@ pub fn sys_umount(p_special: *const u8, flags: usize) -> isize {
     let token = current_user_token();
     let special = translated_str(token, p_special);
     MNT_TABLE.lock().umount(special, flags as u32)
+}
+
+pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isize {
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
+    let path = translated_str(token, path);
+    //print!("\n");
+    //println!("unlink: path = {}", path);
+    let mut inner = task.acquire_inner_lock();
+    //println!("openat: fd = {}", dirfd);
+    if let Some(file) = get_file_discpt(
+        fd as isize,
+        &path,
+        &inner,
+        OpenFlags::from_bits(flags).unwrap(),
+    ) {
+        match file {
+            FileClass::File(f) => return 0,
+            _ => return -1,
+        }
+    } else {
+        return -2;
+    }
 }

@@ -1,10 +1,12 @@
 mod fs;
 mod process;
+mod syslog;
 mod utsname;
 
 use crate::timer::{TimeVal, Times};
 use fs::*;
 use process::*;
+use syslog::*;
 use utsname::*;
 
 const SYSCALL_GETCWD: usize = 17;
@@ -17,6 +19,7 @@ const SYSCALL_UNLINKAT: usize = 35;
 const SYSCALL_LINKAT: usize = 37;
 const SYSCALL_UMOUNT2: usize = 39;
 const SYSCALL_MOUNT: usize = 40;
+const SYSCALL_FACCESSAT: usize = 48;
 const SYSCALL_CHDIR: usize = 49;
 const SYSCALL_OPENAT: usize = 56;
 const SYSCALL_CLOSE: usize = 57;
@@ -26,13 +29,14 @@ const SYSCALL_READ: usize = 63;
 const SYSCALL_WRITE: usize = 64;
 const SYSCALL_READV: usize = 65;
 const SYSCALL_WRITEV: usize = 66;
+const SYSCALL_FSTATAT: usize = 79;
 const SYSCALL_FSTAT: usize = 80;
 const SYSCALL_EXIT: usize = 93;
 const SYSCALL_EXIT_GRUOP: usize = 94;
 const SYSCALL_SET_TID_ADDRESS: usize = 96;
 const SYSCALL_NANOSLEEP: usize = 101;
 const SYSCALL_CLOCK_GETTIME: usize = 113;
-const SYSCALL_SETGROUPS: usize = 116;
+const SYSCALL_SYSLOG: usize = 116;
 const SYSCALL_SCHED_YIELD: usize = 124;
 const SYSCALL_TIMES: usize = 153;
 const SYSCALL_UNAME: usize = 160;
@@ -71,6 +75,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[3] as usize,
             args[4] as *const u8,
         ),
+        SYSCALL_FACCESSAT => sys_faccessat(args[0], args[1] as *const u8, args[2], 0),
         SYSCALL_CHDIR => sys_chdir(args[0] as *const u8),
         SYSCALL_OPENAT => sys_open_at(
             args[0] as isize,
@@ -87,6 +92,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
         SYSCALL_READV => sys_readv(args[0], args[1] as *const crate::fs::IOVec, args[2]),
         SYSCALL_WRITEV => sys_writev(args[0], args[1] as *const crate::fs::IOVec, args[2]),
+        SYSCALL_FSTATAT => sys_fstatat(args[0] as isize, args[1] as *mut u8, args[2] as *mut u8),
         SYSCALL_FSTAT => sys_fstat(args[0] as isize, args[1] as *mut u8),
         SYSCALL_EXIT => sys_exit(args[0] as i32),
         SYSCALL_EXIT_GRUOP => sys_exit_group(args[0] as i32),
@@ -95,6 +101,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             &mut *(args[1] as *mut TimeVal)
         }),
         SYSCALL_CLOCK_GETTIME => sys_clock_get_time(args[0] as usize, args[1] as *mut u64),
+        SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
