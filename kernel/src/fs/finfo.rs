@@ -106,8 +106,8 @@ impl Dirent {
 #[derive(Default)]
 pub struct Kstat {
     st_dev: u64,   /* ID of device containing file */
-    st_ino: u64,   /* Inode number */
-    st_mode: u32,  /* File type and mode */
+    pub st_ino: u64,   /* Inode number */
+    pub st_mode: u32,  /* File type and mode */
     st_nlink: u32, /* Number of hard links */
     st_uid: u32,
     st_gid: u32,
