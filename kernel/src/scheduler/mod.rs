@@ -5,11 +5,13 @@ use crate::cpu::take_my_cpu;
 use crate::fs::{open, DiskInodeType, File, OpenFlags};
 use crate::mm::{add_free, UserBuffer};
 use crate::task::{TaskContext, TaskControlBlock};
+use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use core::arch::global_asm;
 use lazy_static::*;
 use round_robin::RoundRobinScheduler;
+use spin::Mutex;
 
 pub trait Scheduler {
     fn schedule(&self);
@@ -19,6 +21,8 @@ pub trait Scheduler {
 
 lazy_static! {
     pub static ref SCHEDULER: RoundRobinScheduler = RoundRobinScheduler::new();
+    pub static ref PID2TCB: Mutex<BTreeMap<usize, Arc<TaskControlBlock>>> =
+        unsafe { Mutex::new(BTreeMap::new()) };
 }
 
 pub fn schedule() {
@@ -26,16 +30,30 @@ pub fn schedule() {
 }
 
 pub fn add_task(task: Arc<TaskControlBlock>) {
+    PID2TCB.lock().insert(task.getpid(), Arc::clone(&task));
     SCHEDULER.add_task(task);
 }
 
 pub fn add_task_to_designate_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
+    PID2TCB.lock().insert(task.getpid(), Arc::clone(&task));
     SCHEDULER.add_task_to_designate_queue(task, queue_id);
 }
 
 #[allow(unused)]
 pub fn have_ready_task() -> bool {
     SCHEDULER.have_ready_task()
+}
+
+pub fn pid2task(pid: usize) -> Option<Arc<TaskControlBlock>> {
+    let map = PID2TCB.lock();
+    map.get(&pid).map(Arc::clone)
+}
+
+pub fn remove_from_pid2task(pid: usize) {
+    let mut map = PID2TCB.lock();
+    if map.remove(&pid).is_none() {
+        panic!("cannot find pid {} in pid2task!", pid);
+    }
 }
 
 global_asm!(include_str!("schedule.S"));

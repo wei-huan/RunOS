@@ -1,7 +1,10 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_trap_cx, current_user_token, hart_id, current_task};
+use crate::cpu::{current_task, current_trap_cx, current_user_token, hart_id};
 use crate::syscall::syscall;
-use crate::task::{exit_current_and_run_next, suspend_current_and_run_next, TIME_TO_SCHEDULE};
+use crate::task::{
+    check_signals_error_of_current, current_add_signal, exit_current_and_run_next, handle_signals,
+    suspend_current_and_run_next, SignalFlags, TIME_TO_SCHEDULE,
+};
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use riscv::register::{
@@ -127,6 +130,7 @@ pub fn user_trap_handler() -> ! {
             println!("heap_base = {:#x?}, heap_top = {:#x?}", heap_base, heap_top);
             // page fault exit code
             exit_current_and_run_next(-2);
+            current_add_signal(SignalFlags::SIGSEGV);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             log::debug!("[kernel] IllegalInstruction in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
@@ -134,6 +138,7 @@ pub fn user_trap_handler() -> ! {
             current_trap_cx().sepc);
             // illegal instruction exit code
             exit_current_and_run_next(-3);
+            current_add_signal(SignalFlags::SIGILL);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             // log::debug!("User Timer");
@@ -148,7 +153,14 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
-    // log::debug!("before trap_return");
+    // handle signals (handle the sent signal)
+    handle_signals();
+
+    // check error signals (if error then exit)
+    if let Some((errno, msg)) = check_signals_error_of_current() {
+        log::error!("[kernel] {}", msg);
+        exit_current_and_run_next(errno);
+    }
     trap_return();
 }
 

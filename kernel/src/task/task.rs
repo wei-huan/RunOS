@@ -1,7 +1,7 @@
 // use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
-use super::{pid_alloc, PidHandle};
+use super::{pid_alloc, PidHandle, SignalActions, SignalFlags};
 use crate::config::{MMAP_BASE, PAGE_SIZE, TRAP_CONTEXT};
 use crate::fs::File;
 use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
@@ -51,6 +51,18 @@ pub struct TaskControlBlockInner {
     // mmap area
     pub mmap_area_num: usize,
     pub mmap_area_top: usize,
+    // signals
+    pub signals: SignalFlags,
+    pub signal_mask: SignalFlags,
+    // the signal which is being handling
+    pub handling_sig: isize,
+    // Signal actions
+    pub signal_actions: SignalActions,
+    // if the task is killed
+    pub killed: bool,
+    // if the task is frozen by a signal
+    pub frozen: bool,
+    pub trap_ctx_backup: Option<TrapContext>,
 }
 
 impl TaskControlBlockInner {
@@ -134,6 +146,13 @@ impl TaskControlBlock {
                 current_path: String::from("/"),
                 mmap_area_num: 0,
                 mmap_area_top: MMAP_BASE,
+                signals: SignalFlags::empty(),
+                signal_mask: SignalFlags::empty(),
+                handling_sig: -1,
+                signal_actions: SignalActions::default(),
+                killed: false,
+                frozen: false,
+                trap_ctx_backup: None,
             }),
         };
         // prepare TrapContext in user space
@@ -421,6 +440,14 @@ impl TaskControlBlock {
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_num: parent_inner.mmap_area_num,
                 mmap_area_top: parent_inner.mmap_area_top,
+                signals: SignalFlags::empty(),
+                // inherit the signal_mask and signal_action
+                signal_mask: parent_inner.signal_mask,
+                handling_sig: -1,
+                signal_actions: parent_inner.signal_actions.clone(),
+                killed: false,
+                frozen: false,
+                trap_ctx_backup: None,
             }),
         });
         // add child

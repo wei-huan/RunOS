@@ -2,8 +2,10 @@ use crate::cpu::{current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
-use crate::scheduler::add_task;
-use crate::task::{exit_current_and_run_next, suspend_current_and_run_next};
+use crate::scheduler::{add_task, pid2task};
+use crate::task::{
+    exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,
+};
 use crate::timer::*;
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -101,7 +103,13 @@ pub fn sys_gettid() -> isize {
 //            a0,    a1,    a2,  a3,   a4,  a5,   a6
 // 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
-pub fn sys_fork(_flags: usize, stack_ptr: usize, _ptid: usize, ctid: usize, _newtls: usize) -> isize {
+pub fn sys_fork(
+    _flags: usize,
+    stack_ptr: usize,
+    _ptid: usize,
+    ctid: usize,
+    _newtls: usize,
+) -> isize {
     let current_task = current_task().unwrap();
     let new_task = current_task.fork();
     // println!("here_1");
@@ -391,4 +399,92 @@ pub fn sys_mmap(
 pub fn sys_munmap(start: usize, length: usize) -> isize {
     let task = current_task().unwrap();
     task.munmap(start, length)
+}
+
+pub fn sys_kill(pid: usize, signum: i32) -> isize {
+    if let Some(task) = pid2task(pid) {
+        if let Some(flag) = SignalFlags::from_bits(1 << signum) {
+            // insert the signal if legal
+            let mut task_ref = task.acquire_inner_lock();
+            if task_ref.signals.contains(flag) {
+                return -1;
+            }
+            task_ref.signals.insert(flag);
+            0
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+pub fn sys_sigprocmask(mask: u32) -> isize {
+    if let Some(task) = current_task() {
+        let mut inner = task.acquire_inner_lock();
+        let old_mask = inner.signal_mask;
+        if let Some(flag) = SignalFlags::from_bits(mask) {
+            inner.signal_mask = flag;
+            old_mask.bits() as isize
+        } else {
+            -1
+        }
+    } else {
+        -1
+    }
+}
+
+pub fn sys_sigretrun() -> isize {
+    if let Some(task) = current_task() {
+        let mut inner = task.acquire_inner_lock();
+        inner.handling_sig = -1;
+        // restore the trap context
+        let trap_ctx = inner.get_trap_cx();
+        *trap_ctx = inner.trap_ctx_backup.unwrap();
+        0
+    } else {
+        -1
+    }
+}
+
+fn check_sigaction_error(signal: SignalFlags, action: usize, old_action: usize) -> bool {
+    if action == 0
+        || old_action == 0
+        || signal == SignalFlags::SIGKILL
+        || signal == SignalFlags::SIGSTOP
+    {
+        true
+    } else {
+        false
+    }
+}
+
+pub fn sys_sigaction(
+    signum: i32,
+    action: *const SignalAction,
+    old_action: *mut SignalAction,
+) -> isize {
+    let token = current_user_token();
+    if let Some(task) = current_task() {
+        let mut inner = task.acquire_inner_lock();
+        if signum as usize > MAX_SIG {
+            return -1;
+        }
+        if let Some(flag) = SignalFlags::from_bits(1 << signum) {
+            if check_sigaction_error(flag, action as usize, old_action as usize) {
+                return -1;
+            }
+            let old_kernel_action = inner.signal_actions.table[signum as usize];
+            if old_kernel_action.mask != SignalFlags::from_bits(40).unwrap() {
+                *translated_refmut(token, old_action) = old_kernel_action;
+            } else {
+                let mut ref_old_action = *translated_refmut(token, old_action);
+                ref_old_action.handler = old_kernel_action.handler;
+            }
+            let ref_action = translated_ref(token, action);
+            inner.signal_actions.table[signum as usize] = *ref_action;
+            return 0;
+        }
+    }
+    -1
 }
