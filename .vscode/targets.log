@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Jun 27 14:31:13 2022
+# Make data base, printed on Mon Jun 27 21:17:20 2022
 
 # Variables
 
@@ -79,7 +79,7 @@ MANAGERPID = 3723
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0862faa0-a311-4175-98c6-49c5db647739.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-698ffef1-6d25-426a-a3e2-20b3200412be.sock
 # environment
 LC_NAME = zh_CN.UTF-8
 # environment
@@ -283,11 +283,11 @@ _CE_CONDA =
 # environment
 LANG = C
 # variable set hash-table stats:
- 
 # Load=136/1024=13%, Rehash=0, Collisions=28/179=16%
 
 # Pattern-specific Variable Values
 
+ 
 # No pattern-specific variable values.
 
 # Directories
@@ -457,6 +457,6 @@ disasm:
 # strcache performance: lookups = 66 / hit rate = 42%
 # hash-table stats:
 # Load=38/8192=0%, Rehash=0, Collisions=1/66=2%
-# Finished Make data base on Mon Jun 27 14:31:13 2022
+# Finished Make data base on Mon Jun 27 21:17:20 2022
 
  
