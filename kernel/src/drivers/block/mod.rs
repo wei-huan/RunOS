@@ -10,9 +10,5 @@ use lazy_static::*;
 use runfs::BlockDevice;
 
 lazy_static! {
-    pub static ref BLOCK_DEVICE: Arc<dyn BlockDevice> = {
-        let b = Arc::new(BlockDeviceImpl::new());
-        // println!("here block device");
-        b
-    };
+    pub static ref BLOCK_DEVICE: Arc<dyn BlockDevice> = Arc::new(BlockDeviceImpl::new());
 }
