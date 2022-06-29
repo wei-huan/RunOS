@@ -26,12 +26,15 @@ const SYSCALL_OPENAT: usize = 56;
 const SYSCALL_CLOSE: usize = 57;
 const SYSCALL_PIPE: usize = 59;
 const SYSCALL_GETDENTS64: usize = 61;
+const SYSCALL_LSEEK: usize = 62;
 const SYSCALL_READ: usize = 63;
 const SYSCALL_WRITE: usize = 64;
 const SYSCALL_READV: usize = 65;
 const SYSCALL_WRITEV: usize = 66;
+const SYSCALL_SENDFILE: usize = 71;
 const SYSCALL_FSTATAT: usize = 79;
 const SYSCALL_FSTAT: usize = 80;
+const SYSCALL_UTIMENSAT: usize = 88;
 const SYSCALL_EXIT: usize = 93;
 const SYSCALL_EXIT_GRUOP: usize = 94;
 const SYSCALL_SET_TID_ADDRESS: usize = 96;
@@ -93,12 +96,20 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETDENTS64 => {
             sys_getdents64(args[0] as isize, args[1] as *mut u8, args[2] as usize)
         }
+        SYSCALL_LSEEK=> sys_lseek(args[0] as usize, args[1] as isize, args[2] as i32),
         SYSCALL_READ => sys_read(args[0], args[1] as *const u8, args[2]),
         SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
         SYSCALL_READV => sys_readv(args[0], args[1] as *const crate::fs::IOVec, args[2]),
         SYSCALL_WRITEV => sys_writev(args[0], args[1] as *const crate::fs::IOVec, args[2]),
+        SYSCALL_SENDFILE => sys_sendfile(
+            args[0] as isize,
+            args[1] as isize,
+            args[2] as *mut usize,
+            args[3] as usize,
+        ),
         SYSCALL_FSTATAT => sys_fstatat(args[0] as isize, args[1] as *mut u8, args[2] as *mut u8),
         SYSCALL_FSTAT => sys_fstat(args[0] as isize, args[1] as *mut u8),
+        SYSCALL_UTIMENSAT => sys_utimensat(args[0], args[1] as *const u8, args[2], args[3] as u32),
         SYSCALL_EXIT => sys_exit(args[0] as i32),
         SYSCALL_EXIT_GRUOP => sys_exit_group(args[0] as i32),
         SYSCALL_SET_TID_ADDRESS => sys_set_tid_address(args[0] as *mut usize),

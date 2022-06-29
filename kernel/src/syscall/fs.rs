@@ -88,6 +88,7 @@ pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 }
 
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
+    // log::debug!("sys_read");
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -228,6 +229,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
 }
 
 pub fn sys_close(fd: usize) -> isize {
+    log::debug!("sys_close");
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     if fd >= inner.fd_table.len() {
@@ -656,5 +658,92 @@ pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
         }
     } else {
         return -2;
+    }
+}
+
+#[repr(C)]
+struct Timespec {
+    tv_sec: usize,  /* seconds */
+    tv_nsec: usize, /* nanoseconds */
+}
+
+pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isize {
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    let path = translated_str(token, path);
+    let mut inner = task.acquire_inner_lock();
+    if let Some(file) = get_file_discpt(
+        fd as isize,
+        &path,
+        &inner,
+        OpenFlags::from_bits(flags).unwrap(),
+    ) {
+        match file {
+            FileClass::File(f) => return 0,
+            _ => return -1,
+        }
+    } else {
+        return -2;
+    }
+}
+
+/* return the num of bytes */
+pub fn sys_sendfile(out_fd: isize, in_fd: isize, offset_ptr: *mut usize, count: usize) -> isize {
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    let inner = task.acquire_inner_lock();
+
+    if let Some(file_in) = &inner.fd_table[in_fd as usize] {
+        // file_in exists
+        match &file_in.fclass {
+            FileClass::File(fin) => {
+                if let Some(file_out) = &inner.fd_table[out_fd as usize] {
+                    //file_out exists
+                    match &file_out.fclass {
+                        FileClass::File(fout) => {
+                            if offset_ptr as usize != 0 {
+                                //won't influence file.offset
+                                let offset = translated_refmut(token, offset_ptr);
+                                let data = fin.read_vec(*offset as isize, count);
+                                let wlen = fout.write_all(&data);
+                                *offset += wlen;
+                                return wlen as isize;
+                            } else {
+                                //use file.offset
+                                let data = fin.read_vec(-1, count);
+                                let wlen = fout.write_all(&data);
+                                return wlen as isize;
+                            }
+                        }
+                        _ => return -1,
+                    }
+                } else {
+                    return -1;
+                }
+            }
+            _ => return -1,
+        }
+    } else {
+        return -1;
+    }
+}
+
+pub fn sys_lseek(fd: usize, offset: isize, whence: i32) -> isize {
+    let task = current_task().unwrap();
+    let token = current_user_token();
+    let inner = task.acquire_inner_lock();
+
+    if fd > inner.fd_table.len() {
+        return -1;
+    }
+
+    if let Some(fdes) = &inner.fd_table[fd] {
+        let fclass = &fdes.fclass;
+        match fclass {
+            FileClass::File(inode) => return inode.lseek(offset as isize, whence),
+            _ => return -1,
+        }
+    } else {
+        return -1;
     }
 }

@@ -152,7 +152,7 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
-    // log::trace!("sys_exec");
+    log::debug!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
     let mut args_vec: Vec<String> = Vec::new();
@@ -391,12 +391,13 @@ pub fn sys_mmap(
     fd: isize,
     offset: usize,
 ) -> isize {
-    // log::debug!("sys_mmap");
+    log::debug!("sys_mmap");
     let task = current_task().unwrap();
     task.mmap(start, length, prot, flags, fd, offset)
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
+    log::debug!("sys_unmmap");
     let task = current_task().unwrap();
     task.munmap(start, length)
 }
