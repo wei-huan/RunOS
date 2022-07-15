@@ -2,7 +2,6 @@ use crate::cpu::current_user_token;
 use crate::mm::{translated_byte_buffer, UserBuffer};
 use core::mem::size_of;
 
-#[allow(unused)]
 struct UTSName {
     sysname: [u8; 65],
     nodename: [u8; 65],

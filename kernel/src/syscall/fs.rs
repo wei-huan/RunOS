@@ -167,7 +167,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
     let path = translated_str(token, path);
     let mut inner = task.acquire_inner_lock();
 
-    let oflags = OpenFlags::from_bits(flags).unwrap();
+    let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
     if dirfd == AT_FDCWD {
         if let Some(inode) = open(
             inner.get_work_path().as_str(),

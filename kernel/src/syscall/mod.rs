@@ -1,5 +1,6 @@
 mod fs;
 mod process;
+mod sysinfo;
 mod syslog;
 mod utsname;
 
@@ -7,6 +8,7 @@ use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
 use fs::*;
 use process::*;
+use sysinfo::*;
 use syslog::*;
 use utsname::*;
 
@@ -56,6 +58,7 @@ const SYSCALL_GETEUID: usize = 175;
 const SYSCALL_GETGID: usize = 176;
 const SYSCALL_GETEGID: usize = 177;
 const SYSCALL_GETTID: usize = 178;
+const SYSCALL_SYSINFO: usize = 179;
 const SYSCALL_SBRK: usize = 213;
 const SYSCALL_BRK: usize = 214;
 const SYSCALL_MUNMAP: usize = 215;
@@ -96,7 +99,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETDENTS64 => {
             sys_getdents64(args[0] as isize, args[1] as *mut u8, args[2] as usize)
         }
-        SYSCALL_LSEEK=> sys_lseek(args[0] as usize, args[1] as isize, args[2] as i32),
+        SYSCALL_LSEEK => sys_lseek(args[0] as usize, args[1] as isize, args[2] as i32),
         SYSCALL_READ => sys_read(args[0], args[1] as *const u8, args[2]),
         SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
         SYSCALL_READV => sys_readv(args[0], args[1] as *const crate::fs::IOVec, args[2]),
@@ -137,6 +140,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETGID => sys_getgid(),
         SYSCALL_GETEGID => sys_getegid(),
         SYSCALL_GETTID => sys_gettid(),
+        SYSCALL_SYSINFO => sys_sysinfo(args[0] as *mut u8),
         SYSCALL_SBRK => sys_sbrk(args[0] as isize),
         SYSCALL_BRK => sys_brk(args[0]),
         SYSCALL_CLONE => sys_fork(
