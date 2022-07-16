@@ -35,9 +35,9 @@ mod timer;
 mod trap;
 mod utils;
 
-// #[cfg(all(feature = "qemu", feature = "opensbi"))]
+// #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 use crate::cpu::SMP_START;
-// #[cfg(all(feature = "qemu", feature = "opensbi"))]
+// #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 use crate::cpu::hart_id;
 use crate::owo_colors::OwoColorize;
 use core::arch::global_asm;
@@ -81,6 +81,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     } else {
         trap::init();
         mm::init();
+        fpu::init();
         timer::init();
         log::info!(
             "{}",
@@ -113,7 +114,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         // fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
-        // cpu::boot_all_harts(hartid);
+        cpu::boot_all_harts(hartid);
         scheduler::schedule();
     } else {
         trap::init();
