@@ -1,131 +1,0 @@
-make[1]: Entering directory '/home/weihuan/WorkSpace/OS/MyOS/kernel'
-make[2]: Entering directory '/home/weihuan/WorkSpace/OS/MyOS/kernel'
-make[2]: Leaving directory '/home/weihuan/WorkSpace/OS/MyOS/kernel'
-../tools/kflash.py
-python3 ../tools/kflash.py -p /dev/ttyUSB0 -b 1500000 target/riscv64gc-unknown-none-elf/release/kernel.bin
-[32m[1m[INFO][0m COM Port Selected Manually:  /dev/ttyUSB0 [0m
-[32m[1m[INFO][0m Default baudrate is 115200 , later it may be changed to the value you set. [0m
-[32m[1m[INFO][0m Trying to Enter the ISP Mode... [0m
-._
-[32m[1m[INFO][0m Automatically detected goE/kd233 [0m
-
-[32m[1m[INFO][0m Greeting Message Detected, Start Downloading ISP [0m
-Downloading ISP: |===-----------------------------------------------------------------------------------------------------| 3.3% Downloading ISP: |======--------------------------------------------------------------------------------------------------| 6.7% Downloading ISP: |==========----------------------------------------------------------------------------------------------| 10.0% Downloading ISP: |=============-------------------------------------------------------------------------------------------| 13.3% Downloading ISP: |=================---------------------------------------------------------------------------------------| 16.7% Downloading ISP: |====================------------------------------------------------------------------------------------| 20.0% Downloading ISP: |========================--------------------------------------------------------------------------------| 23.3% Downloading ISP: |===========================-----------------------------------------------------------------------------| 26.7% Downloading ISP: |===============================-------------------------------------------------------------------------| 30.0% Downloading ISP: |==================================----------------------------------------------------------------------| 33.3% Downloading ISP: |======================================------------------------------------------------------------------| 36.7% 10kiB/sDownloading ISP: |=========================================---------------------------------------------------------------| 40.0% 10kiB/sDownloading ISP: |=============================================-----------------------------------------------------------| 43.3% 10kiB/sDownloading ISP: |================================================--------------------------------------------------------| 46.7% 10kiB/sDownloading ISP: |====================================================----------------------------------------------------| 50.0% 10kiB/sDownloading ISP: |=======================================================-------------------------------------------------| 53.3% 10kiB/sDownloading ISP: |==========================================================----------------------------------------------| 56.7% 10kiB/sDownloading ISP: |==============================================================------------------------------------------| 60.0% 10kiB/sDownloading ISP: |=================================================================---------------------------------------| 63.3% 10kiB/sDownloading ISP: |=====================================================================-----------------------------------| 66.7% 10kiB/sDownloading ISP: |========================================================================--------------------------------| 70.0% 10kiB/sDownloading ISP: |============================================================================----------------------------| 73.3% 10kiB/sDownloading ISP: |===============================================================================-------------------------| 76.7% 10kiB/sDownloading ISP: |===================================================================================---------------------| 80.0% 10kiB/sDownloading ISP: |======================================================================================------------------| 83.3% 10kiB/sDownloading ISP: |==========================================================================================--------------| 86.7% 10kiB/sDownloading ISP: |=============================================================================================-----------| 90.0% 10kiB/sDownloading ISP: |=================================================================================================-------| 93.3% 10kiB/sDownloading ISP: |====================================================================================================----| 96.7% 10kiB/sDownloading ISP: |========================================================================================================| 100.0% 10kiB/s
-[32m[1m[INFO][0m Booting From 0x80000000 [0m
-[32m[1m[INFO][0m Wait For 0.1 second for ISP to Boot [0m
-[32m[1m[INFO][0m Boot to Flashmode Successfully [0m
-[32m[1m[INFO][0m Selected Baudrate:  1500000 [0m
-[32m[1m[INFO][0m Baudrate changed, greeting with ISP again ...  [0m
-[32m[1m[INFO][0m Boot to Flashmode Successfully [0m
-[32m[1m[INFO][0m Selected Flash:  On-Board [0m
-[32m[1m[INFO][0m Initialization flash Successfully [0m
-Programming BIN: |===============-----------------------------------------------------------------------------------------| 15.2% 54kiB/sProgramming BIN: |===============================-------------------------------------------------------------------------| 30.5% 55kiB/sProgramming BIN: |===============================================---------------------------------------------------------| 45.7% 54kiB/sProgramming BIN: |===============================================================-----------------------------------------| 61.0% 54kiB/sProgramming BIN: |===============================================================================-------------------------| 76.2% 54kiB/sProgramming BIN: |===============================================================================================---------| 91.4% 54kiB/sProgramming BIN: |========================================================================================================| 100.0% 53kiB/s
-[32m[1m[INFO][0m Rebooting... [0m
-python3 -m serial.tools.miniterm --eol LF --dtr 0 --rts 0 --filter direct /dev/ttyUSB0 115200
-  |  |  |  |    \   \       |  |      \   \    |   _  < |  |
-|  |\  \----.|  `--'  |.----)   |      |  |  .----)   |   |  |_)  ||  |
-| _| `._____| \______/ |_______/       |__|  |_______/    |______/ |__|
-
-[rustsbi] Implementation: RustSBI-K210 Version 0.0.2
-[rustsbi] misa: RV64ACDFIMSU
-[rustsbi] mideleg: ssoft, stimer (0x22)
-[rustsbi] medeleg: ima, bkpt, uecall (0x109)
-[rustsbi] enter supervisor 0x80020000
-[33m
-.______      __    __ .____    __      .<----_________ -------_________
-|   _  \    |  |  |  ||    \  |  |       .<---_/ _____ \  __-- / _____/
-|  |_)  |   |  |  |  ||  .  \ |  |      .<--- /  /    \ \  ---|  (
-|      /    |  |  |  ||  |\  \|  |     .<--- (  (      ) | _---\  \
-|  |\  \----|  `--'  ||  | \  '  |      .<---_\__\____/ / ______) /
-| _| `._____|\______/ |__|  \____|     .<---___\______ /_________/
-[39m
-[    0.342][ [34m INFO[0m ][HART 0][kernel::logger] [34m=== Machine Info ===[39m
-[    0.351][ [34m INFO[0m ][HART 0][kernel::logger]  Total CPUs: 2
-[    0.359][ [34m INFO[0m ][HART 0][kernel::logger]  RAM: 8 MiB @ 0x80000000
-[    0.368][ [34m INFO[0m ][HART 0][kernel::logger]  Timer Clock: 6500000Hz
-[    0.377][ [34m INFO[0m ][HART 0][kernel::logger] [34m=== SBI Implementation ===[39m
-[    0.387][ [34m INFO[0m ][HART 0][kernel::logger]  Implementor: RustSbi (version: [32m0[39m.[32m514[39m)
-[    0.400][ [34m INFO[0m ][HART 0][kernel::logger]  Spec Version: [32m1[39m.[32m0[39m
-[    0.410][ [34m INFO[0m ][HART 0][kernel::logger] [34m=== RunOS Info ===[39m
-[    0.420][ [34m INFO[0m ][HART 0][kernel::logger]  RunOS version [32m0.1.0[39m
-[    0.429][ [34m INFO[0m ][HART 0][kernel::logger]  Paging scheme: Bare
-init sdcard!
-[   15.118][ [34m INFO[0m ][HART 0][kernel] [32mMain Hart 0 successfully booted[39m
-/**** APPS ****
-[92mbrk[39m
-[92mchdir[39m
-[92mclone[39m
-[92mclose[39m
-[92mdup[39m
-[92mdup2[39m
-[92mexecve[39m
-[92mexit[39m
-[92mfork[39m
-[92mfstat[39m
-[92mgetcwd[39m
-[92mgetdents[39m
-[92mgetpid[39m
-[92mgetppid[39m
-[92mgettimeofday[39m
-[92minitproc[39m
-[92mmkdir_[39m
-[92mmmap[39m
-[92mmount[39m
-[92mmunmap[39m
-[92mopen[39m
-[92mopenat[39m
-[92mpipe[39m
-[92mread[39m
-[92msleep[39m
-[92mtest_echo[39m
-[92mtext.txt[39m
-[92mtimes[39m
-[92mumount[39m
-[92muname[39m
-[92munlink[39m
-[92muser_shell[39m
-[92mwait[39m
-[92mwaitpid[39m
-[92mwrite[39m
-[92myield[39m
-[92mall.S[39m
-[92mbusybox[39m
-[92mbusybox_cmd.txt[39m
-[92mbusybox_objdump.txt[39m
-[92mbusybox_testcode.sh[39m
-[92mdate.lua[39m
-[92mfile_io.lua[39m
-[92mlat_syscall[39m
-[92mlat_syscall.o[39m
-[92mlmbench_all[39m
-[92mlmbench_all.info[39m
-[92mlmbench_all.S[39m
-[92mlmbench_all.section[39m
-[92mlmbench_testcode.sh[39m
-[92mlua[39m
-[92mmax_min.lua[39m
-[92mrandom.lua[39m
-[92mremove.lua[39m
-[92mresult.txt[39m
-[92mround_num.lua[39m
-[92msin30.lua[39m
-[92msort.lua[39m
-[92mstrings.lua[39m
-[92mstrtab[39m
-[92mtest.sh[39m
-**************/
-[I n i t1 5P.r2o7c2e]s[s 
-[34m I[N F O 1[50.m2 7]5[]H[A RT[ 312]m[DkEeBrUnGel[]0 m []3[2HmAHRaTr t0 ]1[ kseurcnceels:s:fsuylslcya lblo:o:tperdoc[e3s9sm]
- [s y s _1e5x.e2c9
-0][ [31mERROR[0m ][HART 1][kernel::lang_items] Panicked at src/trap/trap.rs:76 a trap Exception(IllegalInstruction) from kernel with stval = 0x3F6BB708D3 sepc = 0x8003C586!
----START BACKTRACE---
-#0:ra=0x80037f86
-#1:ra=0x80053ef4
-#2:ra=0x800294e8
-#3:ra=0x8002a18c
-#4:ra=0x8003cdce
----END   BACKTRACE---
-I am dead
-[rustsbi] reset triggered! todo: shutdown all harts on k210; program halt. Type: 0, reason: 0
-Rust user shell
->> make[1]: Leaving directory '/home/weihuan/WorkSpace/OS/MyOS/kernel'

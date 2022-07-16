@@ -415,15 +415,15 @@ pub fn open(
         }
         {
             // create file
-            log::debug!("path: {:?}", path);
+            // log::debug!("path: {:?}", path);
             let name_path: Vec<&str> = path.rsplitn(2, '/').collect();
-            log::debug!("name_path: {:?}", name_path);
+            // log::debug!("name_path: {:?}", name_path);
             let name = name_path[0];
             let mut prev_path = "";
             if name_path.len() == 2 {
                 prev_path = name_path[1]
             }
-            log::debug!("prev_path: {:?}, name: {:?}", prev_path, name);
+            // log::debug!("prev_path: {:?}, name: {:?}", prev_path, name);
             if let Some(temp_inode) = cur_inode.find_vfile_bypath(prev_path) {
                 let attribute = {
                     match type_ {

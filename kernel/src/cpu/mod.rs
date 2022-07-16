@@ -16,7 +16,7 @@ use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 pub static SMP_START: AtomicBool = AtomicBool::new(false);
 pub static BOOT_HARTID: AtomicUsize = AtomicUsize::new(0);
 
-// #[cfg(feature = "platform-qemu")]
+#[cfg(feature = "platform-qemu")]
 pub fn boot_all_harts(my_hartid: usize) {
     extern "C" {
         fn _start();

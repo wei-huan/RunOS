@@ -99,7 +99,6 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         let file: Arc<dyn File + Send + Sync> = match &file.fclass {
             FileClass::Abstr(f) => f.clone(),
             FileClass::File(f) => f.clone(),
-            _ => return -1,
         };
         if !file.readable() {
             return -1;

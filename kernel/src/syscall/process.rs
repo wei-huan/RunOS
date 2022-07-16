@@ -2,7 +2,7 @@ use crate::cpu::{current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
-use crate::scheduler::{add_task, pid2task};
+use crate::scheduler::{add_task, pid2task, add_task_to_designate_queue};
 use crate::task::{
     exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,
 };

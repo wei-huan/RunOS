@@ -38,7 +38,7 @@ fn fdt_get_timerfreq(fdt_ptr: *const u8) {
 }
 
 
-// #[cfg(feature = "platform-qemu")]
+#[cfg(feature = "platform-qemu")]
 fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
     let hart_id = hart_id();
