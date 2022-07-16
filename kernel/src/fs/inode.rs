@@ -44,7 +44,6 @@ pub enum DiskInodeType {
 pub struct OSInode {
     readable: bool,
     writable: bool,
-    //fd_cloexec: bool,
     inner: Mutex<OSInodeInner>,
 }
 

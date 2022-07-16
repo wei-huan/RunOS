@@ -125,7 +125,9 @@ pub fn add_initproc_into_fs() {
         println!("Already have init user_shell in FS");
         inode.delete();
     }
+
     //Write apps initproc to disk from mem
+    println!("Create initproc here");
     if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
         println!("Create initproc ");
         let mut data: Vec<&'static mut [u8]> = Vec::new();
