@@ -47,6 +47,7 @@ const SYSCALL_SCHED_YIELD: usize = 124;
 const SYSCALL_KILL: usize = 129;
 const SYSCALL_SIGACTION: usize = 134;
 const SYSCALL_SIGPROCMASK: usize = 135;
+const SYSCALL_RT_SIGTIMEDWAIT: usize = 137;
 const SYSCALL_SIGRETURN: usize = 139;
 const SYSCALL_TIMES: usize = 153;
 const SYSCALL_UNAME: usize = 160;
@@ -67,9 +68,10 @@ const SYSCALL_EXECVE: usize = 221;
 const SYSCALL_MMAP: usize = 222;
 const SYSCALL_MPROTECT: usize = 226;
 const SYSCALL_WAIT4: usize = 260;
+const SYSCALL_PRLIMIT: usize = 261;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    log::trace!("syscall_id: {}", syscall_id);
+    // log::debug!("syscall_id: {}", syscall_id);
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),
@@ -129,6 +131,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[2] as *mut SignalAction,
         ),
         SYSCALL_SIGPROCMASK => sys_sigprocmask(args[0] as u32),
+        SYSCALL_RT_SIGTIMEDWAIT => 0,
         SYSCALL_SIGRETURN => sys_sigretrun(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
@@ -160,7 +163,9 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[4] as isize,
             args[5] as usize,
         ),
+        SYSCALL_MPROTECT => 0,
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
+        SYSCALL_PRLIMIT => 0,
         _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }
 }

@@ -22,7 +22,7 @@ pub trait Scheduler {
 lazy_static! {
     pub static ref SCHEDULER: RoundRobinScheduler = RoundRobinScheduler::new();
     pub static ref PID2TCB: Mutex<BTreeMap<usize, Arc<TaskControlBlock>>> =
-        unsafe { Mutex::new(BTreeMap::new()) };
+        Mutex::new(BTreeMap::new());
 }
 
 pub fn schedule() {
@@ -108,28 +108,28 @@ pub fn add_initproc_into_fs() {
     // }
 
     //Write apps initproc to disk from mem
-    if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
-        let mut data: Vec<&'static mut [u8]> = Vec::new();
-        data.push(unsafe {
-            core::slice::from_raw_parts_mut(app_start[0] as *mut u8, app_start[1] - app_start[0])
-        });
-        inode.write(UserBuffer::new(data));
-    } else {
-        panic!("initproc create fail!");
-    }
+    // if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
+    //     let mut data: Vec<&'static mut [u8]> = Vec::new();
+    //     data.push(unsafe {
+    //         core::slice::from_raw_parts_mut(app_start[0] as *mut u8, app_start[1] - app_start[0])
+    //     });
+    //     inode.write(UserBuffer::new(data));
+    // } else {
+    //     panic!("initproc create fail!");
+    // }
     //Write apps user_shell to disk from mem
-    if let Some(inode) = open("/", "user_shell", OpenFlags::CREATE, DiskInodeType::File) {
-        let mut data: Vec<&'static mut [u8]> = Vec::new();
-        data.push(unsafe {
-            core::slice::from_raw_parts_mut(app_start[1] as *mut u8, app_start[2] - app_start[1])
-        });
-        //data.extend_from_slice()
-        // println!("Start write user_shell ");
-        inode.write(UserBuffer::new(data));
-        // println!("User_shell OK");
-    } else {
-        panic!("user_shell create fail!");
-    }
+    // if let Some(inode) = open("/", "user_shell", OpenFlags::CREATE, DiskInodeType::File) {
+    //     let mut data: Vec<&'static mut [u8]> = Vec::new();
+    //     data.push(unsafe {
+    //         core::slice::from_raw_parts_mut(app_start[1] as *mut u8, app_start[2] - app_start[1])
+    //     });
+    //     //data.extend_from_slice()
+    //     // println!("Start write user_shell ");
+    //     inode.write(UserBuffer::new(data));
+    //     // println!("User_shell OK");
+    // } else {
+    //     panic!("user_shell create fail!");
+    // }
     // recycle pages
     let mut start_ppn = app_start[0] / PAGE_SIZE + 1;
     while start_ppn < app_start[2] / PAGE_SIZE {

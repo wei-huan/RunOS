@@ -66,8 +66,9 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         mm::boot_init();
         fpu::init();
         logo::show();
-        scheduler::add_initproc();
         logger::init();
+        fs::init_rootfs();
+        scheduler::add_initproc();
         logger::show_basic_info();
         log::info!(
             "{}",
@@ -102,10 +103,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         fpu::init();
-        // fs::init_rootfs();
         logo::show();
         logger::init();
         logger::show_basic_info();
+        fs::init_rootfs();
         scheduler::add_initproc();
         log::info!(
             "{}",

@@ -319,14 +319,10 @@ lazy_static! {
 }
 
 pub fn init_rootfs() {
-    // println!("[fs] build rootfs ... start");
-    // println!("[fs] build rootfs: creating /proc");
     open("/", "proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // println!("[fs] build rootfs: init /proc");
-    open("/proc", "mounts", OpenFlags::CREATE, DiskInodeType::File).unwrap();
-    open("/proc", "meminfo", OpenFlags::CREATE, DiskInodeType::File).unwrap();
-    open("/", "ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
-    // println!("[fs] build rootfs ... finish");
+    open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // open("/", "ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
 }
 
 pub fn list_apps() {
@@ -506,4 +502,3 @@ impl File for OSInode {
         total_write_size
     }
 }
-

@@ -25,6 +25,8 @@ pub fn sys_fcntl() -> isize {
 }
 
 pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
+    // log::debug!("fd: {:#?}", fd);
+    // log::debug!("buf: {:#?}", buf);
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -38,7 +40,6 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
                 /*print!("\n");*/
                 f.clone()
             }
-            _ => return -1,
         };
         if !file.writable() {
             return -1;
@@ -159,22 +160,24 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 //     }
 // }
 
-// TODO:文件所有权
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isize {
+    log::debug!("sys_open_at");
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
+    log::debug!("path: {:#?}", path);
     let mut inner = task.acquire_inner_lock();
 
     let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
+    log::debug!("oflags: {:#?}", oflags);
     if dirfd == AT_FDCWD {
+        log::debug!("herherherher");
         if let Some(inode) = open(
             inner.get_work_path().as_str(),
             path.as_str(),
             oflags,
             DiskInodeType::File,
         ) {
-            // log::debug!("open path: {:#?}", path);
             let fd = inner.alloc_fd();
             inner.fd_table[fd] = Some(FileDescripter::new(
                 oflags.contains(OpenFlags::CLOEXEC),
@@ -395,7 +398,6 @@ pub fn sys_mkdir(dirfd: isize, path: *const u8, _mode: u32) -> isize {
     let inner = task.acquire_inner_lock();
     let path = translated_str(token, path);
     if dirfd == AT_FDCWD {
-        let work_path = inner.current_path.clone();
         if let Some(_) = open(
             inner.get_work_path().as_str(),
             path.as_str(),
@@ -619,7 +621,7 @@ pub fn sys_mount(
     p_dir: *const u8,
     p_fstype: *const u8,
     flags: usize,
-    data: *const u8,
+    _data: *const u8,
 ) -> isize {
     // TODO
     let token = current_user_token();
@@ -636,7 +638,7 @@ pub fn sys_umount(p_special: *const u8, flags: usize) -> isize {
     MNT_TABLE.lock().umount(special, flags as u32)
 }
 
-pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isize {
+pub fn sys_faccessat(fd: usize, path: *const u8, _time: usize, flags: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
     // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
@@ -652,7 +654,7 @@ pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
         OpenFlags::from_bits(flags).unwrap(),
     ) {
         match file {
-            FileClass::File(f) => return 0,
+            FileClass::File(_) => return 0,
             _ => return -1,
         }
     } else {
@@ -670,7 +672,7 @@ pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
-    let mut inner = task.acquire_inner_lock();
+    let inner = task.acquire_inner_lock();
     if let Some(file) = get_file_discpt(
         fd as isize,
         &path,
@@ -678,7 +680,7 @@ pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
         OpenFlags::from_bits(flags).unwrap(),
     ) {
         match file {
-            FileClass::File(f) => return 0,
+            FileClass::File(_f) => return 0,
             _ => return -1,
         }
     } else {
