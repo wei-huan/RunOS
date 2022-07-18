@@ -67,17 +67,17 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         fpu::init();
         logo::show();
         logger::init();
-        fs::init_rootfs();
         scheduler::add_initproc();
+        fs::init_rootfs();
         logger::show_basic_info();
-        log::info!(
-            "{}",
-            alloc::format!("Main Hart {} successfully booted", hart_id()).green()
-        );
-        fs::list_apps();
+        // fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
+        log::info!(
+            "{}",
+            alloc::format!("Main Hart {} successfully init", hart_id()).green()
+        );
         scheduler::schedule();
     } else {
         trap::init();
@@ -86,7 +86,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         timer::init();
         log::info!(
             "{}",
-            alloc::format!("Hart {} successfully booted", hart_id()).green()
+            alloc::format!("Hart {} successfully init", hart_id()).green()
         );
         scheduler::schedule();
     }

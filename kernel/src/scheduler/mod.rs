@@ -2,12 +2,11 @@ mod round_robin;
 
 use crate::config::PAGE_SIZE;
 use crate::cpu::take_my_cpu;
-use crate::fs::{open, DiskInodeType, File, OpenFlags};
-use crate::mm::{add_free, UserBuffer};
+use crate::fs::{open, DiskInodeType, OpenFlags};
+use crate::mm::add_free;
 use crate::task::{TaskContext, TaskControlBlock};
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use core::arch::global_asm;
 use lazy_static::*;
 use round_robin::RoundRobinScheduler;

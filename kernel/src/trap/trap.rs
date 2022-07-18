@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
-use crate::cpu::{current_task, current_trap_cx, current_user_token, hart_id};
+use crate::cpu::{current_trap_cx, current_user_token, hart_id};
 use crate::syscall::syscall;
 use crate::task::{
     check_signals_error_of_current, current_add_signal, exit_current_and_run_next, handle_signals,
@@ -125,9 +125,9 @@ pub fn user_trap_handler() -> ! {
                 stval,
                 current_trap_cx().sepc,
             );
-            let heap_base = current_task().unwrap().acquire_inner_lock().heap_start;
-            let heap_top = current_task().unwrap().acquire_inner_lock().heap_pointer;
-            println!("heap_base = {:#x?}, heap_top = {:#x?}", heap_base, heap_top);
+            // let heap_base = current_task().unwrap().acquire_inner_lock().heap_start;
+            // let heap_top = current_task().unwrap().acquire_inner_lock().heap_pointer;
+            // println!("heap_base = {:#x?}, heap_top = {:#x?}", heap_base, heap_top);
             // page fault exit code
             exit_current_and_run_next(-2);
             current_add_signal(SignalFlags::SIGSEGV);

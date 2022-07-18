@@ -1,7 +1,6 @@
-#![allow(unused)]
-
 use super::{finfo, Dirent, File, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN};
 use crate::mm::UserBuffer;
+use crate::syscall::EINVAL;
 use crate::owo_colors::OwoColorize;
 use crate::{drivers::BLOCK_DEVICE, println};
 use _core::usize;
@@ -13,11 +12,8 @@ use runfs::{FileAttributes, RunFileSystem, VFile};
 use spin::rwlock::RwLock;
 use spin::Mutex;
 
-#[allow(unused)]
 pub const SEEK_SET: i32 = 0; /* set to offset bytes.  */
-#[allow(unused)]
 pub const SEEK_CUR: i32 = 1; /* set to its current location plus offset bytes.  */
-#[allow(unused)]
 pub const SEEK_END: i32 = 2; /* set to the size of the file plus offset bytes.  */
 /*  Adjust the file offset to the next location in the file
 greater than or equal to offset containing data.  If
@@ -272,35 +268,46 @@ impl OSInode {
     //     inner.inode.set_delete_bit();
     // }
 
-    pub fn set_offset(&self, off: usize) {
+    pub fn get_offset(&self) -> usize {
+        let inner = self.inner.lock();
+        inner.offset
+    }
+
+    pub fn set_offset(&self, offset: usize) {
+        log::trace!("set_offset offset: {:#X?}", offset);
         let mut inner = self.inner.lock();
-        inner.offset = off;
+        inner.offset = offset;
     }
 
     pub fn lseek(&self, offset: isize, whence: i32) -> isize {
+        log::trace!("lseek offset: {}", offset);
+        log::trace!("lseek whence: {}", whence);
         let mut inner = self.inner.lock();
-        if whence == SEEK_END {
-            if inner.offset as isize - offset < 0 {
-                return -1;
-            }
-        } else {
-            if offset < 0 {
-                return -1;
-            }
-        }
-
+        let size = inner.inode.size();
+        let cur_offset: isize = inner.offset as isize;
         match whence {
+            SEEK_SET => {
+                if offset < 0 {
+                    return -EINVAL;
+                } else {
+                    inner.offset = offset as usize;
+                }
+            }
             SEEK_CUR => {
-                inner.offset += offset as usize;
+                if cur_offset + offset < 0 {
+                    return -EINVAL;
+                } else {
+                    inner.offset += offset as usize;
+                }
             }
             SEEK_END => {
-                let size = inner.inode.size();
-                inner.offset = (size as isize + offset - 1) as usize;
+                if size as isize - 1 + offset < 0 {
+                    return -EINVAL;
+                } else {
+                    inner.offset = (size as isize + offset - 1) as usize;
+                }
             }
-            SEEK_SET => {
-                inner.offset = offset as usize;
-            }
-            _ => return -1,
+            _ => return -EINVAL,
         }
         inner.offset as isize
     }
@@ -319,8 +326,8 @@ lazy_static! {
 }
 
 pub fn init_rootfs() {
-    open("/", "proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // open("/", "proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // open("/", "ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
 }
@@ -479,9 +486,11 @@ impl File for OSInode {
     fn read(&self, mut buf: UserBuffer) -> usize {
         let mut inner = self.inner.lock();
         let mut total_read_size = 0usize;
+        // buffers element is [u8], not u8
         for slice in buf.buffers.iter_mut() {
-            // buffer存放的元素是[u8]而不是u8
+            // log::debug!("slice before read: {:#?}", slice.len());
             let read_size = inner.inode.read_at(inner.offset, *slice);
+            // log::debug!("read_size after read: {:#?}", read_size);
             if read_size == 0 {
                 break;
             }

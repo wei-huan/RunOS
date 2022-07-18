@@ -6,6 +6,7 @@ use crate::fs::{
 use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
 };
+use crate::syscall::errorno::{EBADF, EISDIR};
 use crate::task::TaskControlBlockInner;
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -89,7 +90,7 @@ pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 }
 
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
-    // log::debug!("sys_read");
+    // log::debug!("sys_read buf: {:#X?}", buf);
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -106,8 +107,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         }
         // release current task PCB inner manually to avoid multi-borrow
         drop(inner);
-        // release current task PCB manually to avoid Arc::strong_count grow
-        // drop(task);
+        // log::debug!("sys_read ptr: {:#X?}, len: {:#X?}", buf, len);
         file.read(UserBuffer::new(translated_byte_buffer(token, buf, len))) as isize
     } else {
         -1
@@ -161,17 +161,16 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 // }
 
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isize {
-    log::debug!("sys_open_at");
+    log::trace!("sys_open_at");
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
-    log::debug!("path: {:#?}", path);
+    log::trace!("path: {:#?}", path);
     let mut inner = task.acquire_inner_lock();
 
     let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
-    log::debug!("oflags: {:#?}", oflags);
+    log::trace!("oflags: {:#?}", oflags);
     if dirfd == AT_FDCWD {
-        log::debug!("herherherher");
         if let Some(inode) = open(
             inner.get_work_path().as_str(),
             path.as_str(),
@@ -231,7 +230,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
 }
 
 pub fn sys_close(fd: usize) -> isize {
-    log::debug!("sys_close");
+    log::trace!("sys_close");
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     if fd >= inner.fd_table.len() {
@@ -376,6 +375,7 @@ pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
 }
 
 pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
+    log::trace!("sys_pipe");
     if flags != 0 {
         println!("[sys_pipe]: flags not support");
     }
@@ -730,21 +730,21 @@ pub fn sys_sendfile(out_fd: isize, in_fd: isize, offset_ptr: *mut usize, count: 
 }
 
 pub fn sys_lseek(fd: usize, offset: isize, whence: i32) -> isize {
+    // log::debug!("sys_lseek");
     let task = current_task().unwrap();
-    let token = current_user_token();
     let inner = task.acquire_inner_lock();
 
     if fd > inner.fd_table.len() {
-        return -1;
+        return -EBADF;
     }
 
     if let Some(fdes) = &inner.fd_table[fd] {
         let fclass = &fdes.fclass;
         match fclass {
-            FileClass::File(inode) => return inode.lseek(offset as isize, whence),
-            _ => return -1,
+            FileClass::File(inode) => return inode.lseek(offset, whence),
+            _ => return -EISDIR,
         }
     } else {
-        return -1;
+        return -EBADF;
     }
 }

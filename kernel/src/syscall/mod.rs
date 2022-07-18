@@ -1,3 +1,4 @@
+mod errorno;
 mod fs;
 mod process;
 mod sysinfo;
@@ -6,6 +7,8 @@ mod utsname;
 
 use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
+
+pub use errorno::*;
 use fs::*;
 use process::*;
 use sysinfo::*;
@@ -71,7 +74,6 @@ const SYSCALL_WAIT4: usize = 260;
 const SYSCALL_PRLIMIT: usize = 261;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    // log::debug!("syscall_id: {}", syscall_id);
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),
@@ -101,7 +103,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETDENTS64 => {
             sys_getdents64(args[0] as isize, args[1] as *mut u8, args[2] as usize)
         }
-        SYSCALL_LSEEK => sys_lseek(args[0] as usize, args[1] as isize, args[2] as i32),
+        SYSCALL_LSEEK => sys_lseek(args[0], args[1] as _, args[2] as _),
         SYSCALL_READ => sys_read(args[0], args[1] as *const u8, args[2]),
         SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
         SYSCALL_READV => sys_readv(args[0], args[1] as *const crate::fs::IOVec, args[2]),
