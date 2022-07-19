@@ -1,7 +1,7 @@
-use super::{finfo, Dirent, File, Kstat, NewStat, DT_DIR, DT_REG, DT_UNKNOWN};
+use super::{finfo, Dirent, File, Stat, DT_DIR, DT_REG, DT_UNKNOWN};
 use crate::mm::UserBuffer;
-use crate::syscall::EINVAL;
 use crate::owo_colors::OwoColorize;
+use crate::syscall::EINVAL;
 use crate::{drivers::BLOCK_DEVICE, println};
 use _core::usize;
 use alloc::sync::Arc;
@@ -166,7 +166,7 @@ impl OSInode {
         }
     }
 
-    pub fn get_fstat(&self, kstat: &mut Kstat) {
+    pub fn get_fstat(&self, kstat: &mut Stat) {
         let inner = self.inner.lock();
         let vfile = inner.inode.clone();
         let (size, atime, mtime, ctime, ino) = vfile.stat();
@@ -178,20 +178,6 @@ impl OSInode {
             }
         };
         kstat.fill_info(0, ino, st_mod, 1, size, atime, mtime, ctime);
-    }
-
-    pub fn get_newstat(&self, stat: &mut NewStat) {
-        let inner = self.inner.lock();
-        let vfile = inner.inode.clone();
-        let (size, atime, mtime, ctime, ino) = vfile.stat();
-        let st_mod: u32 = {
-            if vfile.is_dir() {
-                finfo::S_IFDIR | finfo::S_IRWXU | finfo::S_IRWXG | finfo::S_IRWXO
-            } else {
-                finfo::S_IFREG | finfo::S_IRWXU | finfo::S_IRWXG | finfo::S_IRWXO
-            }
-        };
-        stat.fill_info(0, ino, st_mod, 1, size, atime, mtime, ctime);
     }
 
     pub fn get_size(&self) -> usize {
@@ -328,6 +314,7 @@ lazy_static! {
 pub fn init_rootfs() {
     // open("/", "proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // open("/", "ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
 }

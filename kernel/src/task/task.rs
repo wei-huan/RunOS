@@ -491,8 +491,9 @@ impl TaskControlBlock {
         // 如果没有 mmap section 就创建 mmap section
         if start == 0 {
             start = inner.mmap_area_top;
-            // log::debug!("mmap new start: 0x{:#X}", start);
+            log::debug!("mmap new start: 0x{:#X}", start);
             inner.mmap_area_top = VirtAddr::from(start + length).ceil().0 * PAGE_SIZE;
+            log::debug!("mmap new start: 0x{:#X}", inner.mmap_area_top);
             inner.addrspace.create_mmap_section(
                 start,
                 length,

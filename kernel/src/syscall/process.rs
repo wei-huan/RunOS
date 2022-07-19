@@ -288,7 +288,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 // brk_addr can‘t be negative, so it would not shrink to zero
 // return heap size
 pub fn sys_brk(brk_addr: usize) -> isize {
-    // log::debug!("sys_brk");
+    log::debug!("sys_brk");
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
     let heap_start = inner.heap_start;
@@ -323,6 +323,7 @@ pub fn sys_brk(brk_addr: usize) -> isize {
 // return heap size
 // todo test, No test yet
 pub fn sys_sbrk(increment: isize) -> isize {
+    log::debug!("sys_sbrk");
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
     let heap_start = inner.heap_start;
@@ -391,7 +392,7 @@ pub fn sys_mmap(
     fd: isize,
     offset: usize,
 ) -> isize {
-    log::debug!("sys_mmap");
+    log::debug!("sys_mmap start: {:#X?}, length: {:#X?}", start, length);
     let task = current_task().unwrap();
     task.mmap(start, length, prot, flags, fd, offset)
 }

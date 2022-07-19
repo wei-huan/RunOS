@@ -7,7 +7,7 @@ pub const DT_UNKNOWN: u8 = 0;
 pub const DT_DIR: u8 = 4;
 pub const DT_REG: u8 = 4; //常规文件
 
-pub const NAME_LIMIT: usize = 128; // TODO:太大了会有跨页问题。。
+pub const NAME_LIMIT: usize = 128; // 太大了会有跨页问题
 
 pub const S_IFMT: u32 = 0o170000; //bit mask for the file type bit field
 pub const S_IFSOCK: u32 = 0o140000; //socket
@@ -104,11 +104,11 @@ impl Dirent {
 
 #[repr(C)]
 #[derive(Default)]
-pub struct Kstat {
-    st_dev: u64,   /* ID of device containing file */
-    pub st_ino: u64,   /* Inode number */
-    pub st_mode: u32,  /* File type and mode */
-    st_nlink: u32, /* Number of hard links */
+pub struct Stat {
+    st_dev: u64,      /* ID of device containing file */
+    pub st_ino: u64,  /* Inode number */
+    pub st_mode: u32, /* File type and mode */
+    st_nlink: u32,    /* Number of hard links */
     st_uid: u32,
     st_gid: u32,
     //__pad   :u64,
@@ -125,11 +125,12 @@ pub struct Kstat {
     st_ctime_nsec: i64,
 }
 
-impl Kstat {
+impl Stat {
     pub fn empty() -> Self {
         Self {
             st_mode: 0100777,
             st_blksize: 512,
+            st_nlink: 1,
             ..Self::default()
         }
     }
@@ -185,161 +186,46 @@ impl Kstat {
 }
 
 #[repr(C)]
-#[derive(Default, Debug)]
-pub struct NewStat {
-    /* the edition that can pass bw_test */
-    st_dev: u64, /* ID of device containing file */
-    //__pad1  :u32,
-    st_ino: u64,   /* Inode number */
-    st_mode: u32,  /* File type and mode */
-    st_nlink: u32, /* Number of hard links */
-    st_uid: u32,
-    st_gid: u32,
-    //st_rdev :u64,   /* Device ID (if special file) */
-    //__pad2  :u32,
-    st_blksize: u64,  /* Block size for filesystem I/O */
-    st_blocks: u64,   /* Number of 512B blocks allocated */
-    pub st_size: u64, /* Total size, in bytes */
-    //????????????
-    st_atime_sec: i64,
-    st_atime_nsec: i64,
-    st_mtime_sec: i64,
-    st_mtime_nsec: i64,
-    st_ctime_sec: i64,
-    st_ctime_nsec: i64,
-    //st_dev  :u64,   /* ID of device containing file */
-    ////__pad1  :u32,
-    //st_ino  :u64,   /* Inode number */
-    //st_mode :u32,   /* File type and mode */
-    //st_nlink:u64,   /* Number of hard links */
-    //st_uid  :u32,
-    //st_gid  :u32,
-    ////st_rdev :u64,   /* Device ID (if special file) */
-    ////__pad2  :u32,
-    //st_blksize   :u64,    /* Block size for filesystem I/O */
-    //st_blocks    :u64,    /* Number of 512B blocks allocated */
-    //pub st_size  :u64,         /* Total size, in bytes */ //????????????
-    //st_atime_sec :i64,
-    //st_atime_nsec:i64,
-    //st_mtime_sec :i64,
-    //st_mtime_nsec:i64,
-    //st_ctime_sec :i64,
-    //st_ctime_nsec:i64,
+pub struct IOVec {
+    pub iov_base: *mut u8,
+    pub iov_len: usize,
 }
 
-impl NewStat {
+#[repr(C)]
+#[derive(Default, Debug)]
+pub struct StatFS {
+    f_bsize: u64,  /* Optimal transfer block size */
+    f_frsize: u64, /* Optimal transfer block size */
+    f_blocks: u64, /* Total data blocks in filesystem */
+    f_bfree: u64,  /* Free blocks in filesystem */
+    f_bavail: u64, /* Free blocks available to unprivileged user */
+    f_files: u64,  /* Total inodes in filesystem */
+    f_ffree: u64,  /* Free inodes in filesystem */
+    f_favail: u64,
+    f_fsid: u64, /* Filesystem ID */
+    f_flag: u64, /* Mount flags of filesystem (since Linux 2.6.36) */
+    f_namemax: u64, /* Maximum length of filenames */
+}
+
+impl StatFS {
     pub fn empty() -> Self {
         Self {
-            st_blksize: 512,
+            f_bsize: 512,
+            f_frsize: 512,
+            f_blocks: 0x200000,
+            f_bfree: 0x100000,
+            f_bavail: 0x100000,
+            f_files: 128,
+            f_ffree: 64,
+            f_favail: 64,
+            f_fsid: 128,
+            f_flag: 128,
+            f_namemax: 128,
             ..Self::default()
         }
     }
-
-    // 目前仅填充用户测试需要的成员
-    pub fn fill_info(
-        &mut self,
-        st_dev: u64,
-        st_ino: u64,
-        st_mode: u32,
-        st_nlink: u64,
-        st_size: i64,
-        st_atime_sec: i64,
-        st_mtime_sec: i64,
-        st_ctime_sec: i64,
-    ) {
-        let st_blocks = (st_size as u64 + self.st_blksize as u64 - 1) / self.st_blksize as u64;
-
-        *self = Self {
-            st_dev,
-            st_ino,
-            st_mode,
-            st_nlink: st_nlink as u32,
-            st_size: st_size as u64,
-            st_blksize: self.st_blksize, //TODO:real blksize
-            st_blocks,
-            st_atime_sec,
-            st_ctime_sec,
-            st_mtime_sec,
-            ..Self::default()
-        };
-    }
-
     pub fn as_bytes(&self) -> &[u8] {
         let size = core::mem::size_of::<Self>();
         unsafe { core::slice::from_raw_parts(self as *const _ as usize as *const u8, size) }
     }
-
-    pub fn as_bytes_mut(&mut self) -> &mut [u8] {
-        let size = core::mem::size_of::<Self>();
-        unsafe { core::slice::from_raw_parts_mut(self as *mut _ as usize as *mut u8, size) }
-    }
 }
-
-#[repr(C)]
-#[derive(Default, Debug)]
-pub struct FdSet {
-    fd_list: [u64; 16],
-}
-
-impl FdSet {
-    fn check_fd(fd: usize) -> bool {
-        if fd < 1024 {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    pub fn set_fd(&mut self, fd: usize) {
-        if Self::check_fd(fd) {
-            let index = fd >> 8; // fd/64
-            let offset = fd - (index << 8); // fd%64
-            self.fd_list[index] |= 1 << offset;
-        }
-    }
-
-    pub fn clear_fd(&mut self, fd: usize) {
-        if Self::check_fd(fd) {
-            let index = fd >> 8;
-            let offset = fd - (index << 8);
-            self.fd_list[index] &= (0 << offset) & 0xFFFFFFFFFFFFFFFF;
-        }
-    }
-
-    pub fn clear_all(&mut self) {
-        for i in 0..16 {
-            self.fd_list[i] = 0;
-        }
-    }
-
-    pub fn count(&mut self) -> usize {
-        let fd_vec = self.get_fd_vec();
-        fd_vec.len()
-    }
-
-    pub fn get_fd_vec(&self) -> Vec<usize> {
-        let mut fd_v = Vec::new();
-        for i in 0..16 {
-            let mut tmp = self.fd_list[i];
-            for off in 0..64 {
-                let fd_bit = tmp & 1;
-                if fd_bit == 1 {
-                    fd_v.push((i << 8) + off); // index*64 + offset
-                }
-                tmp = tmp >> 1;
-            }
-        }
-        fd_v
-    }
-}
-
-
-#[repr(C)]
-pub struct IOVec {
-    pub iov_base: *mut u8,
-    pub iov_len: usize
-}
-
-
-// use crate::lang_items::Bytes;
-// impl Bytes<FdSet> for FdSet {}
