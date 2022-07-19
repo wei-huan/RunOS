@@ -287,10 +287,10 @@ impl OSInode {
                 }
             }
             SEEK_END => {
-                if size as isize - 1 + offset < 0 {
+                if size as isize + offset < 0 {
                     return -EINVAL;
                 } else {
-                    inner.offset = (size as isize + offset - 1) as usize;
+                    inner.offset = (size as isize + offset) as usize;
                 }
             }
             _ => return -EINVAL,
@@ -314,8 +314,8 @@ lazy_static! {
 pub fn init_rootfs() {
     // open("/", "proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // open("/", "ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
 }
 

@@ -444,23 +444,32 @@ impl AddrSpace {
         let mut need_data_sec = true;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
+            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+            let name = sect.get_name(&elf).unwrap();
+            log::debug!(
+                "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
+                name,
+                ph.get_type().unwrap(),
+                ph.virtual_addr(),
+                ph.virtual_addr() + ph.mem_size()
+            );
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
                 // first section header is dummy, not match program header, so i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                 let name = sect.get_name(&elf).unwrap();
-                // println!("name: {}", name);
+                // log::debug!("name: {}", name);
                 if name == "data" {
                     need_data_sec = false;
                 }
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
-                // println!(
+                // log::debug!(
                 //     "start_va - end_va: {:#X} - {:#X}",
                 //     usize::from(start_va),
                 //     usize::from(end_va)
                 // );
                 let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
-                // println!("offset: {:#X}", offset);
+                // log::debug!("offset: {:#X}", offset);
                 let mut map_perm = Permission::U;
                 let ph_flags = ph.flags();
                 if ph_flags.is_read() {
@@ -472,7 +481,7 @@ impl AddrSpace {
                 if ph_flags.is_execute() {
                     map_perm |= Permission::X;
                 }
-                // println!("map_perm: {:#?}", map_perm);
+                // log::debug!("map_perm: {:#?}", map_perm);
                 let section = Section::new(
                     name.to_string(),
                     start_va,
@@ -481,11 +490,6 @@ impl AddrSpace {
                     map_perm,
                 );
                 max_end_vpn = section.vpn_range.get_end();
-                // println!("range: 0x{:X}", (usize::from(end_va) - usize::from(start_va)));
-                // println!("start_vpn: {:?} end_vpn: {:?}", section.vpn_range.get_start(), section.vpn_range.get_end());
-                // println!("ph file_size: 0x{:X}", ph.file_size());
-                // println!("ph mem_size: 0x{:X}", ph.mem_size());
-                // println!("");
                 // user_space.push_section(
                 //     section,
                 //     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
@@ -513,6 +517,11 @@ impl AddrSpace {
                     head_va = start_va.0;
                 }
             }
+            // load dll
+            else if ph.get_type().unwrap() == xmas_elf::program::Type::Interp{
+
+            }
+            // else do nothing
         }
 
         if need_data_sec == true {
@@ -679,7 +688,12 @@ impl AddrSpace {
         }
     }
     // size 最终会按页对齐, 返回 end_va
-    pub fn create_mmap_section(&mut self, mmap_start: usize, size: usize, permission: Permission) -> VirtAddr {
+    pub fn create_mmap_section(
+        &mut self,
+        mmap_start: usize,
+        size: usize,
+        permission: Permission,
+    ) -> VirtAddr {
         let start_va = mmap_start.into();
         let end_va = (mmap_start + size).into();
         self.insert_mmap_area(".mmap".to_string(), start_va, end_va, permission);

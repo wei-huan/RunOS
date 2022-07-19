@@ -3,6 +3,7 @@ use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
 use crate::scheduler::{add_task, pid2task};
+use crate::syscall::ESRCH;
 use crate::task::{
     exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,
 };
@@ -422,21 +423,23 @@ pub fn sys_kill(pid: usize, signum: i32) -> isize {
 }
 
 pub fn sys_sigprocmask(mask: u32) -> isize {
+    // log::debug!("sys_sigprocmask");
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
         let old_mask = inner.signal_mask;
         if let Some(flag) = SignalFlags::from_bits(mask) {
             inner.signal_mask = flag;
-            old_mask.bits() as isize
+            0
         } else {
             -1
         }
     } else {
-        -1
+        -ESRCH
     }
 }
 
 pub fn sys_sigretrun() -> isize {
+    log::debug!("sys_sigretrun");
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
         inner.handling_sig = -1;
@@ -466,6 +469,7 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
+    log::debug!("sys_sigaction");
     let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
