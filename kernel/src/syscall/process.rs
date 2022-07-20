@@ -285,16 +285,16 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
     }
 }
 
-// sets the end of the data segment to the value
-// brk_addr can‘t be negative, so it would not shrink to zero
-// return heap size
-pub fn sys_brk(brk_addr: usize) -> isize {
-    log::debug!("sys_brk");
+
+/// the  actual  Linux system  call returns the new program break on success
+/// On failure, the system call returns the current break.
+pub fn sys_brk(mut brk_addr: usize) -> isize {
+    log::debug!("sys_brk: {:#X?}", brk_addr);
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
     let heap_start = inner.heap_start;
     if brk_addr == 0 {
-        return (inner.heap_pointer - heap_start) as isize;
+        return (inner.heap_pointer) as isize;
     } else {
         // 还未分配堆，直接创建 heap section
         if inner.heap_pointer == heap_start {
@@ -393,10 +393,10 @@ pub fn sys_mmap(
     fd: isize,
     offset: usize,
 ) -> isize {
-    log::debug!("sys_mmap start: {:#X?}, length: {:#X?}, fd: {}", start, length, fd);
+    // log::debug!("sys_mmap start: {:#X?}, length: {:#X?}, fd: {}", start, length, fd);
     let task = current_task().unwrap();
     let res = task.mmap(start, length, prot, flags, fd, offset);
-    log::debug!("sys_mmap leave");
+    // log::debug!("sys_mmap leave");
     res
 }
 

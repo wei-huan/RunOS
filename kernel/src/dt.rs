@@ -1,6 +1,6 @@
 // DEVICE TREE mod
 
-use crate::cpu::hart_id;
+use crate::hart_id;
 use core::ptr;
 use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use fdt::node::FdtNode;
@@ -9,7 +9,8 @@ use fdt::Fdt;
 pub static CPU_NUMS: AtomicUsize = AtomicUsize::new(2);
 pub static MEM_SIZE: AtomicUsize = AtomicUsize::new(0);
 pub static MEM_START: AtomicUsize = AtomicUsize::new(0);
-pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(403000000 / 62);
+// pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(403000000 / 62);
+pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(10000000);
 pub static FDT: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
 // pub static MODEL: AtomicPtr<&str> = AtomicPtr::new(ptr::null_mut());
 
@@ -37,7 +38,6 @@ fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
 
-
 #[cfg(feature = "platform-qemu")]
 fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
@@ -47,7 +47,6 @@ fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     TIMER_FREQ.store(timebase_frequency, Ordering::Release);
     // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
-
 
 fn fdt_get_ncpu(fdt_ptr: *const u8) {
     let fdt: Fdt<'static> = unsafe { Fdt::from_ptr(fdt_ptr).unwrap() };
