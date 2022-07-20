@@ -4,8 +4,10 @@ use super::{
     section::{MapType, Permission, Section},
 };
 use crate::config::{
-    MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH, USER_STACK_SIZE,
+    DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH,
+    USER_STACK_SIZE,
 };
+use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::platform::MMIO;
 use crate::task::{
     AuxHeader, AT_BASE, AT_CLKTCK, AT_EGID, AT_ENTRY, AT_EUID, AT_FLAGS, AT_GID, AT_HWCAP,
@@ -135,6 +137,17 @@ impl AddrSpace {
         }
         self.mmap_sections.push(section);
     }
+    pub fn is_mmap_section_exist(&self, start_vpn: VirtPageNum) -> bool {
+        if let Some(_) = self
+            .mmap_sections
+            .iter()
+            .enumerate()
+            .find(|(_, section)| section.vpn_range.is_cover(start_vpn))
+        {
+            return true;
+        }
+        return false;
+    }
     fn push_section_with_offset(
         &mut self,
         mut section: Section,
@@ -243,129 +256,69 @@ impl AddrSpace {
         // println!("mapping kernel finish");
         kernel_space
     }
+    /// load dynamic link library loader
+    pub fn load_dll_loader(&mut self) -> usize {
+        if let Some(app_vfile) = open("/", "libc.so", OpenFlags::RDONLY, DiskInodeType::File) {
+            let all_data = app_vfile.read_all();
+            let elf_data = all_data.as_slice();
+            let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
+            let elf_header = elf.header;
+            let magic = elf_header.pt1.magic;
+            assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
+            let ph_count = elf_header.pt2.ph_count();
+
+            for i in 0..ph_count {
+                let ph = elf.program_header(i).unwrap();
+                let start_va: VirtAddr = (DLL_LOADER_BASE + ph.virtual_addr() as usize).into();
+                let end_va: VirtAddr =
+                    (DLL_LOADER_BASE + ph.virtual_addr() as usize + ph.mem_size() as usize).into();
+                let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
+                if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
+                    let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+                    let name: String =
+                        "dll_".to_string() + &sect.get_name(&elf).unwrap().to_string();
+                    let mut map_perm = Permission::U;
+                    let ph_flags = ph.flags();
+                    if ph_flags.is_read() {
+                        map_perm |= Permission::R;
+                    }
+                    if ph_flags.is_write() {
+                        map_perm |= Permission::W;
+                    }
+                    if ph_flags.is_execute() {
+                        map_perm |= Permission::X;
+                    }
+                    let section = Section::new(name, start_va, end_va, MapType::Framed, map_perm);
+                    if offset == 0 {
+                        self.push_section(
+                            section,
+                            Some(
+                                &elf.input
+                                    [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+                            ),
+                        );
+                    } else {
+                        self.push_section_with_offset(
+                            section,
+                            offset,
+                            Some(
+                                &elf.input
+                                    [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+                            ),
+                        );
+                    }
+                }
+            }
+            return elf_header.pt2.entry_point() as usize;
+        } else {
+            log::error!("[execve load_dl] dynamic load dl false");
+            return 0;
+        }
+    }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
-    // pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize) {
-    //     // println!("create_user_space");
-    //     let mut user_space = Self::new_empty();
-    //     // map trampoline
-    //     user_space.map_trampoline();
-    //     // map program headers of elf, with U flag
-    //     let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
-    //     let elf_header = elf.header;
-    //     let magic = elf_header.pt1.magic;
-    //     assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
-    //     let ph_count = elf_header.pt2.ph_count();
-    //     // println!("ph_count: {}", ph_count);
-    //     let mut max_end_vpn = VirtPageNum(0);
-    //     for i in 0..ph_count {
-    //         let ph = elf.program_header(i).unwrap();
-    //         if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
-    //             // first section header is dummy, not match program header, so i + 1
-    //             let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-    //             let name = sect.get_name(&elf).unwrap();
-    //             // println!("name: {}", name);
-    //             let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
-    //             // println!("start_va: {:#X}", usize::from(start_va));
-    //             let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
-    //             // println!("end_va: {:#X}", usize::from(end_va));
-    //             let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
-    //             // println!("offset: {:#X}", offset);
-    //             let mut map_perm = Permission::U;
-    //             let ph_flags = ph.flags();
-    //             if ph_flags.is_read() {
-    //                 map_perm |= Permission::R;
-    //             }
-    //             if ph_flags.is_write() {
-    //                 map_perm |= Permission::W;
-    //             }
-    //             if ph_flags.is_execute() {
-    //                 map_perm |= Permission::X;
-    //             }
-    //             // println!("map_perm: {:#?}", map_perm);
-    //             let section = Section::new(
-    //                 name.to_string(),
-    //                 start_va,
-    //                 end_va,
-    //                 MapType::Framed,
-    //                 map_perm,
-    //             );
-    //             max_end_vpn = section.vpn_range.get_end();
-    //             // println!("range: 0x{:X}", (usize::from(end_va) - usize::from(start_va)));
-    //             // println!("start_vpn: {:?} end_vpn: {:?}", section.vpn_range.get_start(), section.vpn_range.get_end());
-    //             // println!("ph file_size: 0x{:X}", ph.file_size());
-    //             // println!("ph mem_size: 0x{:X}", ph.mem_size());
-    //             // println!("");
-    //             // user_space.push_section(
-    //             //     section,
-    //             //     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
-    //             // );
-    //             if offset == 0 {
-    //                 user_space.push_section(
-    //                     section,
-    //                     Some(
-    //                         &elf.input
-    //                             [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-    //                     ),
-    //                 );
-    //             } else {
-    //                 user_space.push_section_with_offset(
-    //                     section,
-    //                     offset,
-    //                     Some(
-    //                         &elf.input
-    //                             [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-    //                     ),
-    //                 );
-    //             }
-    //         }
-    //     }
-    //     // clear bss section
-    //     user_space.clear_bss_pages();
-
-    //     let max_end_va: VirtAddr = max_end_vpn.into();
-    //     let mut heap_start: usize = max_end_va.into();
-    //     //guard page
-    //     heap_start += PAGE_SIZE;
-
-    //     // map user stack with U flags
-    //     // user stack is set just below the trap_cx
-    //     let user_stack_high = USER_STACK_HIGH;
-    //     let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
-    //     // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
-    //     // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
-    //     user_space.push_section(
-    //         Section::new(
-    //             ".ustack".to_string(),
-    //             user_stack_bottom.into(),
-    //             user_stack_high.into(),
-    //             MapType::Framed,
-    //             Permission::R | Permission::W | Permission::U,
-    //         ),
-    //         None,
-    //     );
-
-    //     // map TrapContext
-    //     user_space.push_section(
-    //         Section::new(
-    //             ".trap_cx".to_string(),
-    //             TRAP_CONTEXT.into(),
-    //             TRAMPOLINE.into(),
-    //             MapType::Framed,
-    //             Permission::R | Permission::W,
-    //         ),
-    //         None,
-    //     );
-    //     // unsafe { asm!("fence.i") }
-    //     (
-    //         user_space,
-    //         heap_start,
-    //         user_stack_high,
-    //         elf.header.pt2.entry_point() as usize,
-    //     )
-    // }
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize, Vec<AuxHeader>) {
-        // println!("create_user_space");
+        // log::debug!("create_user_space");
         let mut auxv: Vec<AuxHeader> = Vec::new();
         let mut user_space = Self::new_empty();
         // map trampoline
@@ -376,7 +329,6 @@ impl AddrSpace {
         let magic = elf_header.pt1.magic;
         assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
         let ph_count = elf_header.pt2.ph_count();
-        // println!("ph_count: {}", ph_count);
         let mut max_end_vpn = VirtPageNum(0);
 
         auxv.push(AuxHeader {
@@ -391,10 +343,100 @@ impl AddrSpace {
             aux_type: AT_PAGESZ,
             value: PAGE_SIZE as usize,
         });
-        auxv.push(AuxHeader {
-            aux_type: AT_BASE,
-            value: 0 as usize,
-        });
+
+        let mut head_va = 0;
+        let mut at_base = 0;
+        let mut need_data_sec = true;
+        for i in 0..ph_count {
+            let ph = elf.program_header(i).unwrap();
+            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+            let name = sect.get_name(&elf).unwrap();
+            // log::debug!(
+            //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
+            //     name,
+            //     ph.get_type().unwrap(),
+            //     ph.virtual_addr(),
+            //     ph.virtual_addr() + ph.mem_size()
+            // );
+            if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
+                // first section header is dummy, not match program header, so set i + 1
+                let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+                let name = sect.get_name(&elf).unwrap();
+                // log::debug!("name: {}", name);
+                if name == "data" {
+                    need_data_sec = false;
+                }
+                let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
+                let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
+                let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
+                // log::debug!("offset: {:#X}", offset);
+                let mut map_perm = Permission::U;
+                let ph_flags = ph.flags();
+                if ph_flags.is_read() {
+                    map_perm |= Permission::R;
+                }
+                if ph_flags.is_write() {
+                    map_perm |= Permission::W;
+                }
+                if ph_flags.is_execute() {
+                    map_perm |= Permission::X;
+                }
+                // log::debug!("map_perm: {:#?}", map_perm);
+                let section = Section::new(
+                    name.to_string(),
+                    start_va,
+                    end_va,
+                    MapType::Framed,
+                    map_perm,
+                );
+                max_end_vpn = section.vpn_range.get_end();
+                if offset == 0 {
+                    user_space.push_section(
+                        section,
+                        Some(
+                            &elf.input
+                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+                        ),
+                    );
+                } else {
+                    user_space.push_section_with_offset(
+                        section,
+                        offset,
+                        Some(
+                            &elf.input
+                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+                        ),
+                    );
+                }
+
+                if head_va == 0 {
+                    head_va = start_va.0;
+                }
+            }
+            // load dll
+            else if ph.get_type().unwrap() == xmas_elf::program::Type::Interp {
+                at_base = user_space.load_dll_loader();
+                // log::debug!("Have Interp, need dll {:#X?}", at_base);
+                if at_base != 0 {
+                    at_base += DLL_LOADER_BASE;
+                } else {
+                    log::error!("dynamic linker error !");
+                }
+            }
+            // else do nothing
+        }
+
+        if at_base != 0 {
+            auxv.push(AuxHeader {
+                aux_type: AT_BASE,
+                value: DLL_LOADER_BASE as usize,
+            });
+        } else {
+            auxv.push(AuxHeader {
+                aux_type: AT_BASE,
+                value: 0 as usize,
+            });
+        }
         auxv.push(AuxHeader {
             aux_type: AT_FLAGS,
             value: 0 as usize,
@@ -440,90 +482,6 @@ impl AddrSpace {
             value: 0x112d as usize,
         });
 
-        let mut head_va = 0;
-        let mut need_data_sec = true;
-        for i in 0..ph_count {
-            let ph = elf.program_header(i).unwrap();
-            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-            let name = sect.get_name(&elf).unwrap();
-            log::debug!(
-                "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
-                name,
-                ph.get_type().unwrap(),
-                ph.virtual_addr(),
-                ph.virtual_addr() + ph.mem_size()
-            );
-            if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
-                // first section header is dummy, not match program header, so i + 1
-                let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-                let name = sect.get_name(&elf).unwrap();
-                // log::debug!("name: {}", name);
-                if name == "data" {
-                    need_data_sec = false;
-                }
-                let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
-                let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
-                // log::debug!(
-                //     "start_va - end_va: {:#X} - {:#X}",
-                //     usize::from(start_va),
-                //     usize::from(end_va)
-                // );
-                let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
-                // log::debug!("offset: {:#X}", offset);
-                let mut map_perm = Permission::U;
-                let ph_flags = ph.flags();
-                if ph_flags.is_read() {
-                    map_perm |= Permission::R;
-                }
-                if ph_flags.is_write() {
-                    map_perm |= Permission::W;
-                }
-                if ph_flags.is_execute() {
-                    map_perm |= Permission::X;
-                }
-                // log::debug!("map_perm: {:#?}", map_perm);
-                let section = Section::new(
-                    name.to_string(),
-                    start_va,
-                    end_va,
-                    MapType::Framed,
-                    map_perm,
-                );
-                max_end_vpn = section.vpn_range.get_end();
-                // user_space.push_section(
-                //     section,
-                //     Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
-                // );
-                if offset == 0 {
-                    user_space.push_section(
-                        section,
-                        Some(
-                            &elf.input
-                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-                        ),
-                    );
-                } else {
-                    user_space.push_section_with_offset(
-                        section,
-                        offset,
-                        Some(
-                            &elf.input
-                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-                        ),
-                    );
-                }
-
-                if start_va.aligned() {
-                    head_va = start_va.0;
-                }
-            }
-            // load dll
-            else if ph.get_type().unwrap() == xmas_elf::program::Type::Interp{
-
-            }
-            // else do nothing
-        }
-
         if need_data_sec == true {
             let map_perm = Permission::U | Permission::R | Permission::W;
             let section = Section::new(
@@ -541,7 +499,6 @@ impl AddrSpace {
             aux_type: AT_PHDR,
             value: ph_head_addr as usize,
         });
-        // println!("ph_head_addr: 0x{:#X}", ph_head_addr);
 
         // clear bss section
         user_space.clear_bss_pages();
@@ -580,14 +537,15 @@ impl AddrSpace {
             ),
             None,
         );
-        // unsafe { asm!("fence.i") }
-        (
-            user_space,
-            heap_start,
-            user_stack_high,
-            elf.header.pt2.entry_point() as usize,
-            auxv,
-        )
+        let entry;
+        if at_base == 0 {
+            // 静态链接程序
+            entry = elf.header.pt2.entry_point() as usize;
+        } else {
+            entry = at_base;
+        }
+        // log::debug!("entry: {:#X}", entry);
+        (user_space, heap_start, user_stack_high, entry, auxv)
     }
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)

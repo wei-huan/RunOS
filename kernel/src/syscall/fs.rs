@@ -162,11 +162,11 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 // }
 
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isize {
-    log::trace!("sys_open_at");
+    log::debug!("sys_open_at");
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
-    log::trace!("path: {:#?}", path);
+    log::debug!("path: {:#?}", path);
     let mut inner = task.acquire_inner_lock();
 
     let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
@@ -652,10 +652,12 @@ pub fn sys_umount(p_special: *const u8, flags: usize) -> isize {
 }
 
 pub fn sys_faccessat(fd: usize, path: *const u8, _time: usize, flags: u32) -> isize {
+    log::debug!("sys_faccessat");
     let task = current_task().unwrap();
     let token = current_user_token();
     // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
     let path = translated_str(token, path);
+    log::debug!("path: {:#?}", path);
     //print!("\n");
     //println!("unlink: path = {}", path);
     let inner = task.acquire_inner_lock();

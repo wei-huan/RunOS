@@ -1,22 +1,44 @@
 // use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
-use super::{pid_alloc, PidHandle, SignalActions, SignalFlags};
 use crate::config::{MMAP_BASE, PAGE_SIZE, TRAP_CONTEXT};
-use crate::fs::File;
-use crate::fs::{FileClass, FileDescripter, Stdin, Stdout};
+use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, Permission, PhysPageNum,
     UserBuffer, VirtAddr, KERNEL_SPACE,
 };
-use crate::task::{AuxHeader, AT_EXECFN, AT_NULL, AT_RANDOM};
+use crate::syscall::{EBADF, ENOENT, EPERM};
+use crate::task::{
+    pid_alloc, AuxHeader, PidHandle, SignalActions, SignalFlags, AT_EXECFN, AT_NULL, AT_RANDOM,
+};
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
+use bitflags::bitflags;
 use spin::{Mutex, MutexGuard};
+use core::arch::asm;
+
+bitflags! {
+    #[derive(Default)]
+    pub struct MMapFlags: usize {
+        const MAP_32BIT = 0;
+        const MAP_SHARED = 1 << 0;
+        const MAP_PRIVATE = 1 << 1;
+        const _X2 = 1 << 2;
+        const _X3 = 1 << 3;
+        const MAP_FIXED = 1 << 4;
+        const MAP_ANONYMOUS = 1 << 5;
+        const _X6 = 1 << 6;
+        const _X7 = 1 << 7;
+        const _X8 = 1 << 8;
+        const _X9 = 1 << 9;
+        const _X10 = 1 << 10;
+        const _X11 = 1 << 11;
+    }
+}
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskStatus {
@@ -49,8 +71,7 @@ pub struct TaskControlBlockInner {
     pub fd_table: FDTable,
     pub current_path: String,
     // mmap area
-    pub mmap_area_num: usize,
-    pub mmap_area_top: usize,
+    pub mmap_area_hint: usize,
     // signals
     pub signals: SignalFlags,
     pub signal_mask: SignalFlags,
@@ -144,8 +165,7 @@ impl TaskControlBlock {
                     )),
                 ],
                 current_path: String::from("/"),
-                mmap_area_num: 0,
-                mmap_area_top: MMAP_BASE,
+                mmap_area_hint: MMAP_BASE,
                 signals: SignalFlags::empty(),
                 signal_mask: SignalFlags::empty(),
                 handling_sig: -1,
@@ -167,68 +187,6 @@ impl TaskControlBlock {
         );
         task
     }
-    // pub fn exec(&self, elf_data: &[u8], args: Vec<String>) {
-    //     // memory_set with elf program headers/trampoline/trap context/user stack
-    //     let (addr_space, heap_start, mut user_sp, mut entry_point) =
-    //         AddrSpace::create_user_space(elf_data);
-    //     log::debug!("entry point: 0x{:X?}", entry_point);
-    //     log::debug!("heap_start: 0x{:X?}", heap_start);
-    //     let trap_cx_ppn = addr_space
-    //         .translate(VirtAddr::from(TRAP_CONTEXT).into())
-    //         .unwrap()
-    //         .ppn();
-
-    //     // push arguments on user stack
-    //     user_sp -= (args.len() + 1) * core::mem::size_of::<usize>();
-    //     log::debug!("user_sp: 0x{:X?}", user_sp);
-    //     let argv_base = user_sp;
-    //     let mut argv: Vec<_> = (0..=args.len())
-    //         .map(|arg| {
-    //             translated_refmut(
-    //                 addr_space.get_token(),
-    //                 (argv_base + arg * core::mem::size_of::<usize>()) as *mut usize,
-    //             )
-    //         })
-    //         .collect();
-    //     *argv[args.len()] = 0;
-    //     for i in 0..args.len() {
-    //         user_sp -= args[i].len() + 1;
-    //         *argv[i] = user_sp;
-    //         let mut p = user_sp;
-    //         for c in args[i].as_bytes() {
-    //             *translated_refmut(addr_space.get_token(), p as *mut u8) = *c;
-    //             p += 1;
-    //         }
-    //         *translated_refmut(addr_space.get_token(), p as *mut u8) = 0;
-    //     }
-    //     // make the user_sp aligned to 8B for k210 platform
-    //     user_sp -= user_sp % core::mem::size_of::<usize>();
-
-    //     // **** access current TCB exclusively
-    //     let mut inner = self.acquire_inner_lock();
-    //     // set new entry_point
-    //     inner.entry_point = entry_point;
-    //     // substitute memory_set
-    //     inner.addrspace = addr_space;
-    //     // update trap_cx ppn
-    //     inner.trap_cx_ppn = trap_cx_ppn;
-    //     // update heap_start
-    //     inner.heap_start = heap_start;
-    //     // update heap_pointer
-    //     inner.heap_pointer = heap_start;
-    //     // initialize trap_cx
-    //     let mut trap_cx = TrapContext::app_init_context(
-    //         entry_point,
-    //         user_sp,
-    //         KERNEL_SPACE.lock().get_token(),
-    //         self.kernel_stack.get_top(),
-    //         user_trap_handler as usize,
-    //     );
-    //     trap_cx.x[10] = args.len();
-    //     trap_cx.x[11] = argv_base;
-    //     *inner.get_trap_cx() = trap_cx;
-    //     // **** release current PCB
-    // }
     pub fn exec(self: &Arc<Self>, elf_data: &[u8], args: Vec<String>) {
         // memory_set with elf program headers/trampoline/trap context/user stack
         let (addrspace, heap_start, mut user_sp, entry_point, mut auxv) =
@@ -257,6 +215,7 @@ impl TaskControlBlock {
         env.push(String::from("LOGNAME=root"));
         env.push(String::from("HOME=/"));
         env.push(String::from("PATH=/"));
+        env.push(String::from("LD_LIBRARY_PATH=/"));
         let mut envp: Vec<usize> = (0..=env.len()).collect();
         envp[env.len()] = 0;
 
@@ -438,8 +397,7 @@ impl TaskControlBlock {
                 exit_code: 0,
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
-                mmap_area_num: parent_inner.mmap_area_num,
-                mmap_area_top: parent_inner.mmap_area_top,
+                mmap_area_hint: parent_inner.mmap_area_hint,
                 signals: SignalFlags::empty(),
                 // inherit the signal_mask and signal_action
                 signal_mask: parent_inner.signal_mask,
@@ -472,34 +430,62 @@ impl TaskControlBlock {
     pub fn getppid(&self) -> usize {
         self.get_parent().unwrap().pid.0
     }
-    // 假设每次新 mmap 的区域和过往不重叠, 目前只支持创建一个mmap区域
+
     pub fn mmap(
         &self,
         mut start: usize,
         length: usize,
         prot: usize,
-        _flags: usize,
+        flags: usize,
         fd: isize,
         offset: usize,
     ) -> isize {
         let mut inner = self.acquire_inner_lock();
         let token = inner.get_user_token();
-        inner.mmap_area_num += 1;
         // prot<<1 is equal to  meaning of Permission, 1<<4 means user
         let map_flags = (((prot & 0b111) << 1) + (1 << 4)) as u8;
-        // log::debug!("mmap start: 0x{:#X}", start);
         // 如果没有 mmap section 就创建 mmap section
         if start == 0 {
-            start = inner.mmap_area_top;
-            log::debug!("mmap new start: 0x{:#X}", start);
-            inner.mmap_area_top = VirtAddr::from(start + length).ceil().0 * PAGE_SIZE;
-            log::debug!("mmap new start: 0x{:#X}", inner.mmap_area_top);
+            start = inner.mmap_area_hint;
+            log::debug!("mmap need hint start before map: {:#X}", start);
+            inner.mmap_area_hint = VirtAddr::from(start + length).ceil().0 * PAGE_SIZE;
+            log::debug!(
+                "mmap need hint start after map: {:#X}",
+                inner.mmap_area_hint
+            );
             inner.addrspace.create_mmap_section(
                 start,
                 length,
                 Permission::from_bits(map_flags).unwrap(),
             );
-        } else {
+        }
+        // 如果已存在 mmap 就看是否需要调整大小,
+        else if inner
+            .addrspace
+            .is_mmap_section_exist(VirtAddr::from(start).floor())
+        {
+            // TODO: adjust mmap size
+            // // 重新映射
+            // inner.addrspace.remove_mmap_area_with_start_vpn(VirtAddr::from(start-0x1000).floor());
+            // unsafe {
+            //     asm!("sfence.vma");
+            //     asm!("fence.i");
+            // }
+            // inner.addrspace.create_mmap_section(
+            //     start,
+            //     length,
+            //     Permission::from_bits(map_flags).unwrap(),
+            // );
+        }
+        // 如果不存在 mmap 就需要根据提示映射新的段
+        else {
+            log::debug!("mmap start before map: {:#X}", start);
+            start = inner.mmap_area_hint;
+            inner.mmap_area_hint = VirtAddr::from(start + length).ceil().0 * PAGE_SIZE;
+            log::debug!(
+                "mmap need hint start after map: {:#X}",
+                inner.mmap_area_hint
+            );
             inner.addrspace.create_mmap_section(
                 start,
                 length,
@@ -507,31 +493,36 @@ impl TaskControlBlock {
             );
         }
         let fd_table = inner.fd_table.clone();
-        if fd < 0 || fd as usize >= fd_table.len() {
+        let mmap_flag = MMapFlags::from_bits(flags).unwrap();
+        if fd < 0 || mmap_flag.contains(MMapFlags::MAP_ANONYMOUS) {
+            log::debug!("mmap here no need file");
             return start as isize;
+        }
+        if fd as usize >= fd_table.len() {
+            return -EBADF;
         }
         if let Some(file) = &fd_table[fd as usize] {
             match &file.fclass {
                 FileClass::File(f) => {
-                    f.set_offset(offset);
                     if !f.readable() {
-                        return -1;
+                        return -EPERM;
                     }
-                    //println!{"The va_start is 0x{:X}, offset of file is {}", va_start.0, offset};
+                    f.set_offset(offset);
+                    log::debug! {"The va_start is {:#?}, offset of file is {:#X?}, file_size: {:#X?}", VirtAddr::from(start), offset, f.get_size()};
                     let read_len = f.read(UserBuffer::new(translated_byte_buffer(
                         token,
                         start as *const u8,
                         length,
                     )));
-                    //println!{"read {} bytes", read_len};
+                    log::debug! {"read {:#X?} bytes", read_len};
                     return start as isize;
                 }
                 _ => {
-                    return -1;
+                    return -ENOENT;
                 }
             };
         } else {
-            return -1;
+            return -ENOENT;
         };
     }
     pub fn munmap(&self, start: usize, _length: usize) -> isize {

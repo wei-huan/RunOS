@@ -255,6 +255,9 @@ where
     pub fn get_end(&self) -> T {
         self.r
     }
+    pub fn is_cover(&self, addr: T) -> bool {
+        self.l <= addr && self.r > addr
+    }
     // pub fn set_start(&mut self, new_start: T) {
     //     self.l = new_start;
     // }
@@ -304,4 +307,3 @@ where
 }
 
 pub type VPNRange = SimpleRange<VirtPageNum>;
-// pub type PPNRange = SimpleRange<PhysPageNum>;

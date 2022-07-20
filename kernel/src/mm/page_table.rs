@@ -140,13 +140,11 @@ impl PageTable {
         }
         result
     }
-    #[allow(unused)]
     pub fn map(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: PTEFlags) {
         let mut pte = self.find_pte_create(vpn).unwrap();
         assert!(!pte.is_valid(), "vpn {:?} is mapped before mapping", vpn);
         *pte = PageTableEntry::new(ppn, RSWField::empty(), flags | PTEFlags::V);
     }
-    #[allow(unused)]
     pub fn unmap(&mut self, vpn: VirtPageNum) {
         let mut pte = self.find_pte(vpn).unwrap();
         assert!(pte.is_valid(), "vpn {:?} is already unmapped", vpn);
@@ -203,13 +201,6 @@ pub fn translated_byte_buffer(token: usize, ptr: *const u8, len: usize) -> Vec<&
     while start < end {
         let start_va = VirtAddr::from(start);
         let mut vpn = start_va.floor();
-        // if page_table.translate(vpn).is_none() {
-        //     // current_task().unwrap().check_lazy(start_va, true);
-        //     unsafe {
-        //         asm!("sfence.vma");
-        //         asm!("fence.i");
-        //     }
-        // }
         let ppn = page_table.translate(vpn).unwrap().ppn();
         vpn.step();
         let mut end_va: VirtAddr = vpn.into();

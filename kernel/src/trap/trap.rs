@@ -120,7 +120,7 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
             log::debug!(
-                "[kernel] {:?} in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
+                "[kernel] {:?} in application, bad addr = {:#X}, bad instruction = {:#X}, kernel killed it.",
                 scause.cause(),
                 stval,
                 current_trap_cx().sepc,

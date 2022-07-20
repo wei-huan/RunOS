@@ -393,9 +393,11 @@ pub fn sys_mmap(
     fd: isize,
     offset: usize,
 ) -> isize {
-    log::debug!("sys_mmap start: {:#X?}, length: {:#X?}", start, length);
+    log::debug!("sys_mmap start: {:#X?}, length: {:#X?}, fd: {}", start, length, fd);
     let task = current_task().unwrap();
-    task.mmap(start, length, prot, flags, fd, offset)
+    let res = task.mmap(start, length, prot, flags, fd, offset);
+    log::debug!("sys_mmap leave");
+    res
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
@@ -469,7 +471,7 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    log::debug!("sys_sigaction");
+    // log::debug!("sys_sigaction");
     let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
