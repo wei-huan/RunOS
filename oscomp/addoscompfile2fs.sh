@@ -30,10 +30,10 @@ sudo rm -rf ${FAT32_DIR}/fs/*
 #     sudo cp -r ./build/riscv64/${inode} ${FAT32_DIR}/fs/${inode}
 # done
 
-for inode in $(ls ../oscomp1)
-do
-    sudo cp -r ../oscomp1/${inode} ${FAT32_DIR}/fs/${inode}
-done
+# for inode in $(ls ../oscomp1)
+# do
+#     sudo cp -r ../oscomp1/${inode} ${FAT32_DIR}/fs/${inode}
+# done
 
 for programname in $(ls ../oscomp2)
 do 

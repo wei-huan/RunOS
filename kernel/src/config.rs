@@ -1,8 +1,8 @@
 pub const PAGE_SIZE: usize = 4096;
 pub const PAGE_SIZE_BITS: usize = 0xc;
-pub const MEMORY_END: usize = 0x80800000;
+pub const MEMORY_END: usize = 0x82000000;
 // 内核堆大小 3MB
-pub const KERNEL_HEAP_SIZE: usize = 0x2A_0000;
+pub const KERNEL_HEAP_SIZE: usize = 0x30_0000;
 // 给 buddy_system_allocator 使用的，这个值大于 32 即可
 pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;
 pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 1;
