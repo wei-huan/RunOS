@@ -162,11 +162,11 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 // }
 
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isize {
-    log::debug!("sys_open_at");
+    log::trace!("sys_open_at");
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
-    log::debug!("path: {:#?}", path);
+    log::trace!("path: {:#?}", path);
     let mut inner = task.acquire_inner_lock();
 
     let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
