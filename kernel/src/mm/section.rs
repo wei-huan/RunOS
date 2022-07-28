@@ -155,7 +155,9 @@ impl Section {
         }
         // 扩大
         else if end_vpn < new_end_vpn {
-            for vpn in VirtPageNum::from(end_vpn.0 + 1)..new_end_vpn {
+            // println!("end_vpn: {:#?}", end_vpn);
+            // println!("new_end_vpn: {:#?}", new_end_vpn);
+            for vpn in VirtPageNum::from(end_vpn.0)..new_end_vpn {
                 self.map_one_page(page_table, vpn);
             }
         }

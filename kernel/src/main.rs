@@ -37,8 +37,8 @@ mod utils;
 
 // #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 use crate::cpu::SMP_START;
-// #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 use crate::cpu::hart_id;
+// #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 use crate::owo_colors::OwoColorize;
 use core::arch::global_asm;
 use core::sync::atomic::Ordering;
@@ -102,19 +102,19 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         fpu::init();
-        logo::show();
+        // logo::show();
         logger::init();
-        logger::show_basic_info();
-        fs::init_rootfs();
         scheduler::add_initproc();
-        log::info!(
-            "{}",
-            alloc::format!("Main Hart {} successfully booted", hart_id()).green()
-        );
+        fs::init_rootfs();
+        logger::show_basic_info();
         // fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Main Hart {} successfully booted", hart_id()).green()
+        // );
         scheduler::schedule();
     } else {
         trap::init();

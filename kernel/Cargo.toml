@@ -29,8 +29,6 @@ platform-qemu = []
 opensbi = []
 rustsbi = []
 
-[profile.release]
-opt-level = "z"  # Optimize for size
 
 # [bin]
 # proc-macro = true

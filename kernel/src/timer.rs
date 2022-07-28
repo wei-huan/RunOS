@@ -105,6 +105,7 @@ pub fn enable_timer_interrupt() {
 }
 
 #[inline(always)]
+#[allow(unused)]
 pub fn disable_timer_interrupt() {
     unsafe {
         sie::clear_stimer();

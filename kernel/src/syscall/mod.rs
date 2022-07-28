@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 mod errorno;
 mod fs;
 mod process;
@@ -38,6 +40,8 @@ const SYSCALL_READ: usize = 63;
 const SYSCALL_WRITE: usize = 64;
 const SYSCALL_READV: usize = 65;
 const SYSCALL_WRITEV: usize = 66;
+const SYSCALL_PREAD: usize = 67;
+const SYSCALL_PWRITE: usize = 68;
 const SYSCALL_SENDFILE: usize = 71;
 const SYSCALL_FSTATAT: usize = 79;
 const SYSCALL_FSTAT: usize = 80;
@@ -89,6 +93,7 @@ const SYSCALL_MMAP: usize = 222;
 const SYSCALL_MPROTECT: usize = 226;
 const SYSCALL_WAIT4: usize = 260;
 const SYSCALL_PRLIMIT: usize = 261;
+const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     // if syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
@@ -142,7 +147,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_EXIT_GRUOP => sys_exit_group(args[0] as i32),
         SYSCALL_SET_ROBUST_LIST => 0,
         SYSCALL_GET_ROBUST_LIST => 0,
-        SYSCALL_SET_TID_ADDRESS => sys_set_tid_address(args[0] as *mut usize),
+        SYSCALL_SET_TID_ADDRESS => sys_set_tid_address(args[0] as _),
         SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
             &mut *(args[1] as *mut TimeVal)
         }),
@@ -203,6 +208,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_MPROTECT => 0,
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
         SYSCALL_PRLIMIT => 0,
+        SYSCALL_MEMBARRIER => 0,
         _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }
 }

@@ -1,3 +1,4 @@
+use crate::config::page_aligned_up;
 use crate::cpu::{current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
@@ -63,10 +64,10 @@ pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
     0
 }
 
-pub fn sys_set_tid_address(ptr: *mut usize) -> isize {
-    // log::debug!("sys_set_tid_address");
+pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
+    // log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
     let token = current_user_token();
-    *translated_refmut(token, ptr) = current_task().unwrap().pid.0;
+    *translated_refmut::<u32>(token, ptr) = current_task().unwrap().pid.0 as u32;
     let ret = current_task().unwrap().pid.0 as isize;
     ret
 }
@@ -285,45 +286,40 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
     }
 }
 
-
 /// On success, returns the new program break
 /// On failure, the system call returns the current break.
 pub fn sys_brk(mut brk_addr: usize) -> isize {
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
-    log::trace!(
-        "sys_brk: {:#X?}, start: {:#X?}, current_break: {:#X?}",
-        brk_addr,
-        inner.heap_start,
-        inner.heap_pointer
-    );
+    // log::debug!(
+    //     "sys_brk: {:#X?}, start: {:#X?}, current_break: {:#X?}",
+    //     brk_addr,
+    //     inner.heap_start,
+    //     inner.heap_pointer
+    // );
     let heap_start = inner.heap_start;
-    if brk_addr == 0 {
-        return (inner.heap_pointer) as isize;
-    } else {
+    brk_addr = page_aligned_up(brk_addr);
+    if brk_addr != 0 {
         // 还未分配堆，直接创建 heap section
         if inner.heap_pointer == heap_start {
             inner
                 .addrspace
                 .alloc_heap_section(heap_start, brk_addr - heap_start);
-            inner.heap_pointer = brk_addr;
-            return inner.heap_pointer as isize;
         }
         // 已经有堆，扩展
         else {
             let (_, top) = inner.addrspace.get_section_range(".heap");
             let top_vpn: VirtPageNum = VirtAddr::from(top).into();
-            let new_top = inner.heap_start + brk_addr;
-            let new_top_vpn: VirtPageNum = VirtAddr::from(new_top).floor().into();
+            let new_top_vpn: VirtPageNum = VirtAddr::from(brk_addr).floor().into();
             if top_vpn != new_top_vpn {
                 // 如果超出界限，需要分配新的页
                 // 如果缩小到的新虚拟页号变小，需要回收页
                 inner.addrspace.modify_section_end(".heap", new_top_vpn);
             }
-            inner.heap_pointer = new_top;
-            return (inner.heap_pointer - heap_start) as isize;
         }
+        inner.heap_pointer = brk_addr;
     }
+    return inner.heap_pointer as isize;
 }
 
 // sets the end of the data segment to the value

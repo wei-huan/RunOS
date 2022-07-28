@@ -73,6 +73,7 @@ lazy_static! {
 pub fn add_initproc() {
     add_initproc_into_fs();
     add_task_to_designate_queue(INITPROC.clone(), 0);
+    // println!("add_initproc finish");
 }
 
 pub fn save_current_and_back_to_schedule(current_task_cx_ptr: *mut TaskContext) {

@@ -1,4 +1,5 @@
 // https://mariadb.com/kb/en/operating-system-error-codes/
+#![allow(unused)]
 
 pub const EPERM: isize = 1; /* Operation not permitted */
 pub const ENOENT: isize = 2; /* No such file or directory */

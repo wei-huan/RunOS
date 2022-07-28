@@ -3,7 +3,7 @@ use super::__schedule;
 use crate::cpu::{hart_id, take_my_cpu};
 use crate::dt::CPU_NUMS;
 use crate::sync::interrupt_off;
-use crate::task::{idle_task, TaskContext, TaskControlBlock, TaskStatus};
+use crate::task::{TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use core::sync::atomic::Ordering;
 use spin::Mutex;
@@ -70,21 +70,22 @@ impl Scheduler for RoundRobinScheduler {
                 // schedule new task
                 unsafe { __schedule(idle_task_cx_ptr, next_task_cx_ptr) }
             } else {
-                idle_task();
+                // idle_task();
                 // log::debug!("Hart {} have no task", hart_id());
             }
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        let (i, selected) = self
-            .ready_queues
-            .iter()
-            .enumerate()
-            .min_by_key(|queue| queue.1.lock().queue.len())
-            .unwrap_or((0, &self.ready_queues[0]));
-        // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
-        selected.lock().queue.push_back(task);
-        // self.ready_queues[0].lock().queue.push_back(task);
+        // let (i, selected) = self
+        //     .ready_queues
+        //     .iter()
+        //     .enumerate()
+        //     .min_by_key(|queue| queue.1.lock().queue.len())
+        //     .unwrap_or((0, &self.ready_queues[0]));
+        // // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
+        // selected.lock().queue.push_back(task);
+
+        self.ready_queues[0].lock().queue.push_back(task);
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
         self.ready_queues[hart_id()].lock().queue.pop_front()

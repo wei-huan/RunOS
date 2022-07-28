@@ -4,6 +4,7 @@ use riscv::asm::wfi;
 
 pub static mut TIME_TO_SCHEDULE: [bool; 4] = [false; 4];
 
+#[allow(unused)]
 pub fn idle_task() {
     // statistics
     let mut cpu = take_my_cpu();

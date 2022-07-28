@@ -119,7 +119,7 @@ impl PhysAddr {
         PhysPageNum(self.0 / PAGE_SIZE)
     }
     pub fn ceil(&self) -> PhysPageNum {
-        PhysPageNum((self.0 - 1 + PAGE_SIZE) / PAGE_SIZE)
+        PhysPageNum((self.0 + PAGE_SIZE - 1) / PAGE_SIZE)
     }
     pub fn page_offset(&self) -> usize {
         self.0 & (PAGE_SIZE - 1)

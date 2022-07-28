@@ -18,7 +18,6 @@ use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::bitflags;
-use core::arch::asm;
 use spin::{Mutex, MutexGuard};
 
 bitflags! {
@@ -426,11 +425,10 @@ impl TaskControlBlock {
         let inner = self.acquire_inner_lock();
         inner.parent.as_ref().unwrap().upgrade()
     }
-    // initproc 不会调用 sys_getppid
+    // initproc won't call sys_getppid
     pub fn getppid(&self) -> usize {
         self.get_parent().unwrap().pid.0
     }
-
     pub fn mmap(
         &self,
         mut start: usize,
@@ -440,52 +438,54 @@ impl TaskControlBlock {
         fd: isize,
         offset: usize,
     ) -> isize {
+        log::debug!(
+            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}",
+            start,
+            length,
+            fd,
+            offset
+        );
         let mut inner = self.acquire_inner_lock();
         let token = inner.get_user_token();
-        // prot<<1 is equal to  meaning of Permission, 1<<4 means user
-        let map_flags = (((prot & 0b111) << 1) + (1 << 4)) as u8;
-        // 如果没有 mmap section 就创建 mmap section
+        // prot<<1 is equal to  meaning of Permission
+        let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap() | Permission::U;
+        // need hint
         if start == 0 {
             start = inner.mmap_area_hint;
-            length = PAGE_SIZE;
-            log::trace!("mmap need hint start before map: {:#X}", start);
-            inner.mmap_area_hint = inner.addrspace.create_mmap_section(
-                start,
-                length,
-                Permission::from_bits(map_flags).unwrap(),
-            ).into();
-            log::trace!(
-                "mmap need hint hint after map: {:#X}",
-                inner.mmap_area_hint
-            );
+            log::debug!("mmap need hint start before map: {:#X}", start);
+            inner.mmap_area_hint = inner
+                .addrspace
+                .create_mmap_section(start, length, mmap_perm)
+                .into();
+            log::debug!("mmap need hint hint after map: {:#X}", inner.mmap_area_hint);
         }
-        // 如果已存在 mmap 就看是否需要调整大小,
+        // another mmaping already exist there, need to picks a new address depending on the hint
         else if inner
             .addrspace
             .is_mmap_section_exist(VirtAddr::from(start).floor())
         {
-            // TODO: adjust mmap size
-            // // 重新映射
-            // inner.addrspace.remove_mmap_area_with_start_vpn(VirtAddr::from(start-0x1000).floor());
-            // unsafe {
-            //     asm!("sfence.vma");
-            //     asm!("fence.i");
-            // }
-            // inner.addrspace.create_mmap_section(
-            //     start,
-            //     length,
-            //     Permission::from_bits(map_flags).unwrap(),
-            // );
+            start = inner.mmap_area_hint;
+            log::debug!("mmap need to pick new place start before map: {:#X}", start);
+            inner.mmap_area_hint = inner
+                .addrspace
+                .create_mmap_section(start, length, mmap_perm)
+                .into();
+            log::debug!(
+                "mmap need to pick new place start after map: {:#X}",
+                inner.mmap_area_hint
+            );
         }
-        // 如果不存在 mmap 就需要根据提示映射新的段
+        // no conflict, just map it
         else {
             log::trace!("mmap start before map: {:#X}", start);
             inner.mmap_area_hint = inner
                 .addrspace
-                .create_mmap_section(start, length, Permission::from_bits(map_flags).unwrap())
+                .create_mmap_section(start, length, mmap_perm)
                 .into();
             log::trace!("mmap hint after map: {:#X}", inner.mmap_area_hint);
         }
+
+        // File Content Copy
         let fd_table = inner.fd_table.clone();
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         if fd < 0 || mmap_flag.contains(MMapFlags::MAP_ANONYMOUS) {
@@ -502,13 +502,11 @@ impl TaskControlBlock {
                         return -EPERM;
                     }
                     f.set_offset(offset);
-                    log::trace! {"The va_start is {:#?}, offset of file is {:#X?}, file_size: {:#X?}", VirtAddr::from(start), offset, f.get_size()};
+                    log::debug! {"The va_start is {:#?}, offset of file is {:#X?}, file_size: {:#X?}", VirtAddr::from(start), offset, f.get_size()};
                     let read_len = f.read(UserBuffer::new(translated_byte_buffer(
-                        token,
-                        start as *const u8,
-                        length,
+                        token, start as _, length,
                     )));
-                    log::trace! {"read {:#X?} bytes", read_len};
+                    log::debug! {"read {:#X?} bytes", read_len};
                     return start as isize;
                 }
                 _ => {
@@ -519,6 +517,7 @@ impl TaskControlBlock {
             return -ENOENT;
         };
     }
+
     pub fn munmap(&self, start: usize, _length: usize) -> isize {
         let mut inner = self.acquire_inner_lock();
         inner

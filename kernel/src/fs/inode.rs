@@ -307,6 +307,7 @@ lazy_static! {
         let runfs = Arc::new(RwLock::new(RunFileSystem::new(BLOCK_DEVICE.clone())));
         // println!("get root_dir");
         let root_dir = Arc::new(runfs.read().root_vfile(&runfs));
+        // println!("get root_dir ok");
         root_dir
     };
 }
@@ -316,6 +317,7 @@ pub fn init_rootfs() {
     // open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // open("/dev", "zero", OpenFlags::CREATE, DiskInodeType::File).unwrap();
     // open("/", "ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
 }
 

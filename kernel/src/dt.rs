@@ -9,8 +9,7 @@ use fdt::Fdt;
 pub static CPU_NUMS: AtomicUsize = AtomicUsize::new(2);
 pub static MEM_SIZE: AtomicUsize = AtomicUsize::new(0);
 pub static MEM_START: AtomicUsize = AtomicUsize::new(0);
-// pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(403000000 / 62);
-pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(10000000);
+pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(403000000 / 62);
 pub static FDT: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
 // pub static MODEL: AtomicPtr<&str> = AtomicPtr::new(ptr::null_mut());
 
@@ -61,7 +60,7 @@ fn fdt_get_ram(fdt_ptr: *const u8) {
         let memory = fdt
             .memory()
             .regions()
-            .find(|region| {
+            .find(|_region| {
                 // let start = region.starting_address as usize;
                 // let end = region.starting_address as usize + region.size.unwrap();
                 // let kstart_phys = unsafe {

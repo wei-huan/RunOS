@@ -15,8 +15,6 @@ pub use page_table::{
 };
 pub use section::Permission;
 
-use core::arch::asm;
-
 pub fn boot_init() {
     heap::init_heap();
     frame::init_frame_allocator();

@@ -77,18 +77,6 @@ impl AddrSpace {
             None,
         );
     }
-    pub fn insert_mmap_area(
-        &mut self,
-        name: String,
-        start_va: VirtAddr,
-        end_va: VirtAddr,
-        permission: Permission,
-    ) {
-        self.push_mmap_section(
-            Section::new(name, start_va, end_va, MapType::Framed, permission),
-            None,
-        );
-    }
     pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
         if let Some((idx, area)) = self
             .sections
@@ -124,6 +112,11 @@ impl AddrSpace {
         }
     }
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
+        // log::debug!(
+        //     "section range start: {:#?}, end: {:#?}",
+        //     section.vpn_range.get_start(),
+        //     section.vpn_range.get_end()
+        // );
         section.map(&mut self.page_table);
         if let Some(data) = data {
             section.copy_data(&mut self.page_table, data, 0);
@@ -645,16 +638,17 @@ impl AddrSpace {
             }
         }
     }
-    // size 最终会按页对齐, 返回 end_va
+    // length 最终会按页对齐, 返回 end_va
     pub fn create_mmap_section(
         &mut self,
         mmap_start: usize,
-        size: usize,
+        length: usize,
         permission: Permission,
     ) -> VirtAddr {
         let start_va = mmap_start.into();
-        let end_va = (mmap_start + size).into();
-        self.insert_mmap_area(".mmap".to_string(), start_va, end_va, permission);
+        let end_va = (mmap_start + length).into();
+        log::debug!("start: {:#?}, end: {:#?}", start_va, end_va);
+        self.insert_framed_area(".mmap".to_string(), start_va, end_va, permission);
         end_va
     }
 }
