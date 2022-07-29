@@ -141,12 +141,12 @@ impl PageTable {
         result
     }
     pub fn map(&mut self, vpn: VirtPageNum, ppn: PhysPageNum, flags: PTEFlags) {
-        let mut pte = self.find_pte_create(vpn).unwrap();
+        let pte = self.find_pte_create(vpn).unwrap();
         assert!(!pte.is_valid(), "vpn {:?} is mapped before mapping", vpn);
         *pte = PageTableEntry::new(ppn, RSWField::empty(), flags | PTEFlags::V);
     }
     pub fn unmap(&mut self, vpn: VirtPageNum) {
-        let mut pte = self.find_pte(vpn).unwrap();
+        let pte = self.find_pte(vpn).unwrap();
         assert!(pte.is_valid(), "vpn {:?} is already unmapped", vpn);
         *pte = PageTableEntry::empty();
     }

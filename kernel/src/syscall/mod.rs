@@ -2,6 +2,7 @@
 
 mod errorno;
 mod fs;
+mod futex;
 mod process;
 mod sysinfo;
 mod syslog;
@@ -12,6 +13,7 @@ use crate::timer::{TimeVal, Times};
 
 pub use errorno::*;
 use fs::*;
+use futex::*;
 use process::*;
 use sysinfo::*;
 use syslog::*;
@@ -97,9 +99,6 @@ const SYSCALL_PRLIMIT: usize = 261;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    // if syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-    //     log::debug!("syscall_id: {:#?}", syscall_id);
-    // }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),
@@ -149,7 +148,14 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SET_ROBUST_LIST => 0,
         SYSCALL_GET_ROBUST_LIST => 0,
         SYSCALL_SET_TID_ADDRESS => sys_set_tid_address(args[0] as _),
-        SYSCALL_FUTEX => 0,
+        SYSCALL_FUTEX => sys_futex(
+            args[0] as _,
+            args[1] as _,
+            args[2] as _,
+            args[3] as _,
+            args[4] as _,
+            args[5] as _,
+        ),
         SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
             &mut *(args[1] as *mut TimeVal)
         }),
@@ -193,9 +199,9 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_CLONE => sys_fork(
             args[0] as usize,
             args[1] as usize,
-            args[2] as usize,
+            args[2] as _,
             args[3] as usize,
-            args[4] as usize,
+            args[4] as _,
         ),
         SYSCALL_MUNMAP => sys_munmap(args[0] as usize, args[1] as usize),
         SYSCALL_EXECVE => sys_exec(args[0] as *const u8, args[1] as *const usize),
