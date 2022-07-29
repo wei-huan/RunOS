@@ -438,17 +438,22 @@ impl TaskControlBlock {
         fd: isize,
         offset: usize,
     ) -> isize {
-        log::debug!(
-            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}",
+        log::trace!(
+            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, prot: {}",
             start,
             length,
             fd,
-            offset
+            offset,
+            prot
         );
         let mut inner = self.acquire_inner_lock();
         let token = inner.get_user_token();
-        // prot<<1 is equal to  meaning of Permission
-        let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap() | Permission::U;
+        // prot << 1 is equal to meaning of Permission
+        let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap()
+            | Permission::U
+            | Permission::W
+            | Permission::R;
+        let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         // need hint
         if start == 0 {
             start = inner.mmap_area_hint;
@@ -457,7 +462,10 @@ impl TaskControlBlock {
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::trace!("mmap need hint hint after map: {:#X}", inner.mmap_area_hint);
+            log::trace!(
+                "mmap need hint start after map: {:#X}",
+                inner.mmap_area_hint
+            );
         }
         // another mmaping already exist there, need to picks a new address depending on the hint
         else if inner
@@ -502,11 +510,11 @@ impl TaskControlBlock {
                         return -EPERM;
                     }
                     f.set_offset(offset);
-                    log::debug! {"The va_start is {:#?}, offset of file is {:#X?}, file_size: {:#X?}", VirtAddr::from(start), offset, f.get_size()};
+                    log::trace! {"The va_start is {:#?}, offset of file is {:#X?}, file_size: {:#X?}", VirtAddr::from(start), offset, f.get_size()};
                     let read_len = f.read(UserBuffer::new(translated_byte_buffer(
                         token, start as _, length,
                     )));
-                    log::debug! {"read {:#X?} bytes", read_len};
+                    log::trace! {"read {:#X?} bytes", read_len};
                     return start as isize;
                 }
                 _ => {
