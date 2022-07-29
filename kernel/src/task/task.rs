@@ -452,12 +452,12 @@ impl TaskControlBlock {
         // need hint
         if start == 0 {
             start = inner.mmap_area_hint;
-            log::debug!("mmap need hint start before map: {:#X}", start);
+            log::trace!("mmap need hint start before map: {:#X}", start);
             inner.mmap_area_hint = inner
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::debug!("mmap need hint hint after map: {:#X}", inner.mmap_area_hint);
+            log::trace!("mmap need hint hint after map: {:#X}", inner.mmap_area_hint);
         }
         // another mmaping already exist there, need to picks a new address depending on the hint
         else if inner
@@ -465,12 +465,12 @@ impl TaskControlBlock {
             .is_mmap_section_exist(VirtAddr::from(start).floor())
         {
             start = inner.mmap_area_hint;
-            log::debug!("mmap need to pick new place start before map: {:#X}", start);
+            log::trace!("mmap need to pick new place start before map: {:#X}", start);
             inner.mmap_area_hint = inner
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::debug!(
+            log::trace!(
                 "mmap need to pick new place start after map: {:#X}",
                 inner.mmap_area_hint
             );
