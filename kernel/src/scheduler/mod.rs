@@ -33,9 +33,13 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
-pub fn add_task_to_designate_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
+pub fn add_task2designate_readyqueue(task: Arc<TaskControlBlock>, queue_id: usize) {
     PID2TCB.lock().insert(task.getpid(), Arc::clone(&task));
-    SCHEDULER.add_task_to_designate_queue(task, queue_id);
+    SCHEDULER.add_task2designate_queue(task, queue_id);
+}
+
+pub fn add_task2designate_blockqueue(task: Arc<TaskControlBlock>, queue_id: usize) {
+    
 }
 
 #[allow(unused)]

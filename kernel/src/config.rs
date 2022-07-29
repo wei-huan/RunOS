@@ -16,7 +16,6 @@ pub const MMAP_BASE: usize = 0x10_0000_0000; // 0xFFFFFFC000000000; //
 // dynamic link library loader base address
 pub const DLL_LOADER_BASE: usize = 0x30_0000_0000;
 
-
 #[inline(always)]
 pub fn page_aligned_up(addr: usize) -> usize {
     (addr + PAGE_SIZE - 1) / PAGE_SIZE * PAGE_SIZE

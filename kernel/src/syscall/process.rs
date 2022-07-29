@@ -367,26 +367,6 @@ pub fn sys_sbrk(increment: isize) -> isize {
     }
 }
 
-bitflags! {
-    pub struct MmapProts: usize {
-        const PROT_NONE = 0;
-        const PROT_READ = 1;
-        const PROT_WRITE = 2;
-        const PROT_EXEC = 4;
-        const PROT_GROWSDOWN = 0x01000000;
-        const PROT_GROWSUP = 0x02000000;
-    }
-}
-
-bitflags! {
-    pub struct MmapFlags: usize {
-        const MAP_FILE = 0;
-        const MAP_SHARED= 0x01;
-        const MAP_PRIVATE = 0x02;
-        const MAP_FIXED = 0x10;
-        const MAP_ANONYMOUS = 0x20;
-    }
-}
 
 pub fn sys_mmap(
     start: usize,

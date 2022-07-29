@@ -77,6 +77,19 @@ impl AddrSpace {
             None,
         );
     }
+    /// Assume that no conflicts.
+    pub fn insert_mmap_area(
+        &mut self,
+        name: String,
+        start_va: VirtAddr,
+        end_va: VirtAddr,
+        permission: Permission,
+    ) {
+        self.push_mmap_section(
+            Section::new(name, start_va, end_va, MapType::Framed, permission),
+            None,
+        );
+    }
     pub fn remove_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
         if let Some((idx, area)) = self
             .sections
@@ -647,8 +660,8 @@ impl AddrSpace {
     ) -> VirtAddr {
         let start_va = mmap_start.into();
         let end_va = (mmap_start + length).into();
-        log::debug!("start: {:#?}, end: {:#?}", start_va, end_va);
-        self.insert_framed_area(".mmap".to_string(), start_va, end_va, permission);
+        // log::debug!("start: {:#?}, end: {:#?}", start_va, end_va);
+        self.insert_mmap_area(".mmap".to_string(), start_va, end_va, permission);
         end_va
     }
 }

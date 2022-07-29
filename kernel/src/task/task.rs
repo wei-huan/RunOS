@@ -1,12 +1,12 @@
 // use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
-use crate::config::{MMAP_BASE, PAGE_SIZE, TRAP_CONTEXT};
+use crate::config::{MMAP_BASE, TRAP_CONTEXT};
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
-    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, Permission, PhysPageNum,
-    UserBuffer, VirtAddr, KERNEL_SPACE,
+    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags,
+    Permission, PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
@@ -17,33 +17,14 @@ use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
-use bitflags::bitflags;
 use spin::{Mutex, MutexGuard};
-
-bitflags! {
-    #[derive(Default)]
-    pub struct MMapFlags: usize {
-        const MAP_32BIT = 0;
-        const MAP_SHARED = 1 << 0;
-        const MAP_PRIVATE = 1 << 1;
-        const _X2 = 1 << 2;
-        const _X3 = 1 << 3;
-        const MAP_FIXED = 1 << 4;
-        const MAP_ANONYMOUS = 1 << 5;
-        const _X6 = 1 << 6;
-        const _X7 = 1 << 7;
-        const _X8 = 1 << 8;
-        const _X9 = 1 << 9;
-        const _X10 = 1 << 10;
-        const _X11 = 1 << 11;
-    }
-}
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskStatus {
     Ready,
     Running,
     Zombie,
+    Blocked,
 }
 
 pub struct TaskControlBlock {
@@ -438,26 +419,34 @@ impl TaskControlBlock {
         fd: isize,
         offset: usize,
     ) -> isize {
-        log::debug!(
-            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}",
+        log::trace!(
+            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, prot: {}",
             start,
             length,
             fd,
-            offset
+            offset,
+            prot
         );
         let mut inner = self.acquire_inner_lock();
         let token = inner.get_user_token();
-        // prot<<1 is equal to  meaning of Permission
-        let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap() | Permission::U;
+        // prot << 1 is equal to meaning of Permission
+        let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap()
+            | Permission::U
+            | Permission::W
+            | Permission::R;
+        let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         // need hint
         if start == 0 {
             start = inner.mmap_area_hint;
-            log::debug!("mmap need hint start before map: {:#X}", start);
+            log::trace!("mmap need hint start before map: {:#X}", start);
             inner.mmap_area_hint = inner
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::debug!("mmap need hint hint after map: {:#X}", inner.mmap_area_hint);
+            log::trace!(
+                "mmap need hint start after map: {:#X}",
+                inner.mmap_area_hint
+            );
         }
         // another mmaping already exist there, need to picks a new address depending on the hint
         else if inner
@@ -465,12 +454,12 @@ impl TaskControlBlock {
             .is_mmap_section_exist(VirtAddr::from(start).floor())
         {
             start = inner.mmap_area_hint;
-            log::debug!("mmap need to pick new place start before map: {:#X}", start);
+            log::trace!("mmap need to pick new place start before map: {:#X}", start);
             inner.mmap_area_hint = inner
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::debug!(
+            log::trace!(
                 "mmap need to pick new place start after map: {:#X}",
                 inner.mmap_area_hint
             );
@@ -502,11 +491,11 @@ impl TaskControlBlock {
                         return -EPERM;
                     }
                     f.set_offset(offset);
-                    log::debug! {"The va_start is {:#?}, offset of file is {:#X?}, file_size: {:#X?}", VirtAddr::from(start), offset, f.get_size()};
+                    log::trace! {"The va_start is {:#?}, offset of file is {:#X?}, file_size: {:#X?}", VirtAddr::from(start), offset, f.get_size()};
                     let read_len = f.read(UserBuffer::new(translated_byte_buffer(
                         token, start as _, length,
                     )));
-                    log::debug! {"read {:#X?} bytes", read_len};
+                    log::trace! {"read {:#X?} bytes", read_len};
                     return start as isize;
                 }
                 _ => {

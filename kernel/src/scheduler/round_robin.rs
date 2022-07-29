@@ -14,20 +14,28 @@ struct Queue {
 
 pub struct RoundRobinScheduler {
     ready_queues: Vec<Mutex<Queue>>,
+    block_queues: Vec<Mutex<Queue>>,
 }
 
 impl RoundRobinScheduler {
     pub fn new() -> Self {
         let cpu_num = CPU_NUMS.load(Ordering::Acquire);
         let mut ready_queues: Vec<Mutex<Queue>> = Vec::with_capacity(cpu_num);
+        let mut block_queues: Vec<Mutex<Queue>> = Vec::with_capacity(cpu_num);
         for _ in 0..cpu_num {
             ready_queues.push(Mutex::new(Queue {
                 queue: VecDeque::new(),
             }));
+            block_queues.push(Mutex::new(Queue {
+                queue: VecDeque::new(),
+            }));
         }
-        Self { ready_queues }
+        Self {
+            ready_queues,
+            block_queues,
+        }
     }
-    pub fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
+    pub fn add_task2designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
         // log::debug!("Hart {} add task {} to queue {}",hart_id(), task.pid.0, queue_id);
         self.ready_queues[queue_id].lock().queue.push_back(task);
     }
@@ -76,16 +84,15 @@ impl Scheduler for RoundRobinScheduler {
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        // let (i, selected) = self
-        //     .ready_queues
-        //     .iter()
-        //     .enumerate()
-        //     .min_by_key(|queue| queue.1.lock().queue.len())
-        //     .unwrap_or((0, &self.ready_queues[0]));
-        // // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
-        // selected.lock().queue.push_back(task);
-
-        self.ready_queues[0].lock().queue.push_back(task);
+        let (i, selected) = self
+            .ready_queues
+            .iter()
+            .enumerate()
+            .min_by_key(|queue| queue.1.lock().queue.len())
+            .unwrap_or((0, &self.ready_queues[0]));
+        // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
+        selected.lock().queue.push_back(task);
+        // self.ready_queues[0].lock().queue.push_back(task);
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
         self.ready_queues[hart_id()].lock().queue.pop_front()
