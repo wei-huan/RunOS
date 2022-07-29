@@ -114,15 +114,15 @@ pub fn sys_fork(
 ) -> isize {
     let current_task = current_task().unwrap();
     let token = current_user_token();
-    log::debug!("sys_fork ptid: {}, ctid: {}", ptid_ptr as usize, ctid_ptr as usize);
-    if ptid_ptr as usize != 0 {
-        let ptid = *translated_ref(token, ptid_ptr);
-        log::debug!("ptid: {}", ptid);
-    }
-    if ctid_ptr as usize != 0 {
-        let ctid = *translated_ref(token, ctid_ptr);
-        log::debug!("ctid: {}", ctid);
-    }
+    // log::debug!("sys_fork ptid: {}, ctid: {}", ptid_ptr as usize, ctid_ptr as usize);
+    // if ptid_ptr as usize != 0 {
+    //     let ptid = *translated_ref(token, ptid_ptr);
+    //     log::debug!("ptid: {}", ptid);
+    // }
+    // if ctid_ptr as usize != 0 {
+    //     let ctid = *translated_ref(token, ctid_ptr);
+    //     log::debug!("ctid: {}", ctid);
+    // }
     let new_task = current_task.fork();
     // println!("here_1");
     if stack_ptr != 0 {
