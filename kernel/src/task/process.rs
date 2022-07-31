@@ -518,7 +518,6 @@ impl ProcessControlBlock {
     pub fn getpid(&self) -> usize {
         self.pid.0
     }
-    // initproc won't call sys_getppid
     pub fn getppid(&self) -> usize {
         self.get_parent().unwrap().pid.0
     }
