@@ -1,7 +1,7 @@
 use super::{
     address::{PhysAddr, VirtAddr, VirtPageNum},
     page_table::{PTEFlags, PageTable, PageTableEntry},
-    section::{MapType, Permission, Section},
+    section::{MapType, MapPermission, Section},
 };
 use crate::config::{
     DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH,
@@ -70,7 +70,7 @@ impl AddrSpace {
         name: String,
         start_va: VirtAddr,
         end_va: VirtAddr,
-        permission: Permission,
+        permission: MapPermission,
     ) {
         self.push_section(
             Section::new(name, start_va, end_va, MapType::Framed, permission),
@@ -83,7 +83,7 @@ impl AddrSpace {
         name: String,
         start_va: VirtAddr,
         end_va: VirtAddr,
-        permission: Permission,
+        permission: MapPermission,
     ) {
         self.push_mmap_section(
             Section::new(name, start_va, end_va, MapType::Framed, permission),
@@ -197,7 +197,7 @@ impl AddrSpace {
                 (stext as usize).into(),
                 (etext as usize).into(),
                 MapType::Identical,
-                Permission::R | Permission::X,
+                MapPermission::R | MapPermission::X,
             ),
             None,
         );
@@ -208,7 +208,7 @@ impl AddrSpace {
                 (srodata as usize).into(),
                 (erodata as usize).into(),
                 MapType::Identical,
-                Permission::R,
+                MapPermission::R,
             ),
             None,
         );
@@ -219,7 +219,7 @@ impl AddrSpace {
                 (sdata as usize).into(),
                 (edata as usize).into(),
                 MapType::Identical,
-                Permission::R | Permission::W,
+                MapPermission::R | MapPermission::W,
             ),
             None,
         );
@@ -230,7 +230,7 @@ impl AddrSpace {
                 (sbss_with_stack as usize).into(),
                 (ebss as usize).into(),
                 MapType::Identical,
-                Permission::R | Permission::W,
+                MapPermission::R | MapPermission::W,
             ),
             None,
         );
@@ -241,7 +241,7 @@ impl AddrSpace {
                 (ekernel as usize).into(),
                 MEMORY_END.into(),
                 MapType::Identical,
-                Permission::R | Permission::W,
+                MapPermission::R | MapPermission::W,
             ),
             None,
         );
@@ -253,7 +253,7 @@ impl AddrSpace {
                     (*pair).0.into(),
                     ((*pair).0 + (*pair).1).into(),
                     MapType::Identical,
-                    Permission::R | Permission::W,
+                    MapPermission::R | MapPermission::W,
                 ),
                 None,
             );
@@ -283,16 +283,16 @@ impl AddrSpace {
                     let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                     let name: String =
                         "dll_".to_string() + &sect.get_name(&elf).unwrap().to_string();
-                    let mut map_perm = Permission::U;
+                    let mut map_perm = MapPermission::U;
                     let ph_flags = ph.flags();
                     if ph_flags.is_read() {
-                        map_perm |= Permission::R;
+                        map_perm |= MapPermission::R;
                     }
                     if ph_flags.is_write() {
-                        map_perm |= Permission::W;
+                        map_perm |= MapPermission::W;
                     }
                     if ph_flags.is_execute() {
-                        map_perm |= Permission::X;
+                        map_perm |= MapPermission::X;
                     }
                     let section = Section::new(name, start_va, end_va, MapType::Framed, map_perm);
                     if offset == 0 {
@@ -376,16 +376,16 @@ impl AddrSpace {
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
                 let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
                 // log::debug!("offset: {:#X}", offset);
-                let mut map_perm = Permission::U;
+                let mut map_perm = MapPermission::U;
                 let ph_flags = ph.flags();
                 if ph_flags.is_read() {
-                    map_perm |= Permission::R;
+                    map_perm |= MapPermission::R;
                 }
                 if ph_flags.is_write() {
-                    map_perm |= Permission::W;
+                    map_perm |= MapPermission::W;
                 }
                 if ph_flags.is_execute() {
-                    map_perm |= Permission::X;
+                    map_perm |= MapPermission::X;
                 }
                 // log::debug!("map_perm: {:#?}", map_perm);
                 let section = Section::new(
@@ -489,7 +489,7 @@ impl AddrSpace {
         });
 
         if need_data_sec == true {
-            let map_perm = Permission::U | Permission::R | Permission::W;
+            let map_perm = MapPermission::U | MapPermission::R | MapPermission::W;
             let section = Section::new(
                 "data".into(),
                 0x1000.into(),
@@ -527,7 +527,7 @@ impl AddrSpace {
                 user_stack_bottom.into(),
                 user_stack_high.into(),
                 MapType::Framed,
-                Permission::R | Permission::W | Permission::U,
+                MapPermission::R | MapPermission::W | MapPermission::U,
             ),
             None,
         );
@@ -539,7 +539,7 @@ impl AddrSpace {
                 TRAP_CONTEXT.into(),
                 TRAMPOLINE.into(),
                 MapType::Framed,
-                Permission::R | Permission::W,
+                MapPermission::R | MapPermission::W,
             ),
             None,
         );
@@ -616,7 +616,7 @@ impl AddrSpace {
             ".heap".to_string(),
             start_va,
             end_va,
-            Permission::R | Permission::W | Permission::U,
+            MapPermission::R | MapPermission::W | MapPermission::U,
         )
     }
     // size 最终会按页对齐
@@ -656,7 +656,7 @@ impl AddrSpace {
         &mut self,
         mmap_start: usize,
         length: usize,
-        permission: Permission,
+        permission: MapPermission,
     ) -> VirtAddr {
         let start_va = mmap_start.into();
         let end_va = (mmap_start + length).into();

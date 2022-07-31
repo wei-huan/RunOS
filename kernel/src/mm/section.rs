@@ -10,7 +10,7 @@ use alloc::string::String;
 use bitflags::bitflags;
 
 bitflags! {
-    pub struct Permission: u8 {
+    pub struct MapPermission: u8 {
         const R = 1 << 1;
         const W = 1 << 2;
         const X = 1 << 3;
@@ -26,7 +26,7 @@ pub enum MapType {
 
 pub struct Section {
     pub name: String,
-    perm: Permission,
+    perm: MapPermission,
     map_type: MapType,
     pub vpn_range: VPNRange,
     data_frames: BTreeMap<VirtPageNum, Frame>,
@@ -38,7 +38,7 @@ impl Section {
         start_va: VirtAddr,
         end_va: VirtAddr,
         map_type: MapType,
-        perm: Permission,
+        perm: MapPermission,
     ) -> Self {
         Self {
             name,

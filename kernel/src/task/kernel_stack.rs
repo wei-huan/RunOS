@@ -1,6 +1,6 @@
 use super::recycle_allocator::RecycleAllocator;
 use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
-use crate::mm::{Permission, VirtAddr, KERNEL_SPACE};
+use crate::mm::{MapPermission, VirtAddr, KERNEL_SPACE};
 use alloc::string::ToString;
 use core::arch::asm;
 use lazy_static::*;
@@ -26,7 +26,7 @@ pub fn kstack_alloc() -> KernelStack {
         ".kstack".to_string(),
         kstack_bottom.into(),
         kstack_top.into(),
-        Permission::R | Permission::W,
+        MapPermission::R | MapPermission::W,
     );
     unsafe { asm!("fence.i") }
     KernelStack(kstack_id)
