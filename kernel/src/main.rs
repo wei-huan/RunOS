@@ -67,8 +67,8 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         fpu::init();
         logo::show();
         logger::init();
-        scheduler::add_initproc();
         fs::init_rootfs();
+        scheduler::add_initproc();
         logger::show_basic_info();
         fs::list_apps();
         timer::init();
