@@ -115,7 +115,7 @@ impl AddrSpace {
     }
     pub fn remove_mmap_area_with_start_vpn(&mut self, start_vpn: VirtPageNum) {
         if let Some((idx, area)) = self
-            .sections
+            .mmap_sections
             .iter_mut()
             .enumerate()
             .find(|(_, area)| area.vpn_range.get_start() == start_vpn)

@@ -2,7 +2,6 @@
 
 mod errorno;
 mod fs;
-mod futex;
 mod process;
 mod sysinfo;
 mod syslog;
@@ -13,7 +12,6 @@ use crate::timer::{TimeVal, Times};
 
 pub use errorno::*;
 use fs::*;
-use futex::*;
 use process::*;
 use sysinfo::*;
 use syslog::*;
@@ -148,14 +146,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SET_ROBUST_LIST => 0,
         SYSCALL_GET_ROBUST_LIST => 0,
         SYSCALL_SET_TID_ADDRESS => sys_set_tid_address(args[0] as _),
-        SYSCALL_FUTEX => sys_futex(
-            args[0] as _,
-            args[1] as _,
-            args[2] as _,
-            args[3] as _,
-            args[4] as _,
-            args[5] as _,
-        ),
+        SYSCALL_FUTEX => 0,
         SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
             &mut *(args[1] as *mut TimeVal)
         }),

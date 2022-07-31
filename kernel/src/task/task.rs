@@ -5,8 +5,8 @@ use crate::config::{MMAP_BASE, TRAP_CONTEXT};
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
-    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags,
-    Permission, PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
+    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, Permission,
+    PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
@@ -24,7 +24,6 @@ pub enum TaskStatus {
     Ready,
     Running,
     Zombie,
-    Blocked,
 }
 
 pub struct TaskControlBlock {
@@ -432,6 +431,7 @@ impl TaskControlBlock {
         // prot << 1 is equal to meaning of Permission
         let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap()
             | Permission::U
+            | Permission::X
             | Permission::W
             | Permission::R;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
