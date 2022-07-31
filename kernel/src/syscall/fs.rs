@@ -7,7 +7,7 @@ use crate::fs::{
 use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
 };
-use crate::syscall::errorno::{EBADF, EISDIR, ENOENT};
+use crate::syscall::errorno::{EBADF, EISDIR, ENOENT, ESPIPE};
 use crate::task::TaskControlBlockInner;
 use alloc::string::String;
 use alloc::sync::Arc;
@@ -87,6 +87,29 @@ pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
         }
     }
 
+    ret
+}
+
+pub fn sys_pread(fd: usize, buf: *mut u8, count: usize, offset: usize) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let ret = if let Some(file) = &inner.fd_table[fd] {
+        let f: Arc<dyn File + Send + Sync>;
+        match &file.fclass {
+            FileClass::File(fi) => {
+                let old_off = fi.get_offset();
+                fi.set_offset(offset);
+                let read_cnt =
+                    fi.read(UserBuffer::new(translated_byte_buffer(token, buf, count))) as isize;
+                fi.set_offset(old_off);
+                read_cnt
+            }
+            FileClass::Abstr(_) => -ESPIPE,
+        }
+    } else {
+        -EBADF
+    };
     ret
 }
 

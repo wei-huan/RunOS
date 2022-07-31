@@ -415,17 +415,38 @@ pub fn sys_kill(pid: usize, signum: i32) -> isize {
     }
 }
 
-pub fn sys_sigprocmask(mask: u32) -> isize {
-    log::debug!("sys_sigprocmask mask: {}", mask);
+const SIG_BLOCK: isize = 0;
+const SIG_UNBLOCK: isize = 1;
+const SIG_SETMASK: isize = 2;
+
+pub fn sys_sigprocmask(how: isize, set_ptr: *const u128, oldset_ptr: *mut u128) -> isize {
+    log::trace!(
+        "sys_sigprocmask how: {},  set_ptr: {},  oldset_ptr: {}",
+        how,
+        set_ptr as usize,
+        oldset_ptr as usize
+    );
+    let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
-        let old_mask = inner.signal_mask;
-        if let Some(flag) = SignalFlags::from_bits(mask) {
-            inner.signal_mask = flag;
-            0
-        } else {
-            -1
+        let old_mask = inner.signal_mask.bits();
+        if oldset_ptr as usize != 0 {
+            *translated_refmut::<u128>(token, oldset_ptr) = old_mask as u128;
         }
+        if set_ptr as usize != 0 {
+            let new_mask = *translated_ref::<u128>(token, set_ptr) as u32;
+            match how {
+                SIG_BLOCK => {
+                    inner.signal_mask = SignalFlags::from_bits(new_mask | old_mask).unwrap()
+                }
+                SIG_UNBLOCK => {
+                    inner.signal_mask = SignalFlags::from_bits(old_mask & (!new_mask)).unwrap()
+                }
+                SIG_SETMASK => inner.signal_mask = SignalFlags::from_bits(new_mask).unwrap(),
+                _ => return -1,
+            };
+        }
+        0
     } else {
         -ESRCH
     }
@@ -462,7 +483,7 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    log::debug!("sys_sigaction");
+    // log::debug!("sys_sigaction");
     let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
