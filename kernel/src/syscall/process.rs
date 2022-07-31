@@ -394,7 +394,7 @@ pub fn sys_mmap(
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
-    log::debug!("sys_unmmap");
+    log::trace!("sys_unmmap");
     let task = current_task().unwrap();
     task.munmap(start, length)
 }

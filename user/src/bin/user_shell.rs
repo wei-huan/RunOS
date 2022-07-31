@@ -44,6 +44,7 @@ fn final_round_one_test() {
     // static_tests.push("setjmp\0");
     static_tests.push("snprintf\0");
     static_tests.push("sscanf\0");
+    static_tests.push("sscanf_long\0");
     static_tests.push("stat\0");
     static_tests.push("strftime\0");
     static_tests.push("string\0");
@@ -169,7 +170,7 @@ fn final_round_one_test() {
     dynamic_tests.push("snprintf\0");
     // dynamic_tests.push("socket\0");
     dynamic_tests.push("sscanf\0");
-    // dynamic_tests.push("sscanf_long\0"); // Exception(StorePageFault) in application, bad addr = 0x1000001000
+    dynamic_tests.push("sscanf_long\0");
     // dynamic_tests.push("stat\0");        // src/functional/stat.c:22: st.st_ctime<=t failed: 386072 > 32
     dynamic_tests.push("strftime\0");
     dynamic_tests.push("string\0");
@@ -275,7 +276,6 @@ pub fn main() -> i32 {
     final_round_one_test();
     0
 }
-
 
 // #![no_std]
 // #![no_main]

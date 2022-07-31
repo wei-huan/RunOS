@@ -18,7 +18,7 @@ pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::{current_task, hart_id, take_current_task};
 use crate::scheduler::{
-    add_task2designate_block_queue, add_task2designate_ready_queue, remove_from_pid2task,
+    add_task2designate_ready_queue, remove_from_pid2task,
     save_current_and_back_to_schedule, INITPROC,
 };
 use alloc::sync::Arc;
@@ -77,24 +77,6 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     save_current_and_back_to_schedule(&mut _unused as *mut _);
 }
 
-/// 将当前任务退出加入阻塞队列，并调度新的任务
-pub fn block_current_and_run_next() {
-    // log::debug!("block");
-    // There must be an application running.
-    let task = take_current_task().unwrap();
-    // ---- access current TCB exclusively
-    let mut task_inner = task.acquire_inner_lock();
-    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
-    // Change status to Blocked
-    task_inner.task_status = TaskStatus::Blocked;
-    drop(task_inner);
-    // ---- release current PCB
-    // push back to ready queue.
-    add_task2designate_block_queue(task, hart_id());
-    // jump to scheduling cycle
-    save_current_and_back_to_schedule(task_cx_ptr);
-    // log::debug!("back to suspend");
-}
 
 pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     let task = current_task().unwrap();

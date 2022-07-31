@@ -431,7 +431,6 @@ impl TaskControlBlock {
         // prot << 1 is equal to meaning of Permission
         let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap()
             | Permission::U
-            | Permission::X
             | Permission::W
             | Permission::R;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();

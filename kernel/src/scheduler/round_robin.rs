@@ -12,37 +12,22 @@ type TaskQueue = VecDeque<Arc<TaskControlBlock>>;
 
 pub struct RoundRobinScheduler {
     ready_queues: Vec<Mutex<TaskQueue>>,
-    block_queues: Vec<Mutex<TaskQueue>>,
 }
 
 impl RoundRobinScheduler {
     pub fn new() -> Self {
         let cpu_num = CPU_NUMS.load(Ordering::Acquire);
         let mut ready_queues: Vec<Mutex<TaskQueue>> = Vec::with_capacity(cpu_num);
-        let mut block_queues: Vec<Mutex<TaskQueue>> = Vec::with_capacity(cpu_num);
         for _ in 0..cpu_num {
             ready_queues.push(Mutex::new(VecDeque::new()));
-            block_queues.push(Mutex::new(VecDeque::new()));
         }
         Self {
             ready_queues,
-            block_queues,
         }
     }
     pub fn add_task2designate_ready_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
         // log::debug!("Hart {} add task {} to ready queue {}",hart_id(), task.pid.0, queue_id);
         self.ready_queues[queue_id].lock().push_back(task);
-    }
-    pub fn add_task2designate_block_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
-        // log::debug!("Hart {} add task {} to block queue {}",hart_id(), task.pid.0, queue_id);
-        self.block_queues[queue_id].lock().push_back(task);
-    }
-    pub fn move_block2ready(&self, task: Arc<TaskControlBlock>) {
-        let task = self.block_queues[hart_id()].lock().pop_back().unwrap();
-        let mut task_inner = task.acquire_inner_lock();
-        task_inner.task_status = TaskStatus::Ready;
-        drop(task_inner);
-        self.ready_queues[hart_id()].lock().push_back(task);
     }
     fn ready_queue_len(&self, queue_id: usize) -> usize {
         self.ready_queues[queue_id].lock().len()

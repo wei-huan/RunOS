@@ -38,14 +38,6 @@ pub fn add_task2designate_ready_queue(task: Arc<TaskControlBlock>, queue_id: usi
     SCHEDULER.add_task2designate_ready_queue(task, queue_id);
 }
 
-pub fn add_task2designate_block_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
-    SCHEDULER.add_task2designate_block_queue(task, queue_id);
-}
-
-pub fn move_block2ready(task: Arc<TaskControlBlock>) {
-    SCHEDULER.move_block2ready(task);
-}
-
 #[allow(unused)]
 pub fn have_ready_task() -> bool {
     SCHEDULER.have_ready_task()
