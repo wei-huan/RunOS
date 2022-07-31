@@ -7,6 +7,7 @@ mod sysinfo;
 mod syslog;
 mod utsname;
 
+use crate::cpu::current_task;
 use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
 
@@ -49,6 +50,7 @@ const SYSCALL_UTIMENSAT: usize = 88;
 const SYSCALL_EXIT: usize = 93;
 const SYSCALL_EXIT_GRUOP: usize = 94;
 const SYSCALL_SET_TID_ADDRESS: usize = 96;
+const SYSCALL_FUTEX: usize = 98;
 const SYSCALL_SET_ROBUST_LIST: usize = 99;
 const SYSCALL_GET_ROBUST_LIST: usize = 100;
 const SYSCALL_NANOSLEEP: usize = 101;
@@ -96,8 +98,9 @@ const SYSCALL_PRLIMIT: usize = 261;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    // if syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-    //     log::debug!("syscall_id: {:#?}", syscall_id);
+    // let pid = current_task().unwrap().getpid();
+    // if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
+    //     log::debug!("process{} syscall: {}", pid, syscall_id);
     // }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
@@ -134,6 +137,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_WRITE => sys_write(args[0], args[1] as *const u8, args[2]),
         SYSCALL_READV => sys_readv(args[0], args[1] as *const crate::fs::IOVec, args[2]),
         SYSCALL_WRITEV => sys_writev(args[0], args[1] as *const crate::fs::IOVec, args[2]),
+        SYSCALL_PREAD => sys_pread(args[0], args[1] as _, args[2], args[3]),
         SYSCALL_SENDFILE => sys_sendfile(
             args[0] as isize,
             args[1] as isize,
@@ -148,6 +152,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SET_ROBUST_LIST => 0,
         SYSCALL_GET_ROBUST_LIST => 0,
         SYSCALL_SET_TID_ADDRESS => sys_set_tid_address(args[0] as _),
+        SYSCALL_FUTEX => 0,
         SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
             &mut *(args[1] as *mut TimeVal)
         }),
@@ -160,7 +165,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[1] as *const SignalAction,
             args[2] as *mut SignalAction,
         ),
-        SYSCALL_SIGPROCMASK => sys_sigprocmask(args[0] as u32),
+        SYSCALL_SIGPROCMASK => sys_sigprocmask(args[0] as _, args[1] as _, args[2] as _),
         SYSCALL_RT_SIGTIMEDWAIT => 0,
         SYSCALL_SIGRETURN => sys_sigretrun(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
@@ -191,9 +196,9 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_CLONE => sys_fork(
             args[0] as usize,
             args[1] as usize,
-            args[2] as usize,
+            args[2] as _,
             args[3] as usize,
-            args[4] as usize,
+            args[4] as _,
         ),
         SYSCALL_MUNMAP => sys_munmap(args[0] as usize, args[1] as usize),
         SYSCALL_EXECVE => sys_exec(args[0] as *const u8, args[1] as *const usize),
@@ -207,7 +212,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         ),
         SYSCALL_MPROTECT => 0,
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
-        SYSCALL_PRLIMIT => 0,
+        SYSCALL_PRLIMIT => sys_prlimit(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
         SYSCALL_MEMBARRIER => 0,
         _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }

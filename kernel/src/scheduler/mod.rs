@@ -34,9 +34,9 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
-pub fn add_task_to_designate_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
+pub fn add_task2designate_ready_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
     PID2TCB.lock().insert(task.getpid(), Arc::clone(&task));
-    SCHEDULER.add_task_to_designate_queue(task, queue_id);
+    SCHEDULER.add_task2designate_ready_queue(task, queue_id);
 }
 
 #[allow(unused)]
@@ -73,7 +73,7 @@ lazy_static! {
 
 pub fn add_initproc() {
     add_initproc_into_fs();
-    add_task_to_designate_queue(INITPROC.clone(), 0);
+    add_task2designate_ready_queue(INITPROC.clone(), 0);
     // println!("add_initproc finish");
 }
 

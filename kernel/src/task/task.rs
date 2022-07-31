@@ -1,12 +1,12 @@
 // use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
-use crate::config::{MMAP_BASE, PAGE_SIZE, TRAP_CONTEXT};
+use crate::config::{MMAP_BASE, TRAP_CONTEXT};
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
-    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, Permission, PhysPageNum,
-    UserBuffer, VirtAddr, KERNEL_SPACE,
+    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, Permission,
+    PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
@@ -17,27 +17,7 @@ use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
-use bitflags::bitflags;
 use spin::{Mutex, MutexGuard};
-
-bitflags! {
-    #[derive(Default)]
-    pub struct MMapFlags: usize {
-        const MAP_32BIT = 0;
-        const MAP_SHARED = 1 << 0;
-        const MAP_PRIVATE = 1 << 1;
-        const _X2 = 1 << 2;
-        const _X3 = 1 << 3;
-        const MAP_FIXED = 1 << 4;
-        const MAP_ANONYMOUS = 1 << 5;
-        const _X6 = 1 << 6;
-        const _X7 = 1 << 7;
-        const _X8 = 1 << 8;
-        const _X9 = 1 << 9;
-        const _X10 = 1 << 10;
-        const _X11 = 1 << 11;
-    }
-}
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskStatus {

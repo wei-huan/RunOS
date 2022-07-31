@@ -18,7 +18,8 @@ pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::{current_task, hart_id, take_current_task};
 use crate::scheduler::{
-    add_task_to_designate_queue, remove_from_pid2task, save_current_and_back_to_schedule, INITPROC,
+    add_task2designate_ready_queue, remove_from_pid2task,
+    save_current_and_back_to_schedule, INITPROC,
 };
 use alloc::sync::Arc;
 
@@ -32,10 +33,8 @@ pub fn suspend_current_and_run_next() {
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
     drop(task_inner);
-    // ---- release current PCB
-
     // push back to ready queue.
-    add_task_to_designate_queue(task, hart_id());
+    add_task2designate_ready_queue(task, hart_id());
     // jump to scheduling cycle
     // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);
@@ -77,6 +76,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     let mut _unused = TaskContext::zero_init();
     save_current_and_back_to_schedule(&mut _unused as *mut _);
 }
+
 
 pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     let task = current_task().unwrap();

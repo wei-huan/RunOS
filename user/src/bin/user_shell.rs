@@ -41,9 +41,10 @@ fn final_round_one_test() {
     static_tests.push("search_insque\0");
     static_tests.push("search_lsearch\0");
     static_tests.push("search_tsearch\0");
-    // static_tests.push("setjmp\0");
+    static_tests.push("setjmp\0");
     static_tests.push("snprintf\0");
     static_tests.push("sscanf\0");
+    static_tests.push("sscanf_long\0");
     static_tests.push("stat\0");
     static_tests.push("strftime\0");
     static_tests.push("string\0");
@@ -72,7 +73,7 @@ fn final_round_one_test() {
     // static_tests.push("daemon_failure\0");
     static_tests.push("dn_expand_empty\0");
     static_tests.push("dn_expand_ptr_0\0");
-    // static_tests.push("fflush_exit\0"); syscall 67
+    static_tests.push("fflush_exit\0");
     static_tests.push("fgets_eof\0");
     static_tests.push("fgetwc_buffering\0");
     static_tests.push("fpclassify_invalid_ld80\0");
@@ -144,7 +145,7 @@ fn final_round_one_test() {
     dynamic_tests.push("clock_gettime\0");
     dynamic_tests.push("crypt\0");
     dynamic_tests.push("dirname\0");
-    dynamic_tests.push("dlopen\0");
+    // dynamic_tests.push("dlopen\0");
     dynamic_tests.push("env\0");
     dynamic_tests.push("fdopen\0");
     dynamic_tests.push("fnmatch\0");
@@ -165,11 +166,11 @@ fn final_round_one_test() {
     dynamic_tests.push("search_lsearch\0");
     dynamic_tests.push("search_tsearch\0");
     // dynamic_tests.push("sem_init\0");
-    // dynamic_tests.push("setjmp\0");
+    dynamic_tests.push("setjmp\0");
     dynamic_tests.push("snprintf\0");
     // dynamic_tests.push("socket\0");
     dynamic_tests.push("sscanf\0");
-    // dynamic_tests.push("sscanf_long\0"); // Exception(StorePageFault) in application, bad addr = 0x1000001000
+    dynamic_tests.push("sscanf_long\0");
     // dynamic_tests.push("stat\0");        // src/functional/stat.c:22: st.st_ctime<=t failed: 386072 > 32
     dynamic_tests.push("strftime\0");
     dynamic_tests.push("string\0");
@@ -192,12 +193,13 @@ fn final_round_one_test() {
     // dynamic_tests.push("tls_local_exec\0");
     dynamic_tests.push("udiv\0");
     dynamic_tests.push("ungetc\0");
+    // dynamic_tests.push("utime\0");
     dynamic_tests.push("wcsstr\0");
     dynamic_tests.push("wcstol\0");
     // dynamic_tests.push("daemon_failure\0");
     dynamic_tests.push("dn_expand_empty\0");
     dynamic_tests.push("dn_expand_ptr_0\0");
-    // dynamic_tests.push("fflush_exit\0");     // Unsupported syscall_id: 67
+    dynamic_tests.push("fflush_exit\0");
     dynamic_tests.push("fgets_eof\0");
     dynamic_tests.push("fgetwc_buffering\0");
     dynamic_tests.push("fpclassify_invalid_ld80\0");
@@ -246,6 +248,7 @@ fn final_round_one_test() {
     dynamic_tests.push("statvfs\0");
     // dynamic_tests.push("syscall_sign_extend\0");
     // dynamic_tests.push("tls_get_new_dtv\0");
+    dynamic_tests.push("uselocale_0\0");
     dynamic_tests.push("wcsncpy_read_overflow\0");
     dynamic_tests.push("wcsstr_false_negative\0");
 
@@ -276,7 +279,10 @@ pub fn main() -> i32 {
     0
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> final-dev
 // #![no_std]
 // #![no_main]
 // #![allow(clippy::println_empty_string)]

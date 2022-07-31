@@ -313,12 +313,7 @@ lazy_static! {
 }
 
 pub fn init_rootfs() {
-    // open("/", "proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // open("/dev", "zero", OpenFlags::CREATE, DiskInodeType::File).unwrap();
-    // open("/", "ls", OpenFlags::CREATE, DiskInodeType::File).unwrap();
+    let _tmp = open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
 }
 
 pub fn list_apps() {

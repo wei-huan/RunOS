@@ -68,8 +68,7 @@ pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
     // log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
     let token = current_user_token();
     *translated_refmut::<u32>(token, ptr) = current_task().unwrap().pid.0 as u32;
-    let ret = current_task().unwrap().pid.0 as isize;
-    ret
+    current_task().unwrap().pid.0 as isize
 }
 
 pub fn sys_getpid() -> isize {
@@ -108,11 +107,21 @@ pub fn sys_gettid() -> isize {
 pub fn sys_fork(
     _flags: usize,
     stack_ptr: usize,
-    _ptid: usize,
-    ctid: usize,
+    ptid_ptr: *const u32,
     _newtls: usize,
+    ctid_ptr: *const u32,
 ) -> isize {
     let current_task = current_task().unwrap();
+    let token = current_user_token();
+    // log::debug!("sys_fork ptid: {}, ctid: {}", ptid_ptr as usize, ctid_ptr as usize);
+    // if ptid_ptr as usize != 0 {
+    //     let ptid = *translated_ref(token, ptid_ptr);
+    //     log::debug!("ptid: {}", ptid);
+    // }
+    // if ctid_ptr as usize != 0 {
+    //     let ctid = *translated_ref(token, ctid_ptr);
+    //     log::debug!("ctid: {}", ctid);
+    // }
     let new_task = current_task.fork();
     // println!("here_1");
     if stack_ptr != 0 {
@@ -367,27 +376,6 @@ pub fn sys_sbrk(increment: isize) -> isize {
     }
 }
 
-bitflags! {
-    pub struct MmapProts: usize {
-        const PROT_NONE = 0;
-        const PROT_READ = 1;
-        const PROT_WRITE = 2;
-        const PROT_EXEC = 4;
-        const PROT_GROWSDOWN = 0x01000000;
-        const PROT_GROWSUP = 0x02000000;
-    }
-}
-
-bitflags! {
-    pub struct MmapFlags: usize {
-        const MAP_FILE = 0;
-        const MAP_SHARED= 0x01;
-        const MAP_PRIVATE = 0x02;
-        const MAP_FIXED = 0x10;
-        const MAP_ANONYMOUS = 0x20;
-    }
-}
-
 pub fn sys_mmap(
     start: usize,
     length: usize,
@@ -404,9 +392,28 @@ pub fn sys_mmap(
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
-    log::debug!("sys_unmmap");
+    log::trace!("sys_unmmap");
     let task = current_task().unwrap();
     task.munmap(start, length)
+}
+
+const RLIMIT_CPU: usize = 0;
+const RLIMIT_FSIZE: usize = 1;
+const RLIMIT_DATA: usize = 2;
+const RLIMIT_STACK: usize = 3;
+const RLIMIT_NOFILE: usize = 7;
+const RLIMIT_AS: usize = 9;
+
+pub struct RLimit {
+    pub rlim_cur: usize, /* Soft limit */
+    pub rlim_max: usize, /* Hard limit (ceiling for rlim_cur) */
+}
+
+const FDMAX: usize = 10;
+
+pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut RLimit) -> isize {
+    // log::debug!("sys_prlimit res: {}", res);
+    0
 }
 
 pub fn sys_kill(pid: usize, signum: i32) -> isize {
@@ -427,17 +434,38 @@ pub fn sys_kill(pid: usize, signum: i32) -> isize {
     }
 }
 
-pub fn sys_sigprocmask(mask: u32) -> isize {
-    // log::debug!("sys_sigprocmask");
+const SIG_BLOCK: isize = 0;
+const SIG_UNBLOCK: isize = 1;
+const SIG_SETMASK: isize = 2;
+
+pub fn sys_sigprocmask(how: isize, set_ptr: *const u128, oldset_ptr: *mut u128) -> isize {
+    log::trace!(
+        "sys_sigprocmask how: {},  set_ptr: {},  oldset_ptr: {}",
+        how,
+        set_ptr as usize,
+        oldset_ptr as usize
+    );
+    let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
-        let old_mask = inner.signal_mask;
-        if let Some(flag) = SignalFlags::from_bits(mask) {
-            inner.signal_mask = flag;
-            0
-        } else {
-            -1
+        let old_mask = inner.signal_mask.bits();
+        if oldset_ptr as usize != 0 {
+            *translated_refmut::<u128>(token, oldset_ptr) = old_mask as u128;
         }
+        if set_ptr as usize != 0 {
+            let new_mask = *translated_ref::<u128>(token, set_ptr) as u32;
+            match how {
+                SIG_BLOCK => {
+                    inner.signal_mask = SignalFlags::from_bits(new_mask | old_mask).unwrap()
+                }
+                SIG_UNBLOCK => {
+                    inner.signal_mask = SignalFlags::from_bits(old_mask & (!new_mask)).unwrap()
+                }
+                SIG_SETMASK => inner.signal_mask = SignalFlags::from_bits(new_mask).unwrap(),
+                _ => return -1,
+            };
+        }
+        0
     } else {
         -ESRCH
     }

@@ -8,36 +8,34 @@ use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use core::sync::atomic::Ordering;
 use spin::Mutex;
 
-struct Queue {
-    queue: VecDeque<Arc<TaskControlBlock>>,
-}
+type TaskQueue = VecDeque<Arc<TaskControlBlock>>;
 
 pub struct RoundRobinScheduler {
-    ready_queues: Vec<Mutex<Queue>>,
+    ready_queues: Vec<Mutex<TaskQueue>>,
 }
 
 impl RoundRobinScheduler {
     pub fn new() -> Self {
         let cpu_num = CPU_NUMS.load(Ordering::Acquire);
-        let mut ready_queues: Vec<Mutex<Queue>> = Vec::with_capacity(cpu_num);
+        let mut ready_queues: Vec<Mutex<TaskQueue>> = Vec::with_capacity(cpu_num);
         for _ in 0..cpu_num {
-            ready_queues.push(Mutex::new(Queue {
-                queue: VecDeque::new(),
-            }));
+            ready_queues.push(Mutex::new(VecDeque::new()));
         }
-        Self { ready_queues }
+        Self {
+            ready_queues,
+        }
     }
-    pub fn add_task_to_designate_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
-        // log::debug!("Hart {} add task {} to queue {}",hart_id(), task.pid.0, queue_id);
-        self.ready_queues[queue_id].lock().queue.push_back(task);
+    pub fn add_task2designate_ready_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
+        // log::debug!("Hart {} add task {} to ready queue {}",hart_id(), task.pid.0, queue_id);
+        self.ready_queues[queue_id].lock().push_back(task);
     }
-    fn queue_len(&self, queue_id: usize) -> usize {
-        self.ready_queues[queue_id].lock().queue.len()
+    fn ready_queue_len(&self, queue_id: usize) -> usize {
+        self.ready_queues[queue_id].lock().len()
     }
     #[allow(unused)]
     pub fn have_ready_task(&self) -> bool {
         for i in 0..self.ready_queues.len() {
-            if self.queue_len(i) > 0 {
+            if self.ready_queue_len(i) > 0 {
                 return true;
             }
         }
@@ -76,18 +74,17 @@ impl Scheduler for RoundRobinScheduler {
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        // let (i, selected) = self
-        //     .ready_queues
-        //     .iter()
-        //     .enumerate()
-        //     .min_by_key(|queue| queue.1.lock().queue.len())
-        //     .unwrap_or((0, &self.ready_queues[0]));
-        // // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
-        // selected.lock().queue.push_back(task);
-
-        self.ready_queues[0].lock().queue.push_back(task);
+        let (i, selected) = self
+            .ready_queues
+            .iter()
+            .enumerate()
+            .min_by_key(|queue| queue.1.lock().len())
+            .unwrap_or((0, &self.ready_queues[0]));
+        // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
+        selected.lock().push_back(task);
+        // self.ready_queues[0].lock().push_back(task);
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
-        self.ready_queues[hart_id()].lock().queue.pop_front()
+        self.ready_queues[hart_id()].lock().pop_front()
     }
 }
