@@ -212,7 +212,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         ),
         SYSCALL_MPROTECT => 0,
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
-        SYSCALL_PRLIMIT => 0,
+        SYSCALL_PRLIMIT => sys_prlimit(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
         SYSCALL_MEMBARRIER => 0,
         _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }
