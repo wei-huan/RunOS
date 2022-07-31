@@ -68,8 +68,7 @@ pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
     // log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
     let token = current_user_token();
     *translated_refmut::<u32>(token, ptr) = current_task().unwrap().pid.0 as u32;
-    let ret = current_task().unwrap().pid.0 as isize;
-    ret
+    current_task().unwrap().pid.0 as isize
 }
 
 pub fn sys_getpid() -> isize {
@@ -377,7 +376,6 @@ pub fn sys_sbrk(increment: isize) -> isize {
     }
 }
 
-
 pub fn sys_mmap(
     start: usize,
     length: usize,
@@ -418,7 +416,7 @@ pub fn sys_kill(pid: usize, signum: i32) -> isize {
 }
 
 pub fn sys_sigprocmask(mask: u32) -> isize {
-    // log::debug!("sys_sigprocmask");
+    log::debug!("sys_sigprocmask mask: {}", mask);
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
         let old_mask = inner.signal_mask;
@@ -464,7 +462,7 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    // log::debug!("sys_sigaction");
+    log::debug!("sys_sigaction");
     let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
