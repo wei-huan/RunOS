@@ -5,7 +5,6 @@ use crate::syscall::EINVAL;
 use crate::{drivers::BLOCK_DEVICE, println};
 use _core::usize;
 use alloc::sync::Arc;
-use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::*;
 use lazy_static::*;
@@ -314,25 +313,7 @@ lazy_static! {
 }
 
 pub fn init_rootfs() {
-    // open("/", "proc", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     let _tmp = open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // let _dev = open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // let _null = open("/dev", "null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // let _zero = open(
-    //     "/dev",
-    //     "zero",
-    //     OpenFlags::CREATE | OpenFlags::RDONLY,
-    //     DiskInodeType::File,
-    // )
-    // .unwrap();
-    // let _invalid = open(
-    //     "/dev/null",
-    //     "invalid",
-    //     OpenFlags::CREATE | OpenFlags::RDONLY,
-    //     DiskInodeType::Directory,
-    // )
-    // .unwrap();
 }
 
 pub fn list_apps() {

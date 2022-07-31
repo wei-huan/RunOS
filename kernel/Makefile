@@ -9,9 +9,9 @@ APPS := ../user/src/bin/*
 SUBMIT_BIN := ../os.bin
 
 # PLATFORM qemu or k210
-PLATFORM ?= k210
+PLATFORM ?= qemu
 # SBI opensbi or rustsbi
-SBI ?= rustsbi
+SBI ?= opensbi
 # SBI_IMG
 SBI_IMG :=../bootloader/$(SBI)-img/$(SBI)-$(PLATFORM).bin
 # BOOTLOADER
@@ -93,7 +93,7 @@ run: build
 ifeq ($(PLATFORM),qemu)
 ifeq ($(SBI),opensbi)
 	@qemu-system-riscv64 \
-		-m 512M \
+		-m 36M \
     	-cpu rv64 \
 		-machine virt \
 		-nographic \

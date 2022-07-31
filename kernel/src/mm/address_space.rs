@@ -585,7 +585,7 @@ impl AddrSpace {
         // copy data mmap_sections
         for area in user_space.mmap_sections.iter() {
             let new_area = Section::from_another(area);
-            addr_space.push_section(new_area, None);
+            addr_space.push_mmap_section(new_area, None);
             // copy data from another space
             for vpn in area.vpn_range {
                 let src_ppn = user_space.translate(vpn).unwrap().ppn();

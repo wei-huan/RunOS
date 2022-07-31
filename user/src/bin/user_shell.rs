@@ -1,283 +1,283 @@
-// #![no_std]
-// #![no_main]
-// #![allow(clippy::println_empty_string)]
+#![no_std]
+#![no_main]
+#![allow(clippy::println_empty_string)]
 
-// extern crate alloc;
+extern crate alloc;
 
-// #[macro_use]
-// extern crate user;
+#[macro_use]
+extern crate user;
 
-// use alloc::vec::Vec;
-// use user::{exec, fork, waitpid};
+use alloc::vec::Vec;
+use user::{exec, fork, waitpid};
 
-// fn final_round_one_test() {
-//     let app_name = "runtest.exe\0";
+fn final_round_one_test() {
+    let app_name = "runtest.exe\0";
 
-//     let mut static_tests = Vec::new();
+    let mut static_tests = Vec::new();
 
-//     // /****************************  static  *****************************/
-//     static_tests.push("argv\0");
-//     static_tests.push("basename\0");
-//     static_tests.push("clocale_mbfuncs\0");
-//     static_tests.push("clock_gettime\0");
-//     static_tests.push("crypt\0");
-//     static_tests.push("dirname\0");
-//     static_tests.push("env\0");
-//     static_tests.push("fdopen\0");
-//     static_tests.push("fnmatch\0");
-//     static_tests.push("fscanf\0");
-//     static_tests.push("fwscanf\0");
-//     static_tests.push("iconv_open\0");
-//     static_tests.push("inet_pton\0");
-//     static_tests.push("mbc\0");
-//     static_tests.push("memstream\0");
-//     // static_tests.push("pthread_cancel_points\0");
-//     // static_tests.push("pthread_cancel\0");
-//     // static_tests.push("pthread_cond\0");
-//     // static_tests.push("pthread_tsd\0");
-//     static_tests.push("qsort\0");
-//     static_tests.push("random\0");
-//     static_tests.push("search_hsearch\0");
-//     static_tests.push("search_insque\0");
-//     static_tests.push("search_lsearch\0");
-//     static_tests.push("search_tsearch\0");
-//     static_tests.push("setjmp\0");
-//     static_tests.push("snprintf\0");
-//     static_tests.push("sscanf\0");
-//     static_tests.push("sscanf_long\0");
-//     static_tests.push("stat\0");
-//     static_tests.push("strftime\0");
-//     static_tests.push("string\0");
-//     static_tests.push("string_memcpy\0");
-//     static_tests.push("string_memmem\0");
-//     static_tests.push("string_memset\0");
-//     static_tests.push("string_strchr\0");
-//     static_tests.push("string_strcspn\0");
-//     static_tests.push("string_strstr\0");
-//     static_tests.push("strptime\0");
-//     static_tests.push("strtod\0");
-//     static_tests.push("strtod_simple\0");
-//     static_tests.push("strtof\0");
-//     static_tests.push("strtol\0");
-//     static_tests.push("strtold\0");
-//     static_tests.push("swprintf\0");
-//     static_tests.push("tgmath\0");
-//     static_tests.push("time\0");
-//     static_tests.push("tls_align\0");
-//     static_tests.push("udiv\0");
-//     static_tests.push("ungetc\0");
-//     // static_tests.push("utime\0");
-//     static_tests.push("wcsstr\0");
-//     static_tests.push("wcstol\0");
-//     static_tests.push("pleval\0");
-//     // static_tests.push("daemon_failure\0");
-//     static_tests.push("dn_expand_empty\0");
-//     static_tests.push("dn_expand_ptr_0\0");
-//     static_tests.push("fflush_exit\0");
-//     static_tests.push("fgets_eof\0");
-//     static_tests.push("fgetwc_buffering\0");
-//     static_tests.push("fpclassify_invalid_ld80\0");
-//     static_tests.push("ftello_unflushed_append\0");
-//     static_tests.push("getpwnam_r_crash\0");
-//     static_tests.push("getpwnam_r_errno\0");
-//     static_tests.push("iconv_roundtrips\0");
-//     static_tests.push("inet_ntop_v4mapped\0");
-//     static_tests.push("inet_pton_empty_last_field\0");
-//     static_tests.push("iswspace_null\0");
-//     static_tests.push("lrand48_signextend\0");
-//     static_tests.push("lseek_large\0");
-//     static_tests.push("malloc_0\0");
-//     static_tests.push("mbsrtowcs_overflow\0");
-//     static_tests.push("memmem_oob_read\0");
-//     static_tests.push("memmem_oob\0");
-//     static_tests.push("mkdtemp_failure\0");
-//     static_tests.push("mkstemp_failure\0");
-//     static_tests.push("printf_1e9_oob\0");
-//     static_tests.push("printf_fmt_g_round\0");
-//     static_tests.push("printf_fmt_g_zeros\0");
-//     static_tests.push("printf_fmt_n\0");
-//     static_tests.push("putenv_doublefree\0");
-//     static_tests.push("regex_backref_0\0");
-//     static_tests.push("regex_bracket_icase\0");
-//     static_tests.push("regex_ere_backref\0");
-//     static_tests.push("regex_escaped_high_byte\0");
-//     static_tests.push("regex_negated_range\0");
-//     static_tests.push("regexec_nosub\0");
-//     static_tests.push("rewind_clear_error\0");
-//     // static_tests.push("rlimit_open_files\0");
-//     static_tests.push("scanf_bytes_consumed\0");
-//     static_tests.push("scanf_match_literal_eof\0");
-//     static_tests.push("scanf_nullbyte_char\0");
-//     static_tests.push("setvbuf_unget\0");
-//     static_tests.push("sigprocmask_internal\0");
-//     static_tests.push("sscanf_eof\0");
-//     static_tests.push("statvfs\0");
-//     static_tests.push("strverscmp\0");
-//     // static_tests.push("syscall_sign_extend\0");
-//     static_tests.push("uselocale_0\0");
-//     static_tests.push("wcsncpy_read_overflow\0");
-//     static_tests.push("wcsstr_false_negative\0");
+    // /****************************  static  *****************************/
+    static_tests.push("argv\0");
+    static_tests.push("basename\0");
+    static_tests.push("clocale_mbfuncs\0");
+    static_tests.push("clock_gettime\0");
+    static_tests.push("crypt\0");
+    static_tests.push("dirname\0");
+    static_tests.push("env\0");
+    static_tests.push("fdopen\0");
+    static_tests.push("fnmatch\0");
+    static_tests.push("fscanf\0");
+    static_tests.push("fwscanf\0");
+    static_tests.push("iconv_open\0");
+    static_tests.push("inet_pton\0");
+    static_tests.push("mbc\0");
+    static_tests.push("memstream\0");
+    // static_tests.push("pthread_cancel_points\0");
+    // static_tests.push("pthread_cancel\0");
+    // static_tests.push("pthread_cond\0");
+    // static_tests.push("pthread_tsd\0");
+    static_tests.push("qsort\0");
+    static_tests.push("random\0");
+    static_tests.push("search_hsearch\0");
+    static_tests.push("search_insque\0");
+    static_tests.push("search_lsearch\0");
+    static_tests.push("search_tsearch\0");
+    static_tests.push("setjmp\0");
+    static_tests.push("snprintf\0");
+    static_tests.push("sscanf\0");
+    static_tests.push("sscanf_long\0");
+    static_tests.push("stat\0");
+    static_tests.push("strftime\0");
+    static_tests.push("string\0");
+    static_tests.push("string_memcpy\0");
+    static_tests.push("string_memmem\0");
+    static_tests.push("string_memset\0");
+    static_tests.push("string_strchr\0");
+    static_tests.push("string_strcspn\0");
+    static_tests.push("string_strstr\0");
+    static_tests.push("strptime\0");
+    static_tests.push("strtod\0");
+    static_tests.push("strtod_simple\0");
+    static_tests.push("strtof\0");
+    static_tests.push("strtol\0");
+    static_tests.push("strtold\0");
+    static_tests.push("swprintf\0");
+    static_tests.push("tgmath\0");
+    static_tests.push("time\0");
+    static_tests.push("tls_align\0");
+    static_tests.push("udiv\0");
+    static_tests.push("ungetc\0");
+    // static_tests.push("utime\0");
+    static_tests.push("wcsstr\0");
+    static_tests.push("wcstol\0");
+    static_tests.push("pleval\0");
+    // static_tests.push("daemon_failure\0");
+    static_tests.push("dn_expand_empty\0");
+    static_tests.push("dn_expand_ptr_0\0");
+    static_tests.push("fflush_exit\0");
+    static_tests.push("fgets_eof\0");
+    static_tests.push("fgetwc_buffering\0");
+    static_tests.push("fpclassify_invalid_ld80\0");
+    static_tests.push("ftello_unflushed_append\0");
+    static_tests.push("getpwnam_r_crash\0");
+    static_tests.push("getpwnam_r_errno\0");
+    static_tests.push("iconv_roundtrips\0");
+    static_tests.push("inet_ntop_v4mapped\0");
+    static_tests.push("inet_pton_empty_last_field\0");
+    static_tests.push("iswspace_null\0");
+    static_tests.push("lrand48_signextend\0");
+    static_tests.push("lseek_large\0");
+    static_tests.push("malloc_0\0");
+    static_tests.push("mbsrtowcs_overflow\0");
+    static_tests.push("memmem_oob_read\0");
+    static_tests.push("memmem_oob\0");
+    static_tests.push("mkdtemp_failure\0");
+    static_tests.push("mkstemp_failure\0");
+    static_tests.push("printf_1e9_oob\0");
+    static_tests.push("printf_fmt_g_round\0");
+    static_tests.push("printf_fmt_g_zeros\0");
+    static_tests.push("printf_fmt_n\0");
+    static_tests.push("putenv_doublefree\0");
+    static_tests.push("regex_backref_0\0");
+    static_tests.push("regex_bracket_icase\0");
+    static_tests.push("regex_ere_backref\0");
+    static_tests.push("regex_escaped_high_byte\0");
+    static_tests.push("regex_negated_range\0");
+    static_tests.push("regexec_nosub\0");
+    static_tests.push("rewind_clear_error\0");
+    // static_tests.push("rlimit_open_files\0");
+    static_tests.push("scanf_bytes_consumed\0");
+    static_tests.push("scanf_match_literal_eof\0");
+    static_tests.push("scanf_nullbyte_char\0");
+    static_tests.push("setvbuf_unget\0");
+    static_tests.push("sigprocmask_internal\0");
+    static_tests.push("sscanf_eof\0");
+    static_tests.push("statvfs\0");
+    static_tests.push("strverscmp\0");
+    // static_tests.push("syscall_sign_extend\0");
+    static_tests.push("uselocale_0\0");
+    static_tests.push("wcsncpy_read_overflow\0");
+    static_tests.push("wcsstr_false_negative\0");
 
-//     let mut static_args: Vec<*const u8> = Vec::new();
-//     static_args.push(app_name.as_ptr());
-//     static_args.push("-w\0".as_ptr());
-//     static_args.push("entry-static.exe\0".as_ptr());
+    let mut static_args: Vec<*const u8> = Vec::new();
+    static_args.push(app_name.as_ptr());
+    static_args.push("-w\0".as_ptr());
+    static_args.push("entry-static.exe\0".as_ptr());
 
-//     for static_test in static_tests {
-//         static_args.push(static_test.as_ptr());
-//         static_args.push(core::ptr::null::<u8>());
-//         let pid = fork();
-//         if pid == 0 {
-//             exec(app_name, static_args.as_slice());
-//         } else {
-//             let mut exit_code = 0;
-//             waitpid(pid as usize, &mut exit_code);
-//         }
-//         static_args.pop();
-//         static_args.pop();
-//     }
+    for static_test in static_tests {
+        static_args.push(static_test.as_ptr());
+        static_args.push(core::ptr::null::<u8>());
+        let pid = fork();
+        if pid == 0 {
+            exec(app_name, static_args.as_slice());
+        } else {
+            let mut exit_code = 0;
+            waitpid(pid as usize, &mut exit_code);
+        }
+        static_args.pop();
+        static_args.pop();
+    }
 
-//     /****************************  dynamic  *****************************/
-//     let mut dynamic_tests = Vec::new();
-//     dynamic_tests.push("argv\0");
-//     dynamic_tests.push("basename\0");
-//     dynamic_tests.push("clocale_mbfuncs\0");
-//     dynamic_tests.push("clock_gettime\0");
-//     dynamic_tests.push("crypt\0");
-//     dynamic_tests.push("dirname\0");
-//     // dynamic_tests.push("dlopen\0");
-//     dynamic_tests.push("env\0");
-//     dynamic_tests.push("fdopen\0");
-//     dynamic_tests.push("fnmatch\0");
-//     dynamic_tests.push("fscanf\0");
-//     dynamic_tests.push("fwscanf\0");
-//     dynamic_tests.push("iconv_open\0");
-//     dynamic_tests.push("inet_pton\0");
-//     dynamic_tests.push("mbc\0");
-//     dynamic_tests.push("memstream\0");
-//     // dynamic_tests.push("pthread_cancel_points\0");
-//     // dynamic_tests.push("pthread_cancel\0");
-//     // dynamic_tests.push("pthread_cond\0");
-//     // dynamic_tests.push("pthread_tsd\0");
-//     dynamic_tests.push("qsort\0");
-//     dynamic_tests.push("random\0");
-//     dynamic_tests.push("search_hsearch\0");
-//     dynamic_tests.push("search_insque\0");
-//     dynamic_tests.push("search_lsearch\0");
-//     dynamic_tests.push("search_tsearch\0");
-//     // dynamic_tests.push("sem_init\0");
-//     dynamic_tests.push("setjmp\0");
-//     dynamic_tests.push("snprintf\0");
-//     // dynamic_tests.push("socket\0");
-//     dynamic_tests.push("sscanf\0");
-//     dynamic_tests.push("sscanf_long\0");
-//     // dynamic_tests.push("stat\0");        // src/functional/stat.c:22: st.st_ctime<=t failed: 386072 > 32
-//     dynamic_tests.push("strftime\0");
-//     dynamic_tests.push("string\0");
-//     dynamic_tests.push("string_memcpy\0");
-//     dynamic_tests.push("string_memmem\0");
-//     dynamic_tests.push("string_memset\0");
-//     dynamic_tests.push("string_strchr\0");
-//     dynamic_tests.push("string_strcspn\0");
-//     dynamic_tests.push("string_strstr\0");
-//     dynamic_tests.push("strptime\0");
-//     dynamic_tests.push("strtod\0");
-//     dynamic_tests.push("strtod_simple\0");
-//     dynamic_tests.push("strtof\0");
-//     dynamic_tests.push("strtol\0");
-//     dynamic_tests.push("strtold\0");
-//     dynamic_tests.push("swprintf\0");
-//     dynamic_tests.push("tgmath\0");
-//     dynamic_tests.push("time\0");
-//     // dynamic_tests.push("tls_init\0");
-//     // dynamic_tests.push("tls_local_exec\0");
-//     dynamic_tests.push("udiv\0");
-//     dynamic_tests.push("ungetc\0");
-//     // dynamic_tests.push("utime\0");
-//     dynamic_tests.push("wcsstr\0");
-//     dynamic_tests.push("wcstol\0");
-//     // dynamic_tests.push("daemon_failure\0");
-//     dynamic_tests.push("dn_expand_empty\0");
-//     dynamic_tests.push("dn_expand_ptr_0\0");
-//     dynamic_tests.push("fflush_exit\0");
-//     dynamic_tests.push("fgets_eof\0");
-//     dynamic_tests.push("fgetwc_buffering\0");
-//     dynamic_tests.push("fpclassify_invalid_ld80\0");
-//     dynamic_tests.push("ftello_unflushed_append\0");
-//     dynamic_tests.push("getpwnam_r_crash\0");
-//     dynamic_tests.push("getpwnam_r_errno\0");
-//     dynamic_tests.push("iconv_roundtrips\0");
-//     dynamic_tests.push("inet_ntop_v4mapped\0");
-//     dynamic_tests.push("inet_pton_empty_last_field\0");
-//     dynamic_tests.push("iswspace_null\0");
-//     dynamic_tests.push("lrand48_signextend\0");
-//     dynamic_tests.push("lseek_large\0");
-//     dynamic_tests.push("malloc_0\0");
-//     dynamic_tests.push("mbsrtowcs_overflow\0");
-//     dynamic_tests.push("memmem_oob_read\0");
-//     dynamic_tests.push("memmem_oob\0");
-//     dynamic_tests.push("mkdtemp_failure\0");
-//     dynamic_tests.push("mkstemp_failure\0");
-//     dynamic_tests.push("printf_1e9_oob\0");
-//     dynamic_tests.push("printf_fmt_g_round\0");
-//     dynamic_tests.push("printf_fmt_g_zeros\0");
-//     dynamic_tests.push("printf_fmt_n\0");
-//     // dynamic_tests.push("pthread_robust_detach\0");
-//     // dynamic_tests.push("pthread_cond_smasher\0");
-//     // dynamic_tests.push("pthread_condattr_setclock\0");
-//     // dynamic_tests.push("pthread_exit_cancel\0");
-//     // dynamic_tests.push("pthread_once_deadlock\0");
-//     // dynamic_tests.push("pthread_rwlock_ebusy\0");
-//     dynamic_tests.push("putenv_doublefree\0");
-//     dynamic_tests.push("regex_backref_0\0");
-//     dynamic_tests.push("regex_bracket_icase\0");
-//     dynamic_tests.push("regex_ere_backref\0");
-//     dynamic_tests.push("regex_escaped_high_byte\0");
-//     dynamic_tests.push("regex_negated_range\0");
-//     dynamic_tests.push("regexec_nosub\0");
-//     dynamic_tests.push("rewind_clear_error\0");
-//     // dynamic_tests.push("rlimit_open_files\0");
-//     dynamic_tests.push("scanf_bytes_consumed\0");
-//     dynamic_tests.push("scanf_match_literal_eof\0");
-//     dynamic_tests.push("scanf_nullbyte_char\0");
-//     dynamic_tests.push("setvbuf_unget\0");
-//     dynamic_tests.push("sigprocmask_internal\0");
-//     dynamic_tests.push("sscanf_eof\0");
-//     dynamic_tests.push("statvfs\0");
-//     dynamic_tests.push("strverscmp\0");
-//     dynamic_tests.push("statvfs\0");
-//     // dynamic_tests.push("syscall_sign_extend\0");
-//     // dynamic_tests.push("tls_get_new_dtv\0");
-//     dynamic_tests.push("uselocale_0\0");
-//     dynamic_tests.push("wcsncpy_read_overflow\0");
-//     dynamic_tests.push("wcsstr_false_negative\0");
+    /****************************  dynamic  *****************************/
+    let mut dynamic_tests = Vec::new();
+    dynamic_tests.push("argv\0");
+    dynamic_tests.push("basename\0");
+    dynamic_tests.push("clocale_mbfuncs\0");
+    dynamic_tests.push("clock_gettime\0");
+    dynamic_tests.push("crypt\0");
+    dynamic_tests.push("dirname\0");
+    // dynamic_tests.push("dlopen\0");
+    dynamic_tests.push("env\0");
+    dynamic_tests.push("fdopen\0");
+    dynamic_tests.push("fnmatch\0");
+    dynamic_tests.push("fscanf\0");
+    dynamic_tests.push("fwscanf\0");
+    dynamic_tests.push("iconv_open\0");
+    dynamic_tests.push("inet_pton\0");
+    dynamic_tests.push("mbc\0");
+    dynamic_tests.push("memstream\0");
+    // dynamic_tests.push("pthread_cancel_points\0");
+    // dynamic_tests.push("pthread_cancel\0");
+    // dynamic_tests.push("pthread_cond\0");
+    // dynamic_tests.push("pthread_tsd\0");
+    dynamic_tests.push("qsort\0");
+    dynamic_tests.push("random\0");
+    dynamic_tests.push("search_hsearch\0");
+    dynamic_tests.push("search_insque\0");
+    dynamic_tests.push("search_lsearch\0");
+    dynamic_tests.push("search_tsearch\0");
+    // dynamic_tests.push("sem_init\0");
+    dynamic_tests.push("setjmp\0");
+    dynamic_tests.push("snprintf\0");
+    // dynamic_tests.push("socket\0");
+    dynamic_tests.push("sscanf\0");
+    dynamic_tests.push("sscanf_long\0");
+    // dynamic_tests.push("stat\0");        // src/functional/stat.c:22: st.st_ctime<=t failed: 386072 > 32
+    dynamic_tests.push("strftime\0");
+    dynamic_tests.push("string\0");
+    dynamic_tests.push("string_memcpy\0");
+    dynamic_tests.push("string_memmem\0");
+    dynamic_tests.push("string_memset\0");
+    dynamic_tests.push("string_strchr\0");
+    dynamic_tests.push("string_strcspn\0");
+    dynamic_tests.push("string_strstr\0");
+    dynamic_tests.push("strptime\0");
+    dynamic_tests.push("strtod\0");
+    dynamic_tests.push("strtod_simple\0");
+    dynamic_tests.push("strtof\0");
+    dynamic_tests.push("strtol\0");
+    dynamic_tests.push("strtold\0");
+    dynamic_tests.push("swprintf\0");
+    dynamic_tests.push("tgmath\0");
+    dynamic_tests.push("time\0");
+    // dynamic_tests.push("tls_init\0");
+    // dynamic_tests.push("tls_local_exec\0");
+    dynamic_tests.push("udiv\0");
+    dynamic_tests.push("ungetc\0");
+    // dynamic_tests.push("utime\0");
+    dynamic_tests.push("wcsstr\0");
+    dynamic_tests.push("wcstol\0");
+    // dynamic_tests.push("daemon_failure\0");
+    dynamic_tests.push("dn_expand_empty\0");
+    dynamic_tests.push("dn_expand_ptr_0\0");
+    dynamic_tests.push("fflush_exit\0");
+    dynamic_tests.push("fgets_eof\0");
+    dynamic_tests.push("fgetwc_buffering\0");
+    dynamic_tests.push("fpclassify_invalid_ld80\0");
+    dynamic_tests.push("ftello_unflushed_append\0");
+    dynamic_tests.push("getpwnam_r_crash\0");
+    dynamic_tests.push("getpwnam_r_errno\0");
+    dynamic_tests.push("iconv_roundtrips\0");
+    dynamic_tests.push("inet_ntop_v4mapped\0");
+    dynamic_tests.push("inet_pton_empty_last_field\0");
+    dynamic_tests.push("iswspace_null\0");
+    dynamic_tests.push("lrand48_signextend\0");
+    dynamic_tests.push("lseek_large\0");
+    dynamic_tests.push("malloc_0\0");
+    dynamic_tests.push("mbsrtowcs_overflow\0");
+    dynamic_tests.push("memmem_oob_read\0");
+    dynamic_tests.push("memmem_oob\0");
+    dynamic_tests.push("mkdtemp_failure\0");
+    dynamic_tests.push("mkstemp_failure\0");
+    dynamic_tests.push("printf_1e9_oob\0");
+    dynamic_tests.push("printf_fmt_g_round\0");
+    dynamic_tests.push("printf_fmt_g_zeros\0");
+    dynamic_tests.push("printf_fmt_n\0");
+    // dynamic_tests.push("pthread_robust_detach\0");
+    // dynamic_tests.push("pthread_cond_smasher\0");
+    // dynamic_tests.push("pthread_condattr_setclock\0");
+    // dynamic_tests.push("pthread_exit_cancel\0");
+    // dynamic_tests.push("pthread_once_deadlock\0");
+    // dynamic_tests.push("pthread_rwlock_ebusy\0");
+    dynamic_tests.push("putenv_doublefree\0");
+    dynamic_tests.push("regex_backref_0\0");
+    dynamic_tests.push("regex_bracket_icase\0");
+    dynamic_tests.push("regex_ere_backref\0");
+    dynamic_tests.push("regex_escaped_high_byte\0");
+    dynamic_tests.push("regex_negated_range\0");
+    dynamic_tests.push("regexec_nosub\0");
+    dynamic_tests.push("rewind_clear_error\0");
+    // dynamic_tests.push("rlimit_open_files\0");
+    dynamic_tests.push("scanf_bytes_consumed\0");
+    dynamic_tests.push("scanf_match_literal_eof\0");
+    dynamic_tests.push("scanf_nullbyte_char\0");
+    dynamic_tests.push("setvbuf_unget\0");
+    dynamic_tests.push("sigprocmask_internal\0");
+    dynamic_tests.push("sscanf_eof\0");
+    dynamic_tests.push("statvfs\0");
+    dynamic_tests.push("strverscmp\0");
+    dynamic_tests.push("statvfs\0");
+    // dynamic_tests.push("syscall_sign_extend\0");
+    // dynamic_tests.push("tls_get_new_dtv\0");
+    dynamic_tests.push("uselocale_0\0");
+    dynamic_tests.push("wcsncpy_read_overflow\0");
+    dynamic_tests.push("wcsstr_false_negative\0");
 
-//     let mut dynamic_args: Vec<*const u8> = Vec::new();
-//     dynamic_args.push(app_name.as_ptr());
-//     dynamic_args.push("-w\0".as_ptr());
-//     dynamic_args.push("entry-dynamic.exe\0".as_ptr());
+    let mut dynamic_args: Vec<*const u8> = Vec::new();
+    dynamic_args.push(app_name.as_ptr());
+    dynamic_args.push("-w\0".as_ptr());
+    dynamic_args.push("entry-dynamic.exe\0".as_ptr());
 
-//     for dynamic_test in dynamic_tests {
-//         dynamic_args.push(dynamic_test.as_ptr());
-//         dynamic_args.push(core::ptr::null::<u8>());
-//         let pid = fork();
-//         if pid == 0 {
-//             exec(app_name, dynamic_args.as_slice());
-//         } else {
-//             let mut exit_code = 0;
-//             waitpid(pid as usize, &mut exit_code);
-//         }
-//         dynamic_args.pop();
-//         dynamic_args.pop();
-//     }
-// }
+    for dynamic_test in dynamic_tests {
+        dynamic_args.push(dynamic_test.as_ptr());
+        dynamic_args.push(core::ptr::null::<u8>());
+        let pid = fork();
+        if pid == 0 {
+            exec(app_name, dynamic_args.as_slice());
+        } else {
+            let mut exit_code = 0;
+            waitpid(pid as usize, &mut exit_code);
+        }
+        dynamic_args.pop();
+        dynamic_args.pop();
+    }
+}
 
-// #[no_mangle]
-// pub fn main() -> i32 {
-//     println!("Rust user shell");
-//     final_round_one_test();
-//     0
-// }
+#[no_mangle]
+pub fn main() -> i32 {
+    println!("Rust user shell");
+    final_round_one_test();
+    0
+}
 
 // #![no_std]
 // #![no_main]
