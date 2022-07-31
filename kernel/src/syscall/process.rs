@@ -397,6 +397,25 @@ pub fn sys_munmap(start: usize, length: usize) -> isize {
     task.munmap(start, length)
 }
 
+const RLIMIT_CPU: usize = 0;
+const RLIMIT_FSIZE: usize = 1;
+const RLIMIT_DATA: usize = 2;
+const RLIMIT_STACK: usize = 3;
+const RLIMIT_NOFILE: usize = 7;
+const RLIMIT_AS: usize = 9;
+
+pub struct RLimit {
+    pub rlim_cur: usize, /* Soft limit */
+    pub rlim_max: usize, /* Hard limit (ceiling for rlim_cur) */
+}
+
+const FDMAX: usize = 10;
+
+pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut RLimit) -> isize {
+    // log::debug!("sys_prlimit res: {}", res);
+    0
+}
+
 pub fn sys_kill(pid: usize, signum: i32) -> isize {
     if let Some(task) = pid2task(pid) {
         if let Some(flag) = SignalFlags::from_bits(1 << signum) {
