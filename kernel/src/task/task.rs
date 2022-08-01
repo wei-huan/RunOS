@@ -460,7 +460,7 @@ impl TaskControlBlock {
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::debug!(
+            log::trace!(
                 "mmap at fixed place hint after map: {:#X}",
                 inner.mmap_area_hint
             );
@@ -473,7 +473,7 @@ impl TaskControlBlock {
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::debug!("mmap hint after map: {:#X}", inner.mmap_area_hint);
+            log::trace!("mmap hint after map: {:#X}", inner.mmap_area_hint);
         }
         // have conflict, but can pick a new place to map
         else {

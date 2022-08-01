@@ -159,14 +159,14 @@ impl AddrSpace {
     pub fn fix_mmap_section_conflict(&mut self, start: usize, len: usize) {
         let left_vpn = VirtAddr::from(start).floor();
         let right_vpn = VirtAddr::from(start + len).ceil();
-        println!(
+        log::trace!(
             "fix_mmap_section_conflict left: {:?}, right: {:?}",
             left_vpn, right_vpn
         );
         let mut need_remove: Vec<usize> = Vec::new();
         let mut new_mmap_sections: Vec<Section> = Vec::new();
         for (index, section) in self.mmap_sections.iter_mut().enumerate() {
-            println!(
+            log::trace!(
                 "fix_mmap_section_conflict mmap_section left: {:?}, right: {:?}",
                 section.vpn_range.get_start(),
                 section.vpn_range.get_end()
