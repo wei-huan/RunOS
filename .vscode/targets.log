@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Aug  1 14:52:09 2022
+# Make data base, printed on Mon Aug  1 23:33:56 2022
 
 # Variables
 
@@ -282,7 +282,6 @@ LANG = C
 # Directories
 
 # . (device 66310, inode 23088373): 25 files, no impossibilities.
- 
 
 # 25 files, no impossibilities in 1 directories.
 
@@ -291,6 +290,7 @@ LANG = C
 # No implicit rules.
 
 # Files
+ 
 
 user:
 #  Phony target (prerequisite of .PHONY).
@@ -447,6 +447,6 @@ disasm:
 # strcache performance: lookups = 68 / hit rate = 41%
 # hash-table stats:
 # Load=40/8192=0%, Rehash=0, Collisions=1/68=1%
-# Finished Make data base on Mon Aug  1 14:52:09 2022
+# Finished Make data base on Mon Aug  1 23:33:56 2022
 
  
