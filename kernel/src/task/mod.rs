@@ -16,17 +16,13 @@ pub use pid::{pid_alloc, PidHandle};
 pub use signal::*;
 pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
-use crate::cpu::{current_task, hart_id, take_current_task};
-use crate::scheduler::{
-    add_task2designate_ready_queue, remove_from_pid2task,
-    save_current_and_back_to_schedule, INITPROC,
-};
+use crate::cpu::{current_task, take_current_task};
+use crate::scheduler::{remove_from_pid2task, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
 
 pub fn suspend_current_and_run_next() {
-    // log::debug!("suspend");
     // There must be an application running.
-    let task = take_current_task().unwrap();
+    let task = current_task().unwrap();
     // ---- access current TCB exclusively
     let mut task_inner = task.acquire_inner_lock();
     let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
@@ -34,7 +30,7 @@ pub fn suspend_current_and_run_next() {
     task_inner.task_status = TaskStatus::Ready;
     drop(task_inner);
     // push back to ready queue.
-    add_task2designate_ready_queue(task, hart_id());
+    // add_task(task);
     // jump to scheduling cycle
     // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);
@@ -76,7 +72,6 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     let mut _unused = TaskContext::zero_init();
     save_current_and_back_to_schedule(&mut _unused as *mut _);
 }
-
 
 pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     let task = current_task().unwrap();

@@ -279,10 +279,6 @@ pub fn main() -> i32 {
     0
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> final-dev
 // #![no_std]
 // #![no_main]
 // #![allow(clippy::println_empty_string)]

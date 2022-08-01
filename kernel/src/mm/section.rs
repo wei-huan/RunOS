@@ -10,7 +10,7 @@ use alloc::string::String;
 use bitflags::bitflags;
 
 bitflags! {
-    pub struct Permission: u8 {
+    pub struct MapPermission: u8 {
         const R = 1 << 1;
         const W = 1 << 2;
         const X = 1 << 3;
@@ -26,7 +26,7 @@ pub enum MapType {
 
 pub struct Section {
     pub name: String,
-    perm: Permission,
+    perm: MapPermission,
     map_type: MapType,
     pub vpn_range: VPNRange,
     data_frames: BTreeMap<VirtPageNum, Frame>,
@@ -38,7 +38,7 @@ impl Section {
         start_va: VirtAddr,
         end_va: VirtAddr,
         map_type: MapType,
-        perm: Permission,
+        perm: MapPermission,
     ) -> Self {
         Self {
             name,
@@ -147,19 +147,55 @@ impl Section {
     }
     pub fn modify_section_end(&mut self, page_table: &mut PageTable, new_end_vpn: VirtPageNum) {
         let end_vpn = self.vpn_range.get_end();
-        // 缩小
+        // shrink
         if end_vpn > new_end_vpn {
-            for vpn in VirtPageNum::from(new_end_vpn.0 + 1)..end_vpn {
+            for vpn in new_end_vpn..end_vpn {
                 self.unmap_one_page(page_table, vpn);
             }
         }
-        // 扩大
+        // expand
         else if end_vpn < new_end_vpn {
             // println!("end_vpn: {:#?}", end_vpn);
             // println!("new_end_vpn: {:#?}", new_end_vpn);
-            for vpn in VirtPageNum::from(end_vpn.0)..new_end_vpn {
+            for vpn in end_vpn..new_end_vpn {
                 self.map_one_page(page_table, vpn);
             }
         }
+    }
+    pub fn modify_section_start(&mut self, page_table: &mut PageTable, new_start_vpn: VirtPageNum) {
+        let start_vpn = self.vpn_range.get_start();
+        // expand
+        if start_vpn > new_start_vpn {
+            for vpn in new_start_vpn..start_vpn {
+                self.map_one_page(page_table, vpn);
+            }
+        }
+        // shrink
+        else if start_vpn < new_start_vpn {
+            for vpn in start_vpn..new_start_vpn {
+                self.unmap_one_page(page_table, vpn);
+            }
+        }
+    }
+    // new_start_vpn should be still map after modify
+    pub fn divide_into_two(
+        &mut self,
+        page_table: &mut PageTable,
+        left_part_end: VirtPageNum,
+        right_part_start: VirtPageNum,
+    ) -> (Section, Section) {
+        let mut left_section = Section::from_another(self);
+        let mut right_section = Section::from_another(self);
+        left_section.modify_section_end(page_table, left_part_end);
+        for left_vpn in left_section.vpn_range {
+            let frame = self.data_frames.remove(&left_vpn).unwrap();
+            left_section.data_frames.insert(left_vpn, frame);
+        }
+        right_section.modify_section_start(page_table, right_part_start);
+        for right_vpn in right_section.vpn_range {
+            let frame = self.data_frames.remove(&right_vpn).unwrap();
+            left_section.data_frames.insert(right_vpn, frame);
+        }
+        (left_section, right_section)
     }
 }

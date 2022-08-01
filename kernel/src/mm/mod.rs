@@ -15,7 +15,7 @@ pub use page_table::{
     translated_array_copy, translated_byte_buffer, translated_ref, translated_refmut,
     translated_str, PageTable, PageTableEntry, UserBuffer,
 };
-pub use section::Permission;
+pub use section::MapPermission;
 
 pub fn boot_init() {
     heap::init_heap();

@@ -137,6 +137,8 @@ pub fn sys_fork(
     // add new task to scheduler
     // println!("here_2");
     add_task(new_task);
+    // let child process run first
+    suspend_current_and_run_next();
     // println!("here_5");
     new_pid as isize
 }

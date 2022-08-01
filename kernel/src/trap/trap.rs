@@ -141,7 +141,6 @@ pub fn user_trap_handler() -> ! {
             current_add_signal(SignalFlags::SIGILL);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
-            // log::debug!("User Timer");
             set_next_trigger();
             suspend_current_and_run_next();
         }

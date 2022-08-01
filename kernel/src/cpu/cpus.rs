@@ -6,15 +6,13 @@ use array_macro::array;
 use core::arch::asm;
 use core::cell::RefMut;
 use lazy_static::*;
+
+#[cfg(feature = "platform-k210")]
+const CPU_NUM: usize = 2;
+#[cfg(not(feature = "platform-k210"))]
 const CPU_NUM: usize = 4;
 
-// Must be called with interrupts disabled,
-// to prevent race with task being moved
-// to a different CPU.
-
-
-
-#[inline]
+#[inline(always)]
 pub fn hart_id() -> usize {
     let id;
     unsafe { asm!("mv {0}, tp", out(reg) id) };
@@ -38,7 +36,3 @@ pub fn take_current_task() -> Option<Arc<TaskControlBlock>> {
 pub fn current_task() -> Option<Arc<TaskControlBlock>> {
     take_my_cpu().current()
 }
-
-// pub fn have_task_on_other_cpu() -> bool {
-
-// }

@@ -2,12 +2,12 @@ use super::Scheduler;
 use super::__schedule;
 use crate::cpu::{hart_id, take_my_cpu};
 use crate::dt::CPU_NUMS;
+use crate::scheduler::add_task;
 use crate::sync::interrupt_off;
 use crate::task::{TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc, vec::Vec};
 use core::sync::atomic::Ordering;
 use spin::Mutex;
-
 type TaskQueue = VecDeque<Arc<TaskControlBlock>>;
 
 pub struct RoundRobinScheduler {
@@ -21,9 +21,7 @@ impl RoundRobinScheduler {
         for _ in 0..cpu_num {
             ready_queues.push(Mutex::new(VecDeque::new()));
         }
-        Self {
-            ready_queues,
-        }
+        Self { ready_queues }
     }
     pub fn add_task2designate_ready_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
         // log::debug!("Hart {} add task {} to ready queue {}",hart_id(), task.pid.0, queue_id);
@@ -47,11 +45,14 @@ impl Scheduler for RoundRobinScheduler {
     fn schedule(&self) {
         loop {
             interrupt_off();
+            let mut cpu = take_my_cpu();
+            if let Some(last_task) = cpu.take_current() {
+                add_task(last_task);
+            }
             if let Some(task) = self.fetch_task() {
                 // if hart_id() == 1 {
                 //     log::trace!("have task");
                 // }
-                let mut cpu = take_my_cpu();
                 let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
                 // access coming task TCB exclusively
                 let mut task_inner = task.acquire_inner_lock();
@@ -74,7 +75,7 @@ impl Scheduler for RoundRobinScheduler {
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        let (i, selected) = self
+        let (_, selected) = self
             .ready_queues
             .iter()
             .enumerate()

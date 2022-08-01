@@ -255,8 +255,21 @@ where
     pub fn get_end(&self) -> T {
         self.r
     }
-    pub fn is_cover(&self, addr: T) -> bool {
-        self.l <= addr && self.r > addr
+    // range provided in args left part has conflict with self's range right part
+    pub fn is_left_cover(&self, left: T, right: T) -> bool {
+        self.l <= left && left < self.r && self.r <= right
+    }
+    // range provided in args right part has conflict with self's range left part
+    pub fn is_right_cover(&self, left: T, right: T) -> bool {
+        self.l >= left && self.l > right && self.r >= right
+    }
+    // range provided in args all covered by self's range
+    pub fn is_full_cover(&self, left: T, right: T) -> bool {
+        self.l < left && self.r > right
+    }
+    // self's range all covered by range provided in args
+    pub fn is_be_covered(&self, left: T, right: T) -> bool {
+        self.l >= left && self.r <= right
     }
     // pub fn set_start(&mut self, new_start: T) {
     //     self.l = new_start;

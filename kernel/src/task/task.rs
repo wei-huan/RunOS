@@ -5,7 +5,7 @@ use crate::config::{MMAP_BASE, TRAP_CONTEXT};
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
-    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, Permission,
+    kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, MapPermission,
     PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
@@ -409,31 +409,34 @@ impl TaskControlBlock {
     pub fn getppid(&self) -> usize {
         self.get_parent().unwrap().pid.0
     }
+
     pub fn mmap(
         &self,
         mut start: usize,
-        mut length: usize,
+        length: usize,
         prot: usize,
         flags: usize,
         fd: isize,
         offset: usize,
     ) -> isize {
+        let mut inner = self.acquire_inner_lock();
+        let token = inner.get_user_token();
+        // prot << 1 is equal to meaning of MapPermission
+        // TODO: Real Implementation of Adjust MMap Section permission
+        let mut mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap();
+        let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         log::trace!(
-            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, prot: {}",
+            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
             start,
             length,
             fd,
             offset,
-            prot
+            mmap_perm,
+            mmap_flag
         );
-        let mut inner = self.acquire_inner_lock();
-        let token = inner.get_user_token();
-        // prot << 1 is equal to meaning of Permission
-        let mmap_perm = Permission::from_bits((prot << 1) as u8).unwrap()
-            | Permission::U
-            | Permission::W
-            | Permission::R;
-        let mmap_flag = MMapFlags::from_bits(flags).unwrap();
+        mmap_perm =
+            mmap_perm | MapPermission::U | MapPermission::W | MapPermission::R | MapPermission::X;
+        /* mmap section */
         // need hint
         if start == 0 {
             start = inner.mmap_area_hint;
@@ -443,15 +446,41 @@ impl TaskControlBlock {
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
             log::trace!(
-                "mmap need hint start after map: {:#X}",
+                "mmap need hint hint after map: {:#X}",
                 inner.mmap_area_hint
             );
         }
-        // another mmaping already exist there, need to picks a new address depending on the hint
-        else if inner
-            .addrspace
-            .is_mmap_section_exist(VirtAddr::from(start).floor())
+        // another mmaping already exist there, but need to place the mapping at exactly that address.
+        else if inner.addrspace.is_mmap_section_conflict(start, length)
+            && mmap_flag.contains(MMapFlags::MAP_FIXED)
         {
+            // adjust mmap section
+            log::trace!("start fixing mmap conflict");
+            inner.addrspace.fix_mmap_section_conflict(start, length);
+
+            // map mmap section at fixed place
+            log::trace!("mmap at fixed place start before map: {:#X}", start);
+            inner.mmap_area_hint = inner
+                .addrspace
+                .create_mmap_section(start, length, mmap_perm)
+                .into();
+            log::debug!(
+                "mmap at fixed place hint after map: {:#X}",
+                inner.mmap_area_hint
+            );
+        }
+        // no conflict, just map it
+        else if mmap_flag.contains(MMapFlags::MAP_FIXED) {
+            log::trace!("mmap start before map: {:#X}", start);
+            // TODO mmap_area_hint new appropriate?
+            inner.mmap_area_hint = inner
+                .addrspace
+                .create_mmap_section(start, length, mmap_perm)
+                .into();
+            log::debug!("mmap hint after map: {:#X}", inner.mmap_area_hint);
+        }
+        // have conflict, but can pick a new place to map
+        else {
             start = inner.mmap_area_hint;
             log::trace!("mmap need to pick new place start before map: {:#X}", start);
             inner.mmap_area_hint = inner
@@ -459,21 +488,12 @@ impl TaskControlBlock {
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
             log::trace!(
-                "mmap need to pick new place start after map: {:#X}",
+                "mmap need to pick new place hint after map: {:#X}",
                 inner.mmap_area_hint
             );
         }
-        // no conflict, just map it
-        else {
-            log::trace!("mmap start before map: {:#X}", start);
-            inner.mmap_area_hint = inner
-                .addrspace
-                .create_mmap_section(start, length, mmap_perm)
-                .into();
-            log::trace!("mmap hint after map: {:#X}", inner.mmap_area_hint);
-        }
 
-        // File Content Copy
+        /* File Content Copy if need*/
         let fd_table = inner.fd_table.clone();
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         if fd < 0 || mmap_flag.contains(MMapFlags::MAP_ANONYMOUS) {
@@ -505,7 +525,6 @@ impl TaskControlBlock {
             return -ENOENT;
         };
     }
-
     pub fn munmap(&self, start: usize, _length: usize) -> isize {
         let mut inner = self.acquire_inner_lock();
         inner
