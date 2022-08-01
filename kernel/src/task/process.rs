@@ -27,8 +27,6 @@ pub struct ProcessControlBlock {
 pub type FDTable = Vec<Option<FileDescripter>>;
 pub struct ProcessControlBlockInner {
     pub entry_point: usize,
-    pub heap_start: usize,
-    pub heap_pointer: usize,
     pub addrspace: AddrSpace,
     pub parent: Option<Weak<ProcessControlBlock>>,
     pub children: Vec<Arc<ProcessControlBlock>>,
@@ -36,6 +34,8 @@ pub struct ProcessControlBlockInner {
     pub exit_code: i32,
     pub fd_table: FDTable,
     pub current_path: String,
+    pub heap_start: usize,
+    pub heap_pointer: usize,
     pub mmap_area_hint: usize,
     pub signals: SignalFlags,
     pub signal_actions: SignalActions,
@@ -58,6 +58,9 @@ impl ProcessControlBlockInner {
     }
     pub fn thread_count(&self) -> usize {
         self.tasks.len()
+    }
+    pub fn get_task(&self, lid: usize) -> Arc<TaskControlBlock> {
+        self.tasks[lid]
     }
 }
 
@@ -109,16 +112,34 @@ impl ProcessControlBlock {
         let trap_cx_ppn = main_task.acquire_inner_lock().trap_cx_ppn;
         process
     }
+
+    /// Only support processes with a single thread.
     pub fn exec(self: &Arc<Self>, elf_data: &[u8], args: Vec<String>) {
-        // assert_eq!(self.acquire_inner_lock().thread_count(), 1, "process can't execve with multithread");
+        assert_eq!(
+            self.acquire_inner_lock().thread_count(),
+            1,
+            "process can't execve with multithread"
+        );
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, heap_start, mut user_sp, entry_point, mut auxv) =
+        let (addrspace, heap_start, _, entry_point, mut auxv) =
             AddrSpace::create_user_space(elf_data);
         let token = addrspace.token();
-        let trap_cx_ppn = addrspace
-            .translate(VirtAddr::from(TRAP_CONTEXT).into())
-            .unwrap()
-            .ppn();
+        // **** access current TCB exclusively
+        let process_inner = self.acquire_inner_lock();
+        // set new entry_point
+        process_inner.entry_point = entry_point;
+        // substitute addrspace
+        process_inner.addrspace = addrspace;
+        // update heap_start
+        process_inner.heap_start = heap_start;
+        // update heap_pointer
+        process_inner.heap_pointer = heap_start;
+        // update mmap hint
+        process_inner.mmap_area_hint = MMAP_BASE;
+
+        let task = process_inner.get_task(0);
+        let mut task_inner = task.acquire_inner_lock();
+        let user_sp = task_inner.res.unwrap().ustack_top();
 
         ////////////// *envp[] ///////////////////
         let mut env: Vec<String> = Vec::new();
@@ -252,24 +273,12 @@ impl ProcessControlBlock {
         ////////////// *argc //////////////////////
         user_sp -= core::mem::size_of::<usize>();
         *translated_refmut(token, user_sp as *mut usize) = args.len();
-
-        // **** access current TCB exclusively
-        let mut inner = self.acquire_inner_lock();
-        // set new entry_point
-        inner.entry_point = entry_point;
-        // substitute addrspace
-        inner.addrspace = addrspace;
-        // update heap_start
-        inner.heap_start = heap_start;
-        // update heap_pointer
-        inner.heap_pointer = heap_start;
-
         // initialize trap_cx
         let mut trap_cx = TrapContext::app_init_context(
             entry_point,
             user_sp,
             KERNEL_SPACE.lock().token(),
-            self.kernel_stack.get_top(),
+            task.kernel_stack.get_top(),
             user_trap_handler as usize,
             hart_id(),
         );
@@ -277,21 +286,20 @@ impl ProcessControlBlock {
         trap_cx.x[11] = argv_base;
         trap_cx.x[12] = envp_base;
         trap_cx.x[13] = auxv_base;
-        *inner.get_trap_cx() = trap_cx;
+        *task_inner.get_trap_cx() = trap_cx;
     }
     pub fn fork(self: &Arc<ProcessControlBlock>) -> Arc<ProcessControlBlock> {
+        // assert_eq!(
+        //     self.acquire_inner_lock().thread_count(),
+        //     1,
+        //     "process can't fork with multithread"
+        // );
         // ---- hold parent PCB lock
         let mut parent_inner = self.acquire_inner_lock();
         // copy user space(include trap context)
         let addrspace = AddrSpace::from_existed_user(&parent_inner.addrspace);
-        let trap_cx_ppn = addrspace
-            .translate(VirtAddr::from(TRAP_CONTEXT).into())
-            .unwrap()
-            .ppn();
         // alloc a pid and a kernel stack in kernel space
         let pid_handle = pid_alloc();
-        let kernel_stack = kstack_alloc();
-        let kernel_stack_top = kernel_stack.get_top();
         // copy fd table
         let mut new_fd_table: FDTable = Vec::new();
         for fd in parent_inner.fd_table.iter() {
@@ -301,7 +309,7 @@ impl ProcessControlBlock {
                 new_fd_table.push(None);
             }
         }
-        let task_control_block = Arc::new(ProcessControlBlock {
+        let child = Arc::new(ProcessControlBlock {
             pid: pid_handle,
             inner: Mutex::new(ProcessControlBlockInner {
                 entry_point: parent_inner.entry_point,
@@ -310,23 +318,33 @@ impl ProcessControlBlock {
                 addrspace,
                 parent: Some(Arc::downgrade(self)),
                 children: Vec::new(),
+                tasks: Vec::new(),
                 exit_code: 0,
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_hint: parent_inner.mmap_area_hint,
-                // inherit the signals and signal_action
                 signals: SignalFlags::empty(),
+                // inherit the signals and signal_action
                 signal_actions: parent_inner.signal_actions.clone(),
             }),
         });
         // add child
-        parent_inner.children.push(task_control_block.clone());
+        parent_inner.children.push(child.clone());
+        // create main thread of child process
+        let task = Arc::new(TaskControlBlock::new(
+            child.clone(),
+            0,
+            // here we do not allocate trap_cx or ustack again
+            // but mention that we allocate a new kstack here
+            false,
+        ));
         // modify kernel_sp in trap_cx
         // **** access child PCB exclusively
-        let trap_cx = task_control_block.acquire_inner_lock().get_trap_cx();
-        trap_cx.kernel_sp = kernel_stack_top;
+        let mut task_inner = task.acquire_inner_lock();
+        let trap_cx = task_inner.get_trap_cx();
+        trap_cx.kernel_sp = task.kernel_stack.get_top();
         // return
-        task_control_block
+        child
         // **** release child PCB
         // ---- release parent PCB
     }

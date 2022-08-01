@@ -126,7 +126,6 @@ impl KernelStack {
 pub struct TaskUserRes {
     // TODO: recycle lid when the thread exit
     pub lid: usize, // local thread id for pthread_self()
-    pub ustack_base: usize,
     pub process: Weak<ProcessControlBlock>,
 }
 
@@ -140,10 +139,8 @@ fn ustack_bottom_from_tid(lid: usize) -> usize {
 
 impl TaskUserRes {
     pub fn new(process: Arc<ProcessControlBlock>, lid: usize, is_alloc_user_res: bool) -> Self {
-        let ustack_base = ustack_bottom_from_tid(lid);
         let task_user_res = Self {
             lid,
-            ustack_base,
             process: Arc::downgrade(&process),
         };
         if is_alloc_user_res {
@@ -204,10 +201,6 @@ impl TaskUserRes {
             .translate(trap_cx_bottom_va.into())
             .unwrap()
             .ppn()
-    }
-
-    pub fn ustack_base(&self) -> usize {
-        self.ustack_base
     }
     pub fn ustack_top(&self) -> usize {
         ustack_bottom_from_tid(self.lid) + USER_STACK_SIZE
