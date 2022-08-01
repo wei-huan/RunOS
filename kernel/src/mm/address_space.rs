@@ -3,7 +3,7 @@ use super::{
     page_table::{PTEFlags, PageTable, PageTableEntry},
     section::{MapPermission, MapType, Section},
 };
-use crate::config::{DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE};
+use crate::config::{DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, USER_STACK_BASE};
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::platform::MMIO;
 use crate::task::{
@@ -549,7 +549,7 @@ impl AddrSpace {
             entry = at_base;
         }
         // log::debug!("entry: {:#X}", entry);
-        (user_space, heap_start, user_stack_high, entry, auxv)
+        (user_space, heap_start, USER_STACK_BASE, entry, auxv)
     }
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)

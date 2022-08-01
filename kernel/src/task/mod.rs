@@ -19,7 +19,7 @@ pub use signal::*;
 // pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::{current_task, take_current_task};
-use crate::scheduler::{remove_from_pid2task, save_current_and_back_to_schedule, INITPROC};
+use crate::scheduler::{remove_from_tid2task, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
 
 pub fn suspend_current_and_run_next() {
@@ -44,7 +44,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // take from Processor
     let task = take_current_task().unwrap();
     // remove from pid2task
-    remove_from_pid2task(task.getpid());
+    remove_from_tid2task(task.gettid());
     // **** access current TCB exclusively
     let mut task_inner = task.acquire_inner_lock();
     // Change status to Ready

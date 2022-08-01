@@ -5,6 +5,7 @@ use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, MapPermission,
     PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
 };
+use crate::scheduler::{add_task, insert_into_pid2process};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
     pid_alloc, AuxHeader, PidHandle, SignalActions, SignalFlags, TaskControlBlock, AT_EXECFN,
@@ -69,12 +70,12 @@ impl ProcessControlBlock {
         self.inner.lock()
     }
     // only for initproc
-    pub fn new(elf_data: &[u8]) -> Self {
+    pub fn new(elf_data: &[u8]) -> Arc<Self> {
         // memory_set with elf program headers/trampoline/trap context/user stack
         let (addrspace, heap_start, _, entry_point, _) = AddrSpace::create_user_space(elf_data);
         // allocate a pid
         let pid_handle = pid_alloc();
-        let process = Self {
+        let process = Arc::new(Self {
             pid: pid_handle,
             inner: Mutex::new(ProcessControlBlockInner {
                 entry_point,
@@ -107,9 +108,30 @@ impl ProcessControlBlock {
                 signals: SignalFlags::empty(),
                 signal_actions: SignalActions::default(),
             }),
-        };
-        let main_task = TaskControlBlock::new(Arc::new(process), 0, true);
-        let trap_cx_ppn = main_task.acquire_inner_lock().trap_cx_ppn;
+        });
+        let main_task = Arc::new(TaskControlBlock::new(process.clone(), 0, true));
+        // prepare trap_cx of main thread
+        let task_inner = main_task.acquire_inner_lock();
+        let ustack_top = task_inner.res.as_ref().unwrap().ustack_top();
+        let kstack_top = main_task.kernel_stack.get_top();
+        let trap_cx = task_inner.get_trap_cx();
+        *trap_cx = TrapContext::app_init_context(
+            entry_point,
+            ustack_top,
+            kernel_token(),
+            kstack_top,
+            user_trap_handler as usize,
+            hart_id(),
+        );
+        // add main thread to the process
+        let mut process_inner = process.acquire_inner_lock();
+        process_inner.tasks.push(main_task.clone());
+
+        drop(task_inner);
+        drop(process_inner);
+        insert_into_pid2process(process.getpid(), process);
+        // add main thread to scheduler
+        add_task(main_task);
         process
     }
 
@@ -339,10 +361,17 @@ impl ProcessControlBlock {
             false,
         ));
         // modify kernel_sp in trap_cx
-        // **** access child PCB exclusively
+        let mut child_inner = child.acquire_inner_lock();
         let mut task_inner = task.acquire_inner_lock();
+        child_inner.tasks.push(task.clone());
+        drop(child_inner);
+        insert_into_pid2process(child.getpid(), child.clone());
         let trap_cx = task_inner.get_trap_cx();
         trap_cx.kernel_sp = task.kernel_stack.get_top();
+
+        drop(task_inner);
+        // add task
+        add_task(task);
         // return
         child
         // **** release child PCB

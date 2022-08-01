@@ -48,6 +48,9 @@ impl TaskControlBlockInner {
 }
 
 impl TaskControlBlock {
+    pub fn gettid(&self) -> usize {
+        self.tid.0
+    }
     pub fn acquire_inner_lock(&self) -> MutexGuard<TaskControlBlockInner> {
         self.inner.lock()
     }
