@@ -423,7 +423,7 @@ impl TaskControlBlock {
         let token = inner.get_user_token();
         // prot << 1 is equal to meaning of MapPermission
         // TODO: Real Implementation of Adjust MMap Section permission
-        let mut mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap();
+        let mut mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         log::trace!(
             "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
@@ -434,8 +434,7 @@ impl TaskControlBlock {
             mmap_perm,
             mmap_flag
         );
-        mmap_perm =
-            mmap_perm | MapPermission::U | MapPermission::W | MapPermission::R | MapPermission::X;
+        // mmap_perm = mmap_perm | MapPermission::W | MapPermission::R | MapPermission::X;
         /* mmap section */
         // need hint
         if start == 0 {
@@ -445,10 +444,7 @@ impl TaskControlBlock {
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::trace!(
-                "mmap need hint hint after map: {:#X}",
-                inner.mmap_area_hint
-            );
+            log::trace!("mmap need hint hint after map: {:#X}", inner.mmap_area_hint);
         }
         // another mmaping already exist there, but need to place the mapping at exactly that address.
         else if inner.addrspace.is_mmap_section_conflict(start, length)
