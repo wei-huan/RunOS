@@ -49,7 +49,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     let mut task_inner = task.acquire_inner_lock();
     // Change status to Ready
     task_inner.task_status = TaskStatus::Zombie;
-    // Record exit code
+    // Record exit code if main thread exit
     task_inner.exit_code = exit_code;
     // do not move to its parent but under initproc
     // ++++++ access initproc TCB exclusively
