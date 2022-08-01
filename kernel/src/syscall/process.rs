@@ -5,7 +5,7 @@ use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{
     translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
 };
-use crate::scheduler::{add_task, pid2task};
+use crate::scheduler::{add_task, pid2process};
 use crate::syscall::ESRCH;
 use crate::task::{
     exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,

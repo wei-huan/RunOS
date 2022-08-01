@@ -1,4 +1,4 @@
-use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
+use crate::config::{TRAMPOLINE};
 use crate::cpu::{current_trap_cx, current_user_token, hart_id};
 use crate::syscall::syscall;
 use crate::task::{
