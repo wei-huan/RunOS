@@ -125,7 +125,6 @@ pub fn sys_fork(
     //     log::debug!("ctid: {}", ctid);
     // }
     let new_task = current_task.fork();
-    // println!("here_1");
     if stack_ptr != 0 {
         let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
         trap_cx.set_sp(stack_ptr);

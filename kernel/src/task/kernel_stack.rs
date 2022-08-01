@@ -1,8 +1,7 @@
 use super::recycle_allocator::RecycleAllocator;
-use crate::config::{KERNEL_STACK_SIZE, PAGE_SIZE, TRAMPOLINE};
+use crate::config::{KERNEL_STACK_HIGH, KERNEL_STACK_SIZE, PAGE_SIZE};
 use crate::mm::{MapPermission, VirtAddr, KERNEL_SPACE};
 use alloc::string::ToString;
-use core::arch::asm;
 use lazy_static::*;
 use spin::Mutex;
 
@@ -12,7 +11,7 @@ lazy_static! {
 
 /// Return (bottom, top) of a kernel stack in kernel space.
 pub fn kernel_stack_position(kstack_id: usize) -> (usize, usize) {
-    let top = TRAMPOLINE - kstack_id * (KERNEL_STACK_SIZE + PAGE_SIZE);
+    let top = KERNEL_STACK_HIGH - kstack_id * (KERNEL_STACK_SIZE + PAGE_SIZE);
     let bottom = top - KERNEL_STACK_SIZE;
     (bottom, top)
 }
@@ -28,7 +27,6 @@ pub fn kstack_alloc() -> KernelStack {
         kstack_top.into(),
         MapPermission::R | MapPermission::W,
     );
-    unsafe { asm!("fence.i") }
     KernelStack(kstack_id)
 }
 

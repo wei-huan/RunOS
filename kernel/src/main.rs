@@ -1,8 +1,8 @@
 #![no_std]
 #![no_main]
+#![feature(step_trait)]
 #![feature(panic_info_message)]
 #![feature(alloc_error_handler)]
-#![feature(step_trait)]
 
 extern crate alloc;
 extern crate fdt;
@@ -36,8 +36,8 @@ mod trap;
 mod utils;
 
 // #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
-use crate::cpu::SMP_START;
 use crate::cpu::hart_id;
+use crate::cpu::SMP_START;
 // #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 use crate::owo_colors::OwoColorize;
 use core::arch::global_asm;
@@ -65,12 +65,12 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         fpu::init();
-        logo::show();
+        // logo::show();
         logger::init();
         fs::init_rootfs();
         scheduler::add_initproc();
-        logger::show_basic_info();
-        fs::list_apps();
+        // logger::show_basic_info();
+        // fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);

@@ -1,6 +1,6 @@
-// use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
+use super::process::ProcessControlBlock;
 use crate::config::{MMAP_BASE, TRAP_CONTEXT};
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
@@ -28,31 +28,18 @@ pub enum TaskStatus {
 
 pub struct TaskControlBlock {
     // immutable
-    pub pid: PidHandle,
+    pub tid: PidHandle,
     pub kernel_stack: KernelStack,
     // mutable
     inner: Mutex<TaskControlBlockInner>,
 }
 
-pub type FDTable = Vec<Option<FileDescripter>>;
 pub struct TaskControlBlockInner {
-    pub entry_point: usize, // 用户程序入口点 exec会改变
     pub trap_cx_ppn: PhysPageNum,
     pub ustack_bottom: usize,
-    pub heap_start: usize,
-    pub heap_pointer: usize,
     pub task_cx: TaskContext,
     pub task_status: TaskStatus,
-    pub addrspace: AddrSpace,
-    pub parent: Option<Weak<TaskControlBlock>>,
-    pub children: Vec<Arc<TaskControlBlock>>,
-    pub exit_code: i32,
-    pub fd_table: FDTable,
-    pub current_path: String,
-    // mmap area
-    pub mmap_area_hint: usize,
-    // signals
-    pub signals: SignalFlags,
+    pub process: Option<Weak<ProcessControlBlock>>,
     pub signal_mask: SignalFlags,
     // the signal which is being handling
     pub handling_sig: isize,
@@ -69,25 +56,11 @@ impl TaskControlBlockInner {
     pub fn get_trap_cx(&self) -> &'static mut TrapContext {
         self.trap_cx_ppn.get_mut()
     }
-    pub fn get_user_token(&self) -> usize {
-        self.addrspace.token()
-    }
     fn get_status(&self) -> TaskStatus {
         self.task_status
     }
     pub fn is_zombie(&self) -> bool {
         self.get_status() == TaskStatus::Zombie
-    }
-    pub fn alloc_fd(&mut self) -> usize {
-        if let Some(fd) = (0..self.fd_table.len()).find(|fd| self.fd_table[*fd].is_none()) {
-            fd
-        } else {
-            self.fd_table.push(None);
-            self.fd_table.len() - 1
-        }
-    }
-    pub fn get_work_path(&self) -> String {
-        self.current_path.clone()
     }
 }
 
@@ -419,8 +392,7 @@ impl TaskControlBlock {
         let mut inner = self.acquire_inner_lock();
         let token = inner.get_user_token();
         // prot << 1 is equal to meaning of MapPermission
-        // TODO: Real Implementation of Adjust MMap Section permission
-        let mut mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
+        let mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         log::trace!(
             "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
@@ -431,7 +403,6 @@ impl TaskControlBlock {
             mmap_perm,
             mmap_flag
         );
-        // mmap_perm = mmap_perm | MapPermission::W | MapPermission::R | MapPermission::X;
         /* mmap section */
         // need hint
         if start == 0 {
@@ -453,11 +424,14 @@ impl TaskControlBlock {
 
             // map mmap section at fixed place
             log::trace!("mmap at fixed place start before map: {:#X}", start);
-            inner.mmap_area_hint = inner
+            let end: usize = inner
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
-            log::debug!(
+            if end > inner.mmap_area_hint {
+                inner.mmap_area_hint = end;
+            }
+            log::trace!(
                 "mmap at fixed place hint after map: {:#X}",
                 inner.mmap_area_hint
             );
@@ -465,11 +439,13 @@ impl TaskControlBlock {
         // no conflict, just map it
         else if mmap_flag.contains(MMapFlags::MAP_FIXED) {
             log::trace!("mmap start before map: {:#X}", start);
-            // TODO mmap_area_hint new appropriate?
-            inner.mmap_area_hint = inner
+            let end: usize = inner
                 .addrspace
                 .create_mmap_section(start, length, mmap_perm)
                 .into();
+            if end > inner.mmap_area_hint {
+                inner.mmap_area_hint = end;
+            }
             log::debug!("mmap hint after map: {:#X}", inner.mmap_area_hint);
         }
         // have conflict, but can pick a new place to map

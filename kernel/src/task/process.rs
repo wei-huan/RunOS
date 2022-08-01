@@ -1,6 +1,6 @@
-// use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
+use super::TaskControlBlock;
 use crate::config::{MMAP_BASE, TRAP_CONTEXT};
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
@@ -19,64 +19,34 @@ use alloc::vec;
 use alloc::vec::Vec;
 use spin::{Mutex, MutexGuard};
 
-#[derive(Copy, Clone, PartialEq)]
-pub enum TaskStatus {
-    Ready,
-    Running,
-    Zombie,
-}
-
-pub struct TaskControlBlock {
+pub struct ProcessControlBlock {
     // immutable
     pub pid: PidHandle,
     pub kernel_stack: KernelStack,
     // mutable
-    inner: Mutex<TaskControlBlockInner>,
+    inner: Mutex<ProcessControlBlockInner>,
 }
 
 pub type FDTable = Vec<Option<FileDescripter>>;
-pub struct TaskControlBlockInner {
-    pub entry_point: usize, // 用户程序入口点 exec会改变
-    pub trap_cx_ppn: PhysPageNum,
-    pub ustack_bottom: usize,
+pub struct ProcessControlBlockInner {
+    pub entry_point: usize,
     pub heap_start: usize,
     pub heap_pointer: usize,
-    pub task_cx: TaskContext,
-    pub task_status: TaskStatus,
     pub addrspace: AddrSpace,
-    pub parent: Option<Weak<TaskControlBlock>>,
-    pub children: Vec<Arc<TaskControlBlock>>,
+    pub parent: Option<Weak<ProcessControlBlock>>,
+    pub children: Vec<Arc<ProcessControlBlock>>,
+    pub tasks: Vec<Arc<TaskControlBlock>>,
     pub exit_code: i32,
     pub fd_table: FDTable,
     pub current_path: String,
-    // mmap area
     pub mmap_area_hint: usize,
-    // signals
     pub signals: SignalFlags,
-    pub signal_mask: SignalFlags,
-    // the signal which is being handling
-    pub handling_sig: isize,
-    // Signal actions
     pub signal_actions: SignalActions,
-    // if the task is killed
-    pub killed: bool,
-    // if the task is frozen by a signal
-    pub frozen: bool,
-    pub trap_ctx_backup: Option<TrapContext>,
 }
 
-impl TaskControlBlockInner {
-    pub fn get_trap_cx(&self) -> &'static mut TrapContext {
-        self.trap_cx_ppn.get_mut()
-    }
+impl ProcessControlBlockInner {
     pub fn get_user_token(&self) -> usize {
         self.addrspace.token()
-    }
-    fn get_status(&self) -> TaskStatus {
-        self.task_status
-    }
-    pub fn is_zombie(&self) -> bool {
-        self.get_status() == TaskStatus::Zombie
     }
     pub fn alloc_fd(&mut self) -> usize {
         if let Some(fd) = (0..self.fd_table.len()).find(|fd| self.fd_table[*fd].is_none()) {
@@ -91,8 +61,8 @@ impl TaskControlBlockInner {
     }
 }
 
-impl TaskControlBlock {
-    pub fn acquire_inner_lock(&self) -> MutexGuard<TaskControlBlockInner> {
+impl ProcessControlBlock {
+    pub fn acquire_inner_lock(&self) -> MutexGuard<ProcessControlBlockInner> {
         self.inner.lock()
     }
     // only for initproc
@@ -111,17 +81,14 @@ impl TaskControlBlock {
         let task = Self {
             pid: pid_handle,
             kernel_stack,
-            inner: Mutex::new(TaskControlBlockInner {
+            inner: Mutex::new(ProcessControlBlockInner {
                 entry_point,
-                trap_cx_ppn,
-                ustack_bottom: ustack_base,
                 heap_start,
                 heap_pointer: heap_start,
-                task_cx: TaskContext::goto_trap_return(kernel_stack_top),
-                task_status: TaskStatus::Ready,
                 addrspace,
                 parent: None,
                 children: Vec::new(),
+                tasks: Vec::new(),
                 exit_code: 0,
                 fd_table: vec![
                     // 0 -> stdin
@@ -143,24 +110,9 @@ impl TaskControlBlock {
                 current_path: String::from("/"),
                 mmap_area_hint: MMAP_BASE,
                 signals: SignalFlags::empty(),
-                signal_mask: SignalFlags::empty(),
-                handling_sig: -1,
                 signal_actions: SignalActions::default(),
-                killed: false,
-                frozen: false,
-                trap_ctx_backup: None,
             }),
         };
-        // prepare TrapContext in user space
-        let trap_cx = task.acquire_inner_lock().get_trap_cx();
-        *trap_cx = TrapContext::app_init_context(
-            entry_point,
-            ustack_base,
-            kernel_token(),
-            kernel_stack_top,
-            user_trap_handler as usize,
-            hart_id(),
-        );
         task
     }
     pub fn exec(self: &Arc<Self>, elf_data: &[u8], args: Vec<String>) {
@@ -173,7 +125,7 @@ impl TaskControlBlock {
             .unwrap()
             .ppn();
 
-        ////////////// envp[] ///////////////////
+        ////////////// *envp[] ///////////////////
         let mut env: Vec<String> = Vec::new();
         env.push(String::from("SHELL=/user_shell"));
         env.push(String::from("PWD=/"));
@@ -209,7 +161,7 @@ impl TaskControlBlock {
         // make the user_sp aligned to 8B for k210 platform
         user_sp -= user_sp % core::mem::size_of::<usize>();
 
-        ////////////// argv[] ///////////////////
+        ////////////// *argv[] ///////////////////
         let mut argv: Vec<usize> = (0..=args.len()).collect();
         argv[args.len()] = 0;
         for i in 0..args.len() {
@@ -228,7 +180,7 @@ impl TaskControlBlock {
         // make the user_sp aligned to 8B for k210 platform
         user_sp -= user_sp % core::mem::size_of::<usize>();
 
-        ////////////// platform String ///////////////////
+        ////////////// *platform String ///////////////////
         let platform = "RISC-V64";
         user_sp -= platform.len() + 1;
         user_sp -= user_sp % core::mem::size_of::<usize>();
@@ -239,7 +191,7 @@ impl TaskControlBlock {
         }
         *translated_refmut(token, p as *mut u8) = 0;
 
-        ////////////// rand bytes ///////////////////
+        ////////////// *rand bytes ///////////////////
         user_sp -= 16;
         p = user_sp;
         auxv.push(AuxHeader {
@@ -251,10 +203,10 @@ impl TaskControlBlock {
             p += 1;
         }
 
-        ////////////// padding //////////////////////
+        ////////////// *padding //////////////////////
         user_sp -= user_sp % 16;
 
-        ////////////// auxv[] //////////////////////
+        ////////////// *auxv[] //////////////////////
         auxv.push(AuxHeader {
             aux_type: AT_EXECFN,
             value: argv[0],
@@ -302,7 +254,7 @@ impl TaskControlBlock {
             ) = argv[i];
         }
 
-        ////////////// argc //////////////////////
+        ////////////// *argc //////////////////////
         user_sp -= core::mem::size_of::<usize>();
         *translated_refmut(token, user_sp as *mut usize) = args.len();
 
@@ -312,8 +264,6 @@ impl TaskControlBlock {
         inner.entry_point = entry_point;
         // substitute addrspace
         inner.addrspace = addrspace;
-        // update trap_cx ppn
-        inner.trap_cx_ppn = trap_cx_ppn;
         // update heap_start
         inner.heap_start = heap_start;
         // update heap_pointer
@@ -334,7 +284,7 @@ impl TaskControlBlock {
         trap_cx.x[13] = auxv_base;
         *inner.get_trap_cx() = trap_cx;
     }
-    pub fn fork(self: &Arc<TaskControlBlock>) -> Arc<TaskControlBlock> {
+    pub fn fork(self: &Arc<ProcessControlBlock>) -> Arc<ProcessControlBlock> {
         // ---- hold parent PCB lock
         let mut parent_inner = self.acquire_inner_lock();
         // copy user space(include trap context)
@@ -356,17 +306,13 @@ impl TaskControlBlock {
                 new_fd_table.push(None);
             }
         }
-        let task_control_block = Arc::new(TaskControlBlock {
+        let task_control_block = Arc::new(ProcessControlBlock {
             pid: pid_handle,
             kernel_stack,
-            inner: Mutex::new(TaskControlBlockInner {
+            inner: Mutex::new(ProcessControlBlockInner {
                 entry_point: parent_inner.entry_point,
-                trap_cx_ppn,
-                ustack_bottom: parent_inner.ustack_bottom,
                 heap_start: parent_inner.heap_start,
                 heap_pointer: parent_inner.heap_pointer,
-                task_cx: TaskContext::goto_trap_return(kernel_stack_top),
-                task_status: TaskStatus::Ready,
                 addrspace,
                 parent: Some(Arc::downgrade(self)),
                 children: Vec::new(),
@@ -374,14 +320,9 @@ impl TaskControlBlock {
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_hint: parent_inner.mmap_area_hint,
+                // inherit the signals and signal_action
                 signals: SignalFlags::empty(),
-                // inherit the signal_mask and signal_action
-                signal_mask: parent_inner.signal_mask,
-                handling_sig: -1,
                 signal_actions: parent_inner.signal_actions.clone(),
-                killed: false,
-                frozen: false,
-                trap_ctx_backup: None,
             }),
         });
         // add child
@@ -398,7 +339,7 @@ impl TaskControlBlock {
     pub fn getpid(&self) -> usize {
         self.pid.0
     }
-    pub fn get_parent(&self) -> Option<Arc<TaskControlBlock>> {
+    pub fn get_parent(&self) -> Option<Arc<ProcessControlBlock>> {
         let inner = self.acquire_inner_lock();
         inner.parent.as_ref().unwrap().upgrade()
     }
