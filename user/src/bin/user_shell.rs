@@ -145,7 +145,7 @@
 //     dynamic_tests.push("clock_gettime\0");
 //     dynamic_tests.push("crypt\0");
 //     dynamic_tests.push("dirname\0");
-//     // dynamic_tests.push("dlopen\0");
+//     dynamic_tests.push("dlopen\0");
 //     dynamic_tests.push("env\0");
 //     dynamic_tests.push("fdopen\0");
 //     dynamic_tests.push("fnmatch\0");

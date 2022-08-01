@@ -75,7 +75,7 @@ impl Scheduler for RoundRobinScheduler {
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        let (i, selected) = self
+        let (_, selected) = self
             .ready_queues
             .iter()
             .enumerate()

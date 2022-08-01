@@ -1,7 +1,7 @@
 use super::{
     address::{PhysAddr, VirtAddr, VirtPageNum},
     page_table::{PTEFlags, PageTable, PageTableEntry},
-    section::{MapType, MapPermission, Section},
+    section::{MapPermission, MapType, Section},
 };
 use crate::config::{
     DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH,
@@ -143,16 +143,61 @@ impl AddrSpace {
         }
         self.mmap_sections.push(section);
     }
-    pub fn is_mmap_section_exist(&self, start_vpn: VirtPageNum) -> bool {
-        if let Some(_) = self
-            .mmap_sections
-            .iter()
-            .enumerate()
-            .find(|(_, section)| section.vpn_range.is_cover(start_vpn))
-        {
+    pub fn is_mmap_section_conflict(&self, start: usize, len: usize) -> bool {
+        let left_vpn = VirtAddr::from(start).floor();
+        let right_vpn = VirtAddr::from(start + len).ceil();
+        if let Some(_) = self.mmap_sections.iter().find(|section| {
+            section.vpn_range.is_left_cover(left_vpn, right_vpn)
+                || section.vpn_range.is_right_cover(left_vpn, right_vpn)
+                || section.vpn_range.is_full_cover(left_vpn, right_vpn)
+                || section.vpn_range.is_be_covered(left_vpn, right_vpn)
+        }) {
             return true;
         }
         return false;
+    }
+    pub fn fix_mmap_section_conflict(&mut self, start: usize, len: usize) {
+        let left_vpn = VirtAddr::from(start).floor();
+        let right_vpn = VirtAddr::from(start + len).ceil();
+        println!(
+            "fix_mmap_section_conflict left: {:?}, right: {:?}",
+            left_vpn, right_vpn
+        );
+        let mut need_remove: Vec<usize> = Vec::new();
+        let mut new_mmap_sections: Vec<Section> = Vec::new();
+        for (index, section) in self.mmap_sections.iter_mut().enumerate() {
+            println!(
+                "fix_mmap_section_conflict mmap_section left: {:?}, right: {:?}",
+                section.vpn_range.get_start(),
+                section.vpn_range.get_end()
+            );
+            // delete section
+            if section.vpn_range.is_be_covered(left_vpn, right_vpn) {
+                need_remove.push(index);
+            }
+            // truncate section right part
+            else if section.vpn_range.is_left_cover(left_vpn, right_vpn) {
+                section.modify_section_end(&mut self.page_table, left_vpn);
+            }
+            // truncate section left part
+            else if section.vpn_range.is_right_cover(left_vpn, right_vpn) {
+                section.modify_section_start(&mut self.page_table, right_vpn);
+            }
+            // full_cover divide section to two parts
+            else if section.vpn_range.is_be_covered(left_vpn, right_vpn) {
+                let (new_left, new_right) =
+                    section.divide_into_two(&mut self.page_table, left_vpn, right_vpn);
+                need_remove.push(index);
+                new_mmap_sections.push(new_left);
+                new_mmap_sections.push(new_right);
+            } else {
+                // no conflict
+            }
+        }
+        for i in need_remove {
+            self.mmap_sections.remove(i);
+        }
+        self.mmap_sections.append(&mut new_mmap_sections);
     }
     fn push_section_with_offset(
         &mut self,
@@ -356,7 +401,7 @@ impl AddrSpace {
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
             let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-            let name = sect.get_name(&elf).unwrap();
+            // let name = sect.get_name(&elf).unwrap();
             // log::debug!(
             //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
             //     name,
