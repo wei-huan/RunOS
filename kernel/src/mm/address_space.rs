@@ -709,6 +709,13 @@ impl AddrSpace {
         self.insert_mmap_area(".mmap".to_string(), start_va, end_va, permission);
         end_va
     }
+    pub fn set_pte_flags(&self, vpn: VirtPageNum, flags: PTEFlags) -> isize {
+        if self.page_table.set_pte_flags(vpn, flags).is_some() {
+            0
+        } else {
+            -1
+        }
+    }
 }
 
 #[allow(unused)]
