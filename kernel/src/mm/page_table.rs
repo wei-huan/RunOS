@@ -138,7 +138,7 @@ impl PageTable {
             }
             *pte = PageTableEntry::new(pte.ppn(), pte.rsw(), cur_flags);
         }
-        log::warn!("set_pte_flags function not found pte in page table");
+        log::trace!("set_pte_flags function not found pte in page table");
     }
     /// Temporarily used to get arguments from user space.
     pub fn from_token(satp: usize) -> Self {

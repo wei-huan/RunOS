@@ -534,7 +534,7 @@ pub fn sys_sigaction(
 
 pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
-    log::debug!("sys_mprotect addr: {:#X} len: {:#X} flags: {:?}", addr, len, flags);
+    log::trace!("sys_mprotect addr: {:#X} len: {:#X} flags: {:?}", addr, len, flags);
     let start = VirtPageNum::from(VirtAddr::from(addr).floor());
     let end = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
     let task = current_task().unwrap();
