@@ -38,5 +38,15 @@ pub fn current_task() -> Option<Arc<TaskControlBlock>> {
 }
 
 pub fn current_process() -> Option<Arc<ProcessControlBlock>> {
-    take_my_cpu().current()
+    current_task().unwrap().process.upgrade()
+}
+
+pub fn current_trap_cx_user_va() -> usize {
+    current_task()
+        .unwrap()
+        .acquire_inner_lock()
+        .res
+        .as_ref()
+        .unwrap()
+        .trap_cx_user_va()
 }

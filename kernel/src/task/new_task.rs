@@ -3,6 +3,7 @@ use super::process::ProcessControlBlock;
 use crate::mm::PhysPageNum;
 use crate::task::{kstack_alloc, tid_alloc, Arc, KernelStack, SignalFlags, TaskUserRes, TidHandle};
 use crate::trap::TrapContext;
+use alloc::sync::Weak;
 use spin::{Mutex, MutexGuard};
 
 #[derive(Copy, Clone, PartialEq)]
@@ -15,6 +16,7 @@ pub enum TaskStatus {
 pub struct TaskControlBlock {
     // immutable
     pub tid: TidHandle,
+    pub process: Weak<ProcessControlBlock>,
     pub kernel_stack: KernelStack,
     // mutable
     inner: Mutex<TaskControlBlockInner>,
@@ -25,6 +27,7 @@ pub struct TaskControlBlockInner {
     pub task_cx: TaskContext,
     pub trap_cx_ppn: PhysPageNum,
     pub task_status: TaskStatus,
+    pub signals: SignalFlags,
     pub signal_mask: SignalFlags,
     // the signal which is being handling
     pub handling_sig: isize,
@@ -45,6 +48,9 @@ impl TaskControlBlockInner {
     pub fn is_zombie(&self) -> bool {
         self.get_status() == TaskStatus::Zombie
     }
+    pub fn get_lid(&self) -> usize {
+        self.res.as_ref().unwrap().lid
+    }
 }
 
 impl TaskControlBlock {
@@ -57,18 +63,20 @@ impl TaskControlBlock {
     // only for initproc
     pub fn new(process: Arc<ProcessControlBlock>, lid: usize, is_alloc_user_res: bool) -> Self {
         let tid_handle = tid_alloc();
-        let res = TaskUserRes::new(process, lid, is_alloc_user_res);
+        let res = TaskUserRes::new(process.clone(), lid, is_alloc_user_res);
         let trap_cx_ppn = res.trap_cx_ppn();
         let kernel_stack = kstack_alloc();
         let kernel_stack_top = kernel_stack.get_top();
         let task = Self {
             tid: tid_handle,
             kernel_stack,
+            process: Arc::downgrade(&process),
             inner: Mutex::new(TaskControlBlockInner {
                 res: Some(res),
                 trap_cx_ppn,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
+                signals: SignalFlags::empty(),
                 signal_mask: SignalFlags::empty(),
                 handling_sig: -1,
                 killed: false,

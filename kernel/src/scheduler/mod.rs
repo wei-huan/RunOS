@@ -55,7 +55,7 @@ pub fn insert_into_pid2process(pid: usize, process: Arc<ProcessControlBlock>) {
     PID2PCB.lock().insert(pid, process);
 }
 
-pub fn remove_from_pid2task(pid: usize) {
+pub fn remove_from_pid2process(pid: usize) {
     let mut map = PID2PCB.lock();
     if map.remove(&pid).is_none() {
         panic!("cannot find pid {} in pid2process!", pid);

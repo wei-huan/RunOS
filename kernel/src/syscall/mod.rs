@@ -58,6 +58,7 @@ const SYSCALL_CLOCK_GETTIME: usize = 113;
 const SYSCALL_SYSLOG: usize = 116;
 const SYSCALL_SCHED_YIELD: usize = 124;
 const SYSCALL_KILL: usize = 129;
+const SYSCALL_TKILL: usize = 130;
 const SYSCALL_SIGACTION: usize = 134;
 const SYSCALL_SIGPROCMASK: usize = 135;
 const SYSCALL_RT_SIGTIMEDWAIT: usize = 137;
@@ -160,6 +161,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
         SYSCALL_KILL => sys_kill(args[0], args[1] as i32),
+        SYSCALL_TKILL => sys_tkill(args[0], args[1] as _),
         SYSCALL_SIGACTION => sys_sigaction(
             args[0] as i32,
             args[1] as *const SignalAction,

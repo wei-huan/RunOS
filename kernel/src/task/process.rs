@@ -3,12 +3,12 @@ use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, MapPermission,
-    PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
+    UserBuffer, VirtAddr, KERNEL_SPACE,
 };
 use crate::scheduler::{add_task, insert_into_pid2process};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, SignalFlags, TaskControlBlock, AT_EXECFN,
+    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN,
     AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
@@ -28,6 +28,7 @@ pub struct ProcessControlBlock {
 pub type FDTable = Vec<Option<FileDescripter>>;
 pub struct ProcessControlBlockInner {
     pub entry_point: usize,
+    pub is_zombie: bool,
     pub addrspace: AddrSpace,
     pub parent: Option<Weak<ProcessControlBlock>>,
     pub children: Vec<Arc<ProcessControlBlock>>,
@@ -38,11 +39,13 @@ pub struct ProcessControlBlockInner {
     pub heap_start: usize,
     pub heap_pointer: usize,
     pub mmap_area_hint: usize,
-    pub signals: SignalFlags,
     pub signal_actions: SignalActions,
 }
 
 impl ProcessControlBlockInner {
+    pub fn is_zombie(&self) -> bool {
+        self.is_zombie
+    }
     pub fn get_user_token(&self) -> usize {
         self.addrspace.token()
     }
@@ -61,7 +64,7 @@ impl ProcessControlBlockInner {
         self.tasks.len()
     }
     pub fn get_task(&self, lid: usize) -> Arc<TaskControlBlock> {
-        self.tasks[lid]
+        self.tasks[lid].clone()
     }
 }
 
@@ -79,6 +82,7 @@ impl ProcessControlBlock {
             pid: pid_handle,
             inner: Mutex::new(ProcessControlBlockInner {
                 entry_point,
+                is_zombie: false,
                 heap_start,
                 heap_pointer: heap_start,
                 addrspace,
@@ -105,7 +109,6 @@ impl ProcessControlBlock {
                 ],
                 current_path: String::from("/"),
                 mmap_area_hint: MMAP_BASE,
-                signals: SignalFlags::empty(),
                 signal_actions: SignalActions::default(),
             }),
         });
@@ -129,7 +132,7 @@ impl ProcessControlBlock {
 
         drop(task_inner);
         drop(process_inner);
-        insert_into_pid2process(process.getpid(), process);
+        insert_into_pid2process(process.getpid(), process.clone());
         // add main thread to scheduler
         add_task(main_task);
         process
@@ -147,7 +150,7 @@ impl ProcessControlBlock {
             AddrSpace::create_user_space(elf_data);
         let token = addrspace.token();
         // **** access current TCB exclusively
-        let process_inner = self.acquire_inner_lock();
+        let mut process_inner = self.acquire_inner_lock();
         // set new entry_point
         process_inner.entry_point = entry_point;
         // substitute addrspace
@@ -160,8 +163,8 @@ impl ProcessControlBlock {
         process_inner.mmap_area_hint = MMAP_BASE;
 
         let task = process_inner.get_task(0);
-        let mut task_inner = task.acquire_inner_lock();
-        let user_sp = task_inner.res.unwrap().ustack_top();
+        let task_inner = task.acquire_inner_lock();
+        let mut user_sp = task_inner.res.as_ref().unwrap().ustack_top();
 
         ////////////// *envp[] ///////////////////
         let mut env: Vec<String> = Vec::new();
@@ -336,6 +339,7 @@ impl ProcessControlBlock {
             inner: Mutex::new(ProcessControlBlockInner {
                 entry_point: parent_inner.entry_point,
                 heap_start: parent_inner.heap_start,
+                is_zombie: parent_inner.is_zombie,
                 heap_pointer: parent_inner.heap_pointer,
                 addrspace,
                 parent: Some(Arc::downgrade(self)),
@@ -345,8 +349,7 @@ impl ProcessControlBlock {
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_hint: parent_inner.mmap_area_hint,
-                signals: SignalFlags::empty(),
-                // inherit the signals and signal_action
+                // inherit the signal_action
                 signal_actions: parent_inner.signal_actions.clone(),
             }),
         });
@@ -362,7 +365,7 @@ impl ProcessControlBlock {
         ));
         // modify kernel_sp in trap_cx
         let mut child_inner = child.acquire_inner_lock();
-        let mut task_inner = task.acquire_inner_lock();
+        let task_inner = task.acquire_inner_lock();
         child_inner.tasks.push(task.clone());
         drop(child_inner);
         insert_into_pid2process(child.getpid(), child.clone());
@@ -370,7 +373,7 @@ impl ProcessControlBlock {
         trap_cx.kernel_sp = task.kernel_stack.get_top();
 
         drop(task_inner);
-        // add task
+        // add new task to scheduler
         add_task(task);
         // return
         child
