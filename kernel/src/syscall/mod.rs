@@ -210,7 +210,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[4] as isize,
             args[5] as usize,
         ),
-        SYSCALL_MPROTECT => 0,
+        SYSCALL_MPROTECT => sys_mprotect(args[0], args[1], args[2]),
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
         SYSCALL_PRLIMIT => sys_prlimit(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
         SYSCALL_MEMBARRIER => 0,

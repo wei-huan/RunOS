@@ -534,15 +534,13 @@ pub fn sys_sigaction(
 
 pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
-    log::debug!("sys_mprotect addr: {:#X} flags: {:?}", addr, flags);
+    log::debug!("sys_mprotect addr: {:#X} len: {:#X} flags: {:?}", addr, len, flags);
     let start = VirtPageNum::from(VirtAddr::from(addr).floor());
     let end = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     for vpn in start..end {
-        if inner.addrspace.set_pte_flags(vpn, flags) != 0 {
-            panic!("sys_mprotect no pte found");
-        }
+        inner.addrspace.set_pte_flags(vpn, flags);
     }
     0
 }
