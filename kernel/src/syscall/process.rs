@@ -2,7 +2,9 @@ use crate::config::page_aligned_up;
 use crate::cpu::{current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
-use crate::mm::{translated_ref, translated_refmut, translated_str, VirtAddr, VirtPageNum};
+use crate::mm::{
+    translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
+};
 use crate::scheduler::{add_task, pid2task};
 use crate::syscall::ESRCH;
 use crate::task::{
@@ -528,4 +530,19 @@ pub fn sys_sigaction(
         }
     }
     -1
+}
+
+pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
+    let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
+    log::debug!("sys_mprotect addr: {:#X} flags: {:?}", addr, flags);
+    let start = VirtPageNum::from(VirtAddr::from(addr).floor());
+    let end = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
+    let task = current_task().unwrap();
+    let mut inner = task.acquire_inner_lock();
+    for vpn in start..end {
+        if inner.addrspace.set_pte_flags(vpn, flags) != 0 {
+            panic!("sys_mprotect no pte found");
+        }
+    }
+    0
 }

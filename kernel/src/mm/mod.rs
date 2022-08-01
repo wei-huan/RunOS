@@ -13,7 +13,7 @@ pub use heap::{heap_test, init_heap, whereis_heap};
 pub use mmap::{MMapFlags, MMapProts};
 pub use page_table::{
     translated_array_copy, translated_byte_buffer, translated_ref, translated_refmut,
-    translated_str, PageTable, PageTableEntry, UserBuffer,
+    translated_str, PTEFlags, PageTable, PageTableEntry, UserBuffer,
 };
 pub use section::MapPermission;
 
