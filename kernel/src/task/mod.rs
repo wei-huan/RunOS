@@ -16,11 +16,8 @@ pub use pid::{pid_alloc, PidHandle};
 pub use signal::*;
 pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
-use crate::cpu::{current_task, hart_id, take_current_task};
-use crate::scheduler::{
-    add_task, add_task2designate_ready_queue, remove_from_pid2task,
-    save_current_and_back_to_schedule, INITPROC,
-};
+use crate::cpu::{current_task, take_current_task};
+use crate::scheduler::{remove_from_pid2task, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
 
 pub fn suspend_current_and_run_next() {
