@@ -15,8 +15,8 @@ pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
 pub const BOOT_STACK_SIZE: usize = PAGE_SIZE * 4; // 16 KB
 
 // User Address Space
-pub const TRAP_CONTEXT: usize = TRAMPOLINE - PAGE_SIZE;
-pub const USER_STACK_BASE: usize = TRAP_CONTEXT - PAGE_SIZE; // omit a page as guard page, and stack grow down, so stack base address is high end
+pub const TRAP_CONTEXT_BASE: usize = TRAMPOLINE - PAGE_SIZE;
+pub const USER_STACK_BASE: usize = 0xFFFFFFD000000000; // stack grow down, so stack base address is high end
 pub const USER_STACK_SIZE: usize = PAGE_SIZE * 8;
 pub const MMAP_BASE: usize = 0x10_0000_0000; // 0xFFFFFFC000000000;
 pub const DLL_LOADER_BASE: usize = 0x30_0000_0000; // dynamic link library loader base address
