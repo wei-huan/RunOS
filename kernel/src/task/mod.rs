@@ -1,6 +1,7 @@
 mod action;
 mod aux;
 mod context;
+mod id;
 mod idle_task;
 mod kernel_stack;
 mod new_task;
