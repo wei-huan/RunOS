@@ -1,7 +1,6 @@
 // use super::signal::SignalFlags;
 use super::context::TaskContext;
-use super::kernel_stack::{kstack_alloc, KernelStack};
-use crate::config::{MMAP_BASE, TRAP_CONTEXT};
+use crate::config::MMAP_BASE;
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
@@ -10,7 +9,8 @@ use crate::mm::{
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, SignalFlags, AT_EXECFN, AT_NULL, AT_RANDOM,
+    kstack_alloc, pid_alloc, AuxHeader, KernelStack, PidHandle, SignalActions, SignalFlags,
+    AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;

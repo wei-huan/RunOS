@@ -1,7 +1,4 @@
-use super::context::TaskContext;
-use super::kernel_stack::{kstack_alloc, KernelStack};
-use super::TaskControlBlock;
-use crate::config::{MMAP_BASE, TRAP_CONTEXT};
+use crate::config::MMAP_BASE;
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
@@ -10,7 +7,8 @@ use crate::mm::{
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, SignalFlags, AT_EXECFN, AT_NULL, AT_RANDOM,
+    pid_alloc, AuxHeader, PidHandle, SignalActions, SignalFlags, TaskControlBlock, AT_EXECFN,
+    AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
@@ -22,7 +20,6 @@ use spin::{Mutex, MutexGuard};
 pub struct ProcessControlBlock {
     // immutable
     pub pid: PidHandle,
-    pub kernel_stack: KernelStack,
     // mutable
     inner: Mutex<ProcessControlBlockInner>,
 }
@@ -59,6 +56,9 @@ impl ProcessControlBlockInner {
     pub fn get_work_path(&self) -> String {
         self.current_path.clone()
     }
+    pub fn thread_count(&self) -> usize {
+        self.tasks.len()
+    }
 }
 
 impl ProcessControlBlock {
@@ -68,19 +68,11 @@ impl ProcessControlBlock {
     // only for initproc
     pub fn new(elf_data: &[u8]) -> Self {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, heap_start, ustack_base, entry_point, _) =
-            AddrSpace::create_user_space(elf_data);
-        let trap_cx_ppn = addrspace
-            .translate(VirtAddr::from(TRAP_CONTEXT).into())
-            .unwrap()
-            .ppn();
+        let (addrspace, heap_start, _, entry_point, _) = AddrSpace::create_user_space(elf_data);
         // allocate a pid
         let pid_handle = pid_alloc();
-        let kernel_stack = kstack_alloc();
-        let kernel_stack_top = kernel_stack.get_top();
-        let task = Self {
+        let process = Self {
             pid: pid_handle,
-            kernel_stack,
             inner: Mutex::new(ProcessControlBlockInner {
                 entry_point,
                 heap_start,
@@ -113,9 +105,12 @@ impl ProcessControlBlock {
                 signal_actions: SignalActions::default(),
             }),
         };
-        task
+        let main_task = TaskControlBlock::new(Arc::new(process), 0, true);
+        let trap_cx_ppn = main_task.acquire_inner_lock().trap_cx_ppn;
+        process
     }
     pub fn exec(self: &Arc<Self>, elf_data: &[u8], args: Vec<String>) {
+        // assert_eq!(self.acquire_inner_lock().thread_count(), 1, "process can't execve with multithread");
         // memory_set with elf program headers/trampoline/trap context/user stack
         let (addrspace, heap_start, mut user_sp, entry_point, mut auxv) =
             AddrSpace::create_user_space(elf_data);
@@ -308,7 +303,6 @@ impl ProcessControlBlock {
         }
         let task_control_block = Arc::new(ProcessControlBlock {
             pid: pid_handle,
-            kernel_stack,
             inner: Mutex::new(ProcessControlBlockInner {
                 entry_point: parent_inner.entry_point,
                 heap_start: parent_inner.heap_start,
@@ -360,8 +354,7 @@ impl ProcessControlBlock {
         let mut inner = self.acquire_inner_lock();
         let token = inner.get_user_token();
         // prot << 1 is equal to meaning of MapPermission
-        // TODO: Real Implementation of Adjust MMap Section permission
-        let mut mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
+        let mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         log::trace!(
             "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
@@ -372,7 +365,6 @@ impl ProcessControlBlock {
             mmap_perm,
             mmap_flag
         );
-        // mmap_perm = mmap_perm | MapPermission::W | MapPermission::R | MapPermission::X;
         /* mmap section */
         // need hint
         if start == 0 {

@@ -3,21 +3,20 @@ mod aux;
 mod context;
 mod id;
 mod idle_task;
-mod kernel_stack;
 mod new_task;
-mod pid;
 mod process;
-mod recycle_allocator;
 mod signal;
-mod task;
+// mod task;
 
 pub use action::*;
 pub use aux::*;
 pub use context::TaskContext;
+pub use id::*;
 pub use idle_task::{idle_task, TIME_TO_SCHEDULE};
-pub use pid::{pid_alloc, PidHandle};
+pub use new_task::*;
+pub use process::*;
 pub use signal::*;
-pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
+// pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::{current_task, take_current_task};
 use crate::scheduler::{remove_from_pid2task, save_current_and_back_to_schedule, INITPROC};
