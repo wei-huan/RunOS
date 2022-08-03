@@ -107,15 +107,19 @@ pub fn sys_gettid() -> isize {
 // 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
 pub fn sys_fork(
-    _flags: usize,
+    flags: usize,
     stack_ptr: usize,
     ptid_ptr: *const u32,
-    _newtls: usize,
+    newtls: usize,
     ctid_ptr: *const u32,
 ) -> isize {
     let current_process = current_process().unwrap();
     let token = current_user_token();
-    log::debug!("sys_fork ptid: {}, ctid: {}", ptid_ptr as usize, ctid_ptr as usize);
+    log::debug!(
+        "sys_fork ptid: {}, ctid: {}",
+        ptid_ptr as usize,
+        ctid_ptr as usize
+    );
     // if ptid_ptr as usize != 0 {
     //     let ptid = *translated_ref(token, ptid_ptr);
     //     log::debug!("ptid: {}", ptid);
@@ -137,8 +141,8 @@ pub fn sys_fork(
     // for child process, fork returns 0
     trap_cx.x[10] = 0;
     // let child process run first
-    // suspend_current_and_run_next();
-    println!("here_5");
+    suspend_current_and_run_next();
+    // println!("here_5");
     new_pid as isize
 }
 
@@ -180,19 +184,18 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         }
     }
     let current_process = current_process().unwrap();
-    let process_inner = current_process.acquire_inner_lock();
+    let cwd = current_process.acquire_inner_lock().current_path.clone();
     if let Some(app_inode) = open(
-        process_inner.current_path.as_str(),
+        cwd.as_str(),
         path.as_str(),
         OpenFlags::RDONLY,
         DiskInodeType::File,
     ) {
-        drop(process_inner);
         let all_data = app_inode.read_all();
         let argc = args_vec.len();
-        log::debug!("before current_process.exec");
+        // log::debug!("before current_process.exec");
         current_process.exec(all_data.as_slice(), args_vec);
-        log::debug!("after task.exec, now return");
+        // log::debug!("after task.exec, now return");
         argc as isize
     } else {
         -1

@@ -33,6 +33,7 @@ pub fn suspend_current_and_run_next() {
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
     drop(task_inner);
+    drop(task);
     // push back to ready queue.
     // add_task(task);
     // jump to scheduling cycle

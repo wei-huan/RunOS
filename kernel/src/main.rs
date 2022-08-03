@@ -111,10 +111,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         timer::init();
         // SMP_START will turn to true in this function
         cpu::boot_all_harts(hartid);
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Main Hart {} successfully booted", hart_id()).green()
-        // );
+        log::info!(
+            "{}",
+            alloc::format!("Main Hart {} successfully booted", hart_id()).green()
+        );
         scheduler::schedule();
     } else {
         trap::init();

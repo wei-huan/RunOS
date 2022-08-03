@@ -3,13 +3,12 @@ use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, MapPermission,
-    UserBuffer, VirtAddr, KERNEL_SPACE,
+    UserBuffer, VirtAddr,
 };
-use crate::scheduler::{add_task, insert_into_pid2process};
+use crate::scheduler::{add_task, insert_into_pid2process, insert_into_tid2task};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN,
-    AT_NULL, AT_RANDOM,
+    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
@@ -113,6 +112,7 @@ impl ProcessControlBlock {
             }),
         });
         let main_task = Arc::new(TaskControlBlock::new(process.clone(), 0, true));
+        insert_into_tid2task(main_task.gettid(), main_task.clone());
         // prepare trap_cx of main thread
         let task_inner = main_task.acquire_inner_lock();
         let ustack_top = task_inner.res.as_ref().unwrap().ustack_top();
@@ -149,7 +149,7 @@ impl ProcessControlBlock {
         let (addrspace, heap_start, _, entry_point, mut auxv) =
             AddrSpace::create_user_space(elf_data);
         let token = addrspace.token();
-        // **** access current TCB exclusively
+        // **** access current PCB exclusively
         let mut process_inner = self.acquire_inner_lock();
         // set new entry_point
         process_inner.entry_point = entry_point;
@@ -161,9 +161,12 @@ impl ProcessControlBlock {
         process_inner.heap_pointer = heap_start;
         // update mmap hint
         process_inner.mmap_area_hint = MMAP_BASE;
-
+        // get main task and allocate user resource
         let task = process_inner.get_task(0);
-        let task_inner = task.acquire_inner_lock();
+        drop(process_inner);
+
+        let mut task_inner = task.acquire_inner_lock();
+        task_inner.res.as_mut().unwrap().alloc_user_res();
         let mut user_sp = task_inner.res.as_ref().unwrap().ustack_top();
 
         ////////////// *envp[] ///////////////////
@@ -207,19 +210,18 @@ impl ProcessControlBlock {
         argv[args.len()] = 0;
         for i in 0..args.len() {
             user_sp -= args[i].len() + 1;
-            // println!("user_sp {:X}", user_sp);
             argv[i] = user_sp;
             let mut p = user_sp;
             // write chars to [user_sp, user_sp + len]
             for c in args[i].as_bytes() {
                 *translated_refmut(token, p as *mut u8) = *c;
-                // print!("({})",*c as char);
                 p += 1;
             }
             *translated_refmut(token, p as *mut u8) = 0;
         }
         // make the user_sp aligned to 8B for k210 platform
         user_sp -= user_sp % core::mem::size_of::<usize>();
+        // println!("user_sp {:X}", user_sp);
 
         ////////////// *platform String ///////////////////
         let platform = "RISC-V64";
@@ -258,9 +260,7 @@ impl ProcessControlBlock {
         }); // end
         user_sp -= auxv.len() * core::mem::size_of::<AuxHeader>();
         let auxv_base = user_sp;
-        // println!("[auxv]: base 0x{:X}", auxv_base);
         for i in 0..auxv.len() {
-            // println!("[auxv]: {:?}", auxv[i]);
             let addr = user_sp + core::mem::size_of::<AuxHeader>() * i;
             *translated_refmut(token, addr as *mut usize) = auxv[i].aux_type;
             *translated_refmut(token, (addr + core::mem::size_of::<usize>()) as *mut usize) =
@@ -302,7 +302,7 @@ impl ProcessControlBlock {
         let mut trap_cx = TrapContext::app_init_context(
             entry_point,
             user_sp,
-            KERNEL_SPACE.lock().token(),
+            kernel_token(),
             task.kernel_stack.get_top(),
             user_trap_handler as usize,
             hart_id(),
@@ -323,7 +323,7 @@ impl ProcessControlBlock {
         let mut parent_inner = self.acquire_inner_lock();
         // copy user space(include trap context)
         let addrspace = AddrSpace::from_existed_user(&parent_inner.addrspace);
-        // alloc a pid and a kernel stack in kernel space
+        // alloc a pid
         let pid_handle = pid_alloc();
         // copy fd table
         let mut new_fd_table: FDTable = Vec::new();
@@ -349,10 +349,10 @@ impl ProcessControlBlock {
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_hint: parent_inner.mmap_area_hint,
-                // inherit the signal_action
                 signal_actions: parent_inner.signal_actions.clone(),
             }),
         });
+        insert_into_pid2process(child.getpid(), child.clone());
         // add child
         parent_inner.children.push(child.clone());
         // create main thread of child process
@@ -363,12 +363,14 @@ impl ProcessControlBlock {
             // but mention that we allocate a new kstack here
             false,
         ));
-        // modify kernel_sp in trap_cx
+        insert_into_tid2task(task.gettid(), task.clone());
+        // add task to child process
         let mut child_inner = child.acquire_inner_lock();
-        let task_inner = task.acquire_inner_lock();
         child_inner.tasks.push(task.clone());
         drop(child_inner);
-        insert_into_pid2process(child.getpid(), child.clone());
+
+        // modify kernel_sp in trap_cx
+        let task_inner = task.acquire_inner_lock();
         let trap_cx = task_inner.get_trap_cx();
         trap_cx.kernel_sp = task.kernel_stack.get_top();
 

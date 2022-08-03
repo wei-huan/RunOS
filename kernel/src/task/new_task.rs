@@ -60,7 +60,6 @@ impl TaskControlBlock {
     pub fn acquire_inner_lock(&self) -> MutexGuard<TaskControlBlockInner> {
         self.inner.lock()
     }
-    // only for initproc
     pub fn new(process: Arc<ProcessControlBlock>, lid: usize, is_alloc_user_res: bool) -> Self {
         let tid_handle = tid_alloc();
         let res = TaskUserRes::new(process.clone(), lid, is_alloc_user_res);
@@ -93,7 +92,6 @@ impl TaskControlBlock {
     //     let inner = self.acquire_inner_lock();
     //     inner.parent.as_ref().unwrap().upgrade()
     // }
-    // initproc won't call sys_getppid
     // pub fn getppid(&self) -> usize {
     //     self.get_parent().unwrap().pid.0
     // }
