@@ -138,7 +138,7 @@ pub fn sys_fork(
     trap_cx.x[10] = 0;
     // let child process run first
     // suspend_current_and_run_next();
-    // println!("here_5");
+    println!("here_5");
     new_pid as isize
 }
 
@@ -164,7 +164,7 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
-    log::trace!("sys_exec");
+    log::debug!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
     let mut args_vec: Vec<String> = Vec::new();
@@ -190,9 +190,9 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         drop(process_inner);
         let all_data = app_inode.read_all();
         let argc = args_vec.len();
-        // log::debug!("before task.exec");
+        log::debug!("before current_process.exec");
         current_process.exec(all_data.as_slice(), args_vec);
-        // log::debug!("after task.exec, now return");
+        log::debug!("after task.exec, now return");
         argc as isize
     } else {
         -1

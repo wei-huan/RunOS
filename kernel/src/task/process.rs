@@ -143,7 +143,7 @@ impl ProcessControlBlock {
         assert_eq!(
             self.acquire_inner_lock().thread_count(),
             1,
-            "process can't execve with multithread"
+            "process can't execve with multithreads"
         );
         // memory_set with elf program headers/trampoline/trap context/user stack
         let (addrspace, heap_start, _, entry_point, mut auxv) =
