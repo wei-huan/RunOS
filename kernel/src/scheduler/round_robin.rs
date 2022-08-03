@@ -47,12 +47,9 @@ impl Scheduler for RoundRobinScheduler {
             interrupt_off();
             let mut cpu = take_my_cpu();
             if let Some(last_task) = cpu.take_current() {
-                log::debug!("here2134");
                 add_task(last_task);
-                log::debug!("here1424");
             }
             if let Some(task) = self.fetch_task() {
-                log::debug!("here142qwer4");
                 // if hart_id() == 1 {
                 //     log::trace!("have task");
                 // }

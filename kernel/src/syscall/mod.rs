@@ -7,7 +7,7 @@ mod sysinfo;
 mod syslog;
 mod utsname;
 
-use crate::cpu::current_task;
+use crate::cpu::{current_process, current_task};
 use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
 
@@ -99,7 +99,7 @@ const SYSCALL_PRLIMIT: usize = 261;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    // let pid = current_task().unwrap().getpid();
+    // let pid = current_process().unwrap().getpid();
     // if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
     //     log::debug!("process{} syscall: {}", pid, syscall_id);
     // }
@@ -122,12 +122,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_STATFS => sys_statfs(args[0] as _, args[1] as _),
         SYSCALL_FACCESSAT => sys_faccessat(args[0], args[1] as *const u8, args[2], 0),
         SYSCALL_CHDIR => sys_chdir(args[0] as *const u8),
-        SYSCALL_OPENAT => sys_open_at(
-            args[0] as isize,
-            args[1] as *const u8,
-            args[2] as u32,
-            args[3] as u32,
-        ),
+        SYSCALL_OPENAT => sys_open_at(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
         SYSCALL_CLOSE => sys_close(args[0]),
         SYSCALL_PIPE => sys_pipe(args[0] as *mut u32, args[1] as usize),
         SYSCALL_GETDENTS64 => {

@@ -161,12 +161,32 @@ impl ProcessControlBlock {
         process_inner.heap_pointer = heap_start;
         // update mmap hint
         process_inner.mmap_area_hint = MMAP_BASE;
+        // fresh fd_table
+        process_inner.fd_table = vec![
+            // 0 -> stdin
+            Some(FileDescripter::new(
+                false,
+                FileClass::Abstr(Arc::new(Stdin)),
+            )),
+            // 1 -> stdout
+            Some(FileDescripter::new(
+                false,
+                FileClass::Abstr(Arc::new(Stdout)),
+            )),
+            // 2 -> stderr
+            Some(FileDescripter::new(
+                false,
+                FileClass::Abstr(Arc::new(Stdout)),
+            )),
+        ];
         // get main task and allocate user resource
         let task = process_inner.get_task(0);
         drop(process_inner);
 
         let mut task_inner = task.acquire_inner_lock();
         task_inner.res.as_mut().unwrap().alloc_user_res();
+        task_inner.trap_cx_ppn = task_inner.res.as_mut().unwrap().trap_cx_ppn();
+
         let mut user_sp = task_inner.res.as_ref().unwrap().ustack_top();
 
         ////////////// *envp[] ///////////////////

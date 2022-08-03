@@ -3,18 +3,18 @@ mod aux;
 mod context;
 mod id;
 mod idle_task;
-mod task;
 mod process;
 mod signal;
+mod task;
 
 pub use action::*;
 pub use aux::*;
 pub use context::TaskContext;
 pub use id::*;
 pub use idle_task::{idle_task, TIME_TO_SCHEDULE};
-pub use task::*;
 pub use process::*;
 pub use signal::*;
+pub use task::*;
 
 use crate::cpu::{current_process, current_task, take_current_task};
 use crate::scheduler::{
@@ -32,8 +32,6 @@ pub fn suspend_current_and_run_next() {
     task_inner.task_status = TaskStatus::Ready;
     drop(task_inner);
     drop(task);
-    // push back to ready queue.
-    // add_task(task);
     // jump to scheduling cycle
     // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);
@@ -48,26 +46,35 @@ pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
     let mut task_inner = task.acquire_inner_lock();
     // remove from pid2task
     remove_from_tid2task(task.gettid());
-    task_inner.res = None;
-
+    // get local id in process to check if main thread
     let lid = task_inner.get_lid();
+    task_inner.res = None;
     drop(task_inner);
     drop(task);
     // main thread exit or exit group
     if lid == 0 || is_group {
-        let mut process_inner = process.acquire_inner_lock();
         remove_from_pid2process(process.getpid());
+        let mut process_inner = process.acquire_inner_lock();
         process_inner.is_zombie = true;
+        // record exit code
         process_inner.exit_code = exit_code;
-        let mut initproc_inner = INITPROC.acquire_inner_lock();
-        for child in process_inner.children.iter() {
-            child.acquire_inner_lock().parent = Some(Arc::downgrade(&INITPROC));
-            initproc_inner.children.push(child.clone());
+
+        {
+            let mut initproc_inner = INITPROC.acquire_inner_lock();
+            for child in process_inner.children.iter() {
+                child.acquire_inner_lock().parent = Some(Arc::downgrade(&INITPROC));
+                initproc_inner.children.push(child.clone());
+            }
         }
+
+        // deallocate user res (including tid/trap_cx/ustack) of all threads
+        // it has to be done before we dealloc the whole memory_set
+        // otherwise they will be deallocated twice
         for task in process_inner.tasks.iter() {
             let mut task_inner = task.acquire_inner_lock();
             task_inner.res = None;
         }
+
         process_inner.children.clear();
         // drop inner
         process_inner.addrspace.recycle_data_pages();
@@ -117,8 +124,8 @@ fn call_kernel_signal_handler(signal: SignalFlags) {
 
 fn call_user_signal_handler(sig: usize, signal: SignalFlags) {
     let task = current_task().unwrap();
-    let process = current_process().unwrap();
     let mut task_inner = task.acquire_inner_lock();
+    let process = current_process().unwrap();
     let process_inner = process.acquire_inner_lock();
     let handler = process_inner.signal_actions.table[sig].handler;
     // change current mask

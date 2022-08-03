@@ -69,8 +69,9 @@ pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
 pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
     // log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
     let token = current_user_token();
-    *translated_refmut::<u32>(token, ptr) = current_task().unwrap().gettid() as u32;
-    current_task().unwrap().gettid() as isize
+    let tid = current_task().unwrap().gettid() as u32;
+    *translated_refmut(token, ptr) = tid;
+    tid as isize
 }
 
 pub fn sys_getpid() -> isize {
@@ -115,7 +116,7 @@ pub fn sys_fork(
 ) -> isize {
     let current_process = current_process().unwrap();
     let token = current_user_token();
-    log::debug!(
+    log::trace!(
         "sys_fork ptid: {}, ctid: {}",
         ptid_ptr as usize,
         ctid_ptr as usize
@@ -168,7 +169,7 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
-    log::debug!("sys_exec");
+    log::trace!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
     let mut args_vec: Vec<String> = Vec::new();
@@ -204,6 +205,7 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
 
 /// If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, return -2.
+#[allow(unused)]
 pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
     let current_process = current_process().unwrap();
     // find a child process

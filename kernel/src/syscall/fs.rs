@@ -185,15 +185,17 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 // }
 
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isize {
-    log::trace!("sys_open_at");
     let current_process = current_process().unwrap();
-    let mut inner = current_process.acquire_inner_lock();
     let token = current_user_token();
-    let path = translated_str(token, path);
-    log::trace!("path: {:#?}", path);
-
     let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
-    log::trace!("oflags: {:#?}", oflags);
+    let mut inner = current_process.acquire_inner_lock();
+    let path = translated_str(token, path);
+    log::debug!(
+        "sys_open_at dirfd: {}, path: {:#?}, oflags: {:#?}",
+        dirfd,
+        path,
+        oflags
+    );
     if dirfd == AT_FDCWD {
         if let Some(inode) = open(
             inner.get_work_path().as_str(),
@@ -211,7 +213,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             -1
         }
     } else {
-        let fd_usz = dirfd as usize;
+        let fd_usz: usize = dirfd as usize;
         if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
             return -1;
         }
