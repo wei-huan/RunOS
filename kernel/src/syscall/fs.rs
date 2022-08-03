@@ -190,7 +190,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
     let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
     let mut inner = current_process.acquire_inner_lock();
     let path = translated_str(token, path);
-    log::debug!(
+    log::trace!(
         "sys_open_at dirfd: {}, path: {:#?}, oflags: {:#?}",
         dirfd,
         path,
