@@ -3,20 +3,18 @@ mod aux;
 mod context;
 mod id;
 mod idle_task;
-mod new_task;
+mod task;
 mod process;
 mod signal;
-// mod task;
 
 pub use action::*;
 pub use aux::*;
 pub use context::TaskContext;
 pub use id::*;
 pub use idle_task::{idle_task, TIME_TO_SCHEDULE};
-pub use new_task::*;
+pub use task::*;
 pub use process::*;
 pub use signal::*;
-// pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::{current_process, current_task, take_current_task};
 use crate::scheduler::{
