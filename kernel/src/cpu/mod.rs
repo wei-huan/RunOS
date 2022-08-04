@@ -1,10 +1,8 @@
 mod cpu;
 mod cpus;
 
-pub use cpu::{
-    current_hstack_top, current_stack_top, current_token, current_trap_cx, current_user_token, Cpu,
-};
-pub use cpus::{current_task, hart_id, take_current_task, take_my_cpu, CPUS};
+pub use cpu::*;
+pub use cpus::*;
 
 use crate::dt::CPU_NUMS;
 #[cfg(feature = "opensbi")]

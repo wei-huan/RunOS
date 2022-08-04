@@ -8,7 +8,7 @@ pub fn sys_syslog(_type: isize, buf_pointer: *const u8, len: isize) -> isize {
     // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
     if _type == 2 | 3 {
         let path = translated_str(token, buf_pointer);
-        println!("{}", path);
+        // println!("{}", path);
     }
     0
 }

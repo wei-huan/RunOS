@@ -1,12 +1,12 @@
 use crate::config::page_aligned_up;
-use crate::cpu::{current_task, current_user_token};
+use crate::cpu::{current_process, current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::mm::{
     translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
 };
-use crate::scheduler::{add_task, pid2task};
-use crate::syscall::ESRCH;
+use crate::scheduler::{add_task, pid2process, tid2task};
+use crate::syscall::{EINVAL, ESRCH};
 use crate::task::{
     exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,
 };
@@ -15,15 +15,16 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
+use core::arch::asm;
 use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
-    exit_current_and_run_next(exit_code);
+    exit_current_and_run_next(exit_code, false);
     panic!("Unreachable in sys_exit!");
 }
 
 pub fn sys_exit_group(exit_code: i32) -> ! {
-    exit_current_and_run_next(exit_code);
+    exit_current_and_run_next(exit_code, true);
     panic!("Unreachable in sys_exit_group!");
 }
 
@@ -69,16 +70,17 @@ pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
 pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
     // log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
     let token = current_user_token();
-    *translated_refmut::<u32>(token, ptr) = current_task().unwrap().pid.0 as u32;
-    current_task().unwrap().pid.0 as isize
+    let tid = current_task().unwrap().gettid() as u32;
+    *translated_refmut(token, ptr) = tid;
+    tid as isize
 }
 
 pub fn sys_getpid() -> isize {
-    current_task().unwrap().getpid() as isize
+    current_process().unwrap().getpid() as isize
 }
 
 pub fn sys_getppid() -> isize {
-    current_task().unwrap().getppid() as isize
+    current_process().unwrap().getppid() as isize
 }
 
 pub fn sys_getuid() -> isize {
@@ -97,52 +99,114 @@ pub fn sys_getegid() -> isize {
     0 // root group
 }
 
-// For user, tid is pid in kernel
 pub fn sys_gettid() -> isize {
-    current_task().unwrap().pid.0 as isize
+    current_task().unwrap().gettid() as isize
+}
+
+bitflags! {
+    pub struct CloneFlags: u32 {
+        const CSIGNAL		        = 0x000000ff;	/* signal mask to be sent at exit */
+        const CLONE_VM	            = 0x00000100;	/* set if VM shared between processes */
+        const CLONE_FS	            = 0x00000200;	/* set if fs info shared between processes */
+        const CLONE_FILES	        = 0x00000400;	/* set if open files shared between processes */
+        const CLONE_SIGHAND         = 0x00000800;	/* set if signal handlers and blocked signals shared */
+        const CLONE_PIDFD	        = 0x00001000;	/* set if a pidfd should be placed in parent */
+        const CLONE_PTRACE	        = 0x00002000;	/* set if we want to let tracing continue on the child too */
+        const CLONE_VFORK	        = 0x00004000;	/* set if the parent wants the child to wake it up on mm_release */
+        const CLONE_PARENT	        = 0x00008000;	/* set if we want to have the same parent as the cloner */
+        const CLONE_THREAD	        = 0x00010000;	/* Same thread group? */
+        const CLONE_NEWNS	        = 0x00020000;	/* New mount namespace group */
+        const CLONE_SYSVSEM	        = 0x00040000;	/* share system V SEM_UNDO semantics */
+        const CLONE_SETTLS	        = 0x00080000;	/* create a new TLS for the child */
+        const CLONE_PARENT_SETTID	= 0x00100000;	/* set the TID in the parent */
+        const CLONE_CHILD_CLEARTID	= 0x00200000;	/* clear the TID in the child */
+        const CLONE_DETACHED		= 0x00400000;	/* Unused, ignored */
+        const CLONE_UNTRACED		= 0x00800000;	/* set if the tracing process can't force CLONE_PTRACE on this clone */
+        const CLONE_CHILD_SETTID	= 0x01000000;	/* set the TID in the child */
+        const CLONE_NEWCGROUP		= 0x02000000;	/* New cgroup namespace */
+        const CLONE_NEWUTS		    = 0x04000000;	/* New utsname namespace */
+        const CLONE_NEWIPC		    = 0x08000000;	/* New ipc namespace */
+        const CLONE_NEWUSER		    = 0x10000000;	/* New user namespace */
+        const CLONE_NEWPID		    = 0x20000000;	/* New pid namespace */
+        const CLONE_NEWNET		    = 0x40000000;	/* New network namespace */
+        const CLONE_IO		        = 0x80000000;	/* Clone io context */
+    }
 }
 
 //  __clone(func, stack, flags, arg, ptid, tls, ctid)
 //            a0,    a1,    a2,  a3,   a4,  a5,   a6
 // 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
-pub fn sys_fork(
-    _flags: usize,
+// TODO: deal with exit signal mask
+pub fn sys_clone(
+    flags: u32,
     stack_ptr: usize,
-    ptid_ptr: *const u32,
-    _newtls: usize,
-    ctid_ptr: *const u32,
+    ptid_ptr: *mut u32,
+    newtls: usize,
+    ctid_ptr: *mut u32,
 ) -> isize {
-    let current_task = current_task().unwrap();
+    let current_process = current_process().unwrap();
+    let clone_flags = CloneFlags::from_bits(flags).unwrap();
     let token = current_user_token();
-    // log::debug!("sys_fork ptid: {}, ctid: {}", ptid_ptr as usize, ctid_ptr as usize);
-    // if ptid_ptr as usize != 0 {
-    //     let ptid = *translated_ref(token, ptid_ptr);
-    //     log::debug!("ptid: {}", ptid);
-    // }
-    // if ctid_ptr as usize != 0 {
-    //     let ctid = *translated_ref(token, ctid_ptr);
-    //     log::debug!("ctid: {}", ctid);
-    // }
-    let new_task = current_task.fork();
-    // println!("here_1");
-    if stack_ptr != 0 {
+    // log::debug!(
+    //     "sys_clone flags: {:?}, stack_ptr: {:#X?}, ptid: {:#X?}, newtls: {}, ctid: {:#X?}",
+    //     clone_flags,
+    //     stack_ptr,
+    //     ptid_ptr as usize,
+    //     newtls,
+    //     ctid_ptr as usize
+    // );
+    if clone_flags.contains(CloneFlags::CLONE_THREAD) {
+        let current_task = current_task().unwrap();
+        let mut new_task = current_task.clone_thread(current_process.clone(), flags);
         let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
-        trap_cx.set_sp(stack_ptr);
+        // set new stack
+        if stack_ptr != 0 {
+            trap_cx.set_sp(stack_ptr);
+        }
+        // set new tls
+        if clone_flags.contains(CloneFlags::CLONE_SETTLS) {
+            trap_cx.x[4] = newtls;
+        }
+        // for child task, clone returns 0
+        trap_cx.x[10] = 0;
+        let new_tid = new_task.gettid();
+        if clone_flags.contains(CloneFlags::CLONE_PARENT_SETTID) && ptid_ptr as usize != 0 {
+            *translated_refmut(
+                current_process.acquire_inner_lock().get_user_token(),
+                ptid_ptr,
+            ) = new_tid as u32;
+        }
+        if clone_flags.contains(CloneFlags::CLONE_CHILD_CLEARTID) && ctid_ptr as usize != 0 {
+            // new_task_inner.clear_child_tid = Some(ClearChildTid {ctid: *translated_ref(
+            //     current_process.acquire_inner_lock().get_user_token(),
+            //     ctid_ptr,
+            // ),
+            // addr: ctid_ptr as usize});
+        }
+        println!("clone syscall before back");
+        new_tid as isize
+    } else {
+        let new_process = current_process.fork(flags);
+        let mut new_task = new_process.acquire_inner_lock().get_task(0);
+        // modify trap context of new_task, because it returns immediately after switching
+        // we do not have to move to next instruction since we have done it before
+        let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
+        // set new stack
+        if stack_ptr != 0 {
+            trap_cx.set_sp(stack_ptr);
+        }
+        // set new tls
+        if clone_flags.contains(CloneFlags::CLONE_SETTLS) {
+            trap_cx.x[4] = newtls;
+        }
+        // for child process, fork returns 0
+        trap_cx.x[10] = 0;
+        let new_pid = new_process.getpid();
+        // let child process run first
+        suspend_current_and_run_next();
+        new_pid as isize
     }
-    let new_pid = new_task.pid.0;
-    // modify trap context of new_task, because it returns immediately after switching
-    let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
-    // we do not have to move to next instruction since we have done it before
-    // for child process, fork returns 0
-    trap_cx.x[10] = 0;
-    // add new task to scheduler
-    // println!("here_2");
-    add_task(new_task);
-    // let child process run first
-    suspend_current_and_run_next();
-    // println!("here_5");
-    new_pid as isize
 }
 
 pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
@@ -182,20 +246,18 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
             args = args.add(1);
         }
     }
-    let task = current_task().unwrap();
-    let inner = task.acquire_inner_lock();
+    let current_process = current_process().unwrap();
+    let cwd = current_process.acquire_inner_lock().current_path.clone();
     if let Some(app_inode) = open(
-        inner.current_path.as_str(),
+        cwd.as_str(),
         path.as_str(),
         OpenFlags::RDONLY,
         DiskInodeType::File,
     ) {
-        drop(inner);
         let all_data = app_inode.read_all();
-        let task = current_task().unwrap();
         let argc = args_vec.len();
-        // log::debug!("before task.exec");
-        task.exec(all_data.as_slice(), args_vec);
+        // log::debug!("before current_process.exec");
+        current_process.exec(all_data.as_slice(), args_vec);
         // log::debug!("after task.exec, now return");
         argc as isize
     } else {
@@ -207,12 +269,12 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
 /// Else if there is a child process but it is still running, return -2.
 #[allow(unused)]
 pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
-    let task = current_task().unwrap();
+    let current_process = current_process().unwrap();
     // find a child process
 
     // ---- access current PCB exclusively
-    let mut inner = task.acquire_inner_lock();
-    if !inner
+    let mut process_inner = current_process.acquire_inner_lock();
+    if !process_inner
         .children
         .iter()
         .any(|p| pid == -1 || pid as usize == p.getpid())
@@ -220,13 +282,13 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
         return -1;
         // ---- release current PCB
     }
-    let pair = inner.children.iter().enumerate().find(|(_, p)| {
+    let pair = process_inner.children.iter().enumerate().find(|(_, p)| {
         // ++++ temporarily access child PCB exclusively
         p.acquire_inner_lock().is_zombie() && (pid == -1 || pid as usize == p.getpid())
         // ++++ release child PCB
     });
     if let Some((idx, _)) = pair {
-        let child = inner.children.remove(idx);
+        let child = process_inner.children.remove(idx);
         // confirm that child will be deallocated after being removed from children list
         assert_eq!(Arc::strong_count(&child), 1);
         let found_pid = child.getpid();
@@ -234,7 +296,7 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
         let exit_code = child.acquire_inner_lock().exit_code;
         // ++++ release child PCB
         if (exit_code_ptr as usize) != 0 {
-            *translated_refmut(inner.addrspace.token(), exit_code_ptr) = exit_code << 8;
+            *translated_refmut(process_inner.addrspace.token(), exit_code_ptr) = exit_code << 8;
         }
         found_pid as isize
     } else {
@@ -252,14 +314,9 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         panic! {"Extended option not support yet..."};
     }
     loop {
-        let task = current_task().unwrap();
-        // No any child process waiting
-        // if !have_ready_task() && !task.acquire_inner_lock().have_children() && {
-
-        // }
-        // find a child process
         // ---- access current PCB exclusively
-        let mut inner = task.acquire_inner_lock();
+        let current_process = current_process().unwrap();
+        let mut inner = current_process.acquire_inner_lock();
         if !inner
             .children
             .iter()
@@ -292,7 +349,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             //     log::debug!("Not yet, pid {} still wait", wait_pid);
             // }
             drop(inner);
-            drop(task);
+            drop(current_process);
             suspend_current_and_run_next();
         }
         // ---- release current PCB automatically
@@ -302,8 +359,8 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 /// On success, returns the new program break
 /// On failure, the system call returns the current break.
 pub fn sys_brk(mut brk_addr: usize) -> isize {
-    let current_task = current_task().unwrap();
-    let mut inner = current_task.acquire_inner_lock();
+    let current_process = current_process().unwrap();
+    let mut inner = current_process.acquire_inner_lock();
     // log::debug!(
     //     "sys_brk: {:#X?}, start: {:#X?}, current_break: {:#X?}",
     //     brk_addr,
@@ -341,8 +398,8 @@ pub fn sys_brk(mut brk_addr: usize) -> isize {
 // todo test, No test yet
 pub fn sys_sbrk(increment: isize) -> isize {
     log::debug!("sys_sbrk");
-    let current_task = current_task().unwrap();
-    let mut inner = current_task.acquire_inner_lock();
+    let current_process = current_process().unwrap();
+    let mut inner = current_process.acquire_inner_lock();
     let heap_start = inner.heap_start;
     if increment == 0 {
         return (inner.heap_pointer - heap_start) as isize;
@@ -389,16 +446,16 @@ pub fn sys_mmap(
     offset: usize,
 ) -> isize {
     // log::debug!("sys_mmap start: {:#X?}, length: {:#X?}, fd: {}", start, length, fd);
-    let task = current_task().unwrap();
-    let res = task.mmap(start, length, prot, flags, fd, offset);
+    let current_process = current_process().unwrap();
+    let res = current_process.mmap(start, length, prot, flags, fd, offset);
     // log::debug!("sys_mmap leave");
     res
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
     log::trace!("sys_unmmap");
-    let task = current_task().unwrap();
-    task.munmap(start, length)
+    let current_process = current_process().unwrap();
+    current_process.munmap(start, length)
 }
 
 const RLIMIT_CPU: usize = 0;
@@ -420,21 +477,42 @@ pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut R
     0
 }
 
+// just add sig to main thread
 pub fn sys_kill(pid: usize, signum: i32) -> isize {
-    if let Some(task) = pid2task(pid) {
+    let process_option = pid2process(pid);
+    if process_option.is_none() {
+        return -ESRCH;
+    }
+    let process = process_option.unwrap();
+    if let Some(flag) = SignalFlags::from_bits(1 << signum) {
+        // insert the signal if legal
+        let mut process_inner = process.acquire_inner_lock();
+        let task = process_inner.get_task(0);
+        let mut task_inner = task.acquire_inner_lock();
+        if task_inner.signals.contains(flag) {
+            return -EINVAL;
+        }
+        task_inner.signals.insert(flag);
+        0
+    } else {
+        -EINVAL
+    }
+}
+
+pub fn sys_tkill(tid: usize, signum: u32) -> isize {
+    if let Some(task) = tid2task(tid) {
         if let Some(flag) = SignalFlags::from_bits(1 << signum) {
-            // insert the signal if legal
-            let mut task_ref = task.acquire_inner_lock();
-            if task_ref.signals.contains(flag) {
-                return -1;
+            let mut task_inner = task.acquire_inner_lock();
+            if task_inner.signals.contains(flag) {
+                return -EINVAL;
             }
-            task_ref.signals.insert(flag);
+            task_inner.signals.insert(flag);
             0
         } else {
-            -1
+            -EINVAL
         }
     } else {
-        -1
+        -ESRCH
     }
 }
 
@@ -506,41 +584,50 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    // log::debug!("sys_sigaction");
+    log::trace!("sys_sigaction");
     let token = current_user_token();
-    if let Some(task) = current_task() {
-        let mut inner = task.acquire_inner_lock();
-        if signum as usize > MAX_SIG {
+    let process = current_process().unwrap();
+    let mut inner = process.acquire_inner_lock();
+    if signum as usize > MAX_SIG {
+        return -1;
+    }
+    if let Some(flag) = SignalFlags::from_bits(1 << signum) {
+        if check_sigaction_error(flag, action as usize, old_action as usize) {
             return -1;
         }
-        if let Some(flag) = SignalFlags::from_bits(1 << signum) {
-            if check_sigaction_error(flag, action as usize, old_action as usize) {
-                return -1;
-            }
-            let old_kernel_action = inner.signal_actions.table[signum as usize];
-            if old_kernel_action.mask != SignalFlags::from_bits(40).unwrap() {
-                *translated_refmut(token, old_action) = old_kernel_action;
-            } else {
-                let mut ref_old_action = *translated_refmut(token, old_action);
-                ref_old_action.handler = old_kernel_action.handler;
-            }
-            let ref_action = translated_ref(token, action);
-            inner.signal_actions.table[signum as usize] = *ref_action;
-            return 0;
+        let old_kernel_action = inner.signal_actions.table[signum as usize];
+        if old_kernel_action.mask != SignalFlags::from_bits(40).unwrap() {
+            *translated_refmut(token, old_action) = old_kernel_action;
+        } else {
+            let mut ref_old_action = *translated_refmut(token, old_action);
+            ref_old_action.handler = old_kernel_action.handler;
         }
+        let ref_action = translated_ref(token, action);
+        inner.signal_actions.table[signum as usize] = *ref_action;
+        return 0;
+    } else {
+        return -EINVAL;
     }
-    -1
 }
 
-pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
+pub fn sys_mprotect(start: usize, length: usize, prot: usize) -> isize {
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
-    log::trace!("sys_mprotect addr: {:#X} len: {:#X} flags: {:?}", addr, len, flags);
-    let start = VirtPageNum::from(VirtAddr::from(addr).floor());
-    let end = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
-    let task = current_task().unwrap();
-    let mut inner = task.acquire_inner_lock();
+    log::trace!(
+        "sys_mprotect addr: {:#X} len: {:#X} flags: {:?}",
+        start,
+        length,
+        flags
+    );
+    let end = VirtAddr::from(start + length).ceil();
+    let start = VirtAddr::from(start).floor();
+    let current_process = current_process().unwrap();
+    let mut inner = current_process.acquire_inner_lock();
     for vpn in start..end {
         inner.addrspace.set_pte_flags(vpn, flags);
+    }
+    unsafe {
+        asm!("sfence.vma");
+        asm!("fence.i");
     }
     0
 }

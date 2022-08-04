@@ -7,7 +7,7 @@ mod sysinfo;
 mod syslog;
 mod utsname;
 
-use crate::cpu::current_task;
+use crate::cpu::{current_process, current_task};
 use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
 
@@ -58,6 +58,7 @@ const SYSCALL_CLOCK_GETTIME: usize = 113;
 const SYSCALL_SYSLOG: usize = 116;
 const SYSCALL_SCHED_YIELD: usize = 124;
 const SYSCALL_KILL: usize = 129;
+const SYSCALL_TKILL: usize = 130;
 const SYSCALL_SIGACTION: usize = 134;
 const SYSCALL_SIGPROCMASK: usize = 135;
 const SYSCALL_RT_SIGTIMEDWAIT: usize = 137;
@@ -98,9 +99,16 @@ const SYSCALL_PRLIMIT: usize = 261;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    // let pid = current_task().unwrap().getpid();
-    // if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-    //     log::debug!("process{} syscall: {}", pid, syscall_id);
+    // let pid = current_process().unwrap().getpid();
+    // let lid = current_task()
+    //     .unwrap()
+    //     .acquire_inner_lock()
+    //     .res
+    //     .as_ref()
+    //     .unwrap()
+    //     .lid;
+    // if pid >= 3 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
+    //     log::debug!("process{} thread{} syscall: {}", pid, lid, syscall_id);
     // }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
@@ -121,12 +129,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_STATFS => sys_statfs(args[0] as _, args[1] as _),
         SYSCALL_FACCESSAT => sys_faccessat(args[0], args[1] as *const u8, args[2], 0),
         SYSCALL_CHDIR => sys_chdir(args[0] as *const u8),
-        SYSCALL_OPENAT => sys_open_at(
-            args[0] as isize,
-            args[1] as *const u8,
-            args[2] as u32,
-            args[3] as u32,
-        ),
+        SYSCALL_OPENAT => sys_open_at(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
         SYSCALL_CLOSE => sys_close(args[0]),
         SYSCALL_PIPE => sys_pipe(args[0] as *mut u32, args[1] as usize),
         SYSCALL_GETDENTS64 => {
@@ -159,7 +162,8 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_CLOCK_GETTIME => sys_clock_get_time(args[0] as usize, args[1] as *mut u64),
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
-        SYSCALL_KILL => sys_kill(args[0], args[1] as i32),
+        SYSCALL_KILL => sys_kill(args[0], args[1] as _),
+        SYSCALL_TKILL => sys_tkill(args[0], args[1] as _),
         SYSCALL_SIGACTION => sys_sigaction(
             args[0] as i32,
             args[1] as *const SignalAction,
@@ -193,11 +197,11 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETSOCKOPT => 0,
         SYSCALL_SBRK => sys_sbrk(args[0] as isize),
         SYSCALL_BRK => sys_brk(args[0]),
-        SYSCALL_CLONE => sys_fork(
-            args[0] as usize,
-            args[1] as usize,
+        SYSCALL_CLONE => sys_clone(
+            args[0] as _,
+            args[1] as _,
             args[2] as _,
-            args[3] as usize,
+            args[3] as _,
             args[4] as _,
         ),
         SYSCALL_MUNMAP => sys_munmap(args[0] as usize, args[1] as usize),

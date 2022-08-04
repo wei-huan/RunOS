@@ -1,12 +1,10 @@
-use super::current_task;
-use crate::cpu::hart_id;
+use crate::cpu::{current_process, current_task, hart_id};
 use crate::mm::kernel_token;
 use crate::sync::{interrupt_get, interrupt_on, IntrLock};
 use crate::task::{TaskContext, TaskControlBlock};
 use crate::trap::TrapContext;
 use crate::utils::get_boot_stack;
 use alloc::sync::Arc;
-
 
 // Per-CPU state
 pub struct Cpu {
@@ -61,15 +59,15 @@ impl Cpu {
 }
 
 pub fn current_user_token() -> usize {
-    let task = current_task().unwrap();
-    let token = task.acquire_inner_lock().get_user_token();
+    let current_process = current_process().unwrap();
+    let token = current_process.acquire_inner_lock().get_user_token();
     token
 }
 
 #[allow(unused)]
 pub fn current_token() -> usize {
-    if let Some(task) = current_task() {
-        let token = task.acquire_inner_lock().get_user_token();
+    if let Some(current_process) = current_process() {
+        let token = current_process.acquire_inner_lock().get_user_token();
         return token;
     } else {
         return kernel_token();
@@ -89,7 +87,6 @@ pub fn current_hstack_top() -> usize {
     let (_, top) = get_boot_stack(hart_id());
     top
 }
-
 
 pub fn current_stack_top() -> usize {
     if let Some(task) = current_task() {

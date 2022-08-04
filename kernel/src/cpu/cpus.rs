@@ -1,6 +1,6 @@
 use super::cpu::Cpu;
 use crate::sync::UPSafeCell;
-use crate::task::TaskControlBlock;
+use crate::task::{TaskControlBlock, ProcessControlBlock};
 use alloc::sync::Arc;
 use array_macro::array;
 use core::arch::asm;
@@ -35,4 +35,18 @@ pub fn take_current_task() -> Option<Arc<TaskControlBlock>> {
 
 pub fn current_task() -> Option<Arc<TaskControlBlock>> {
     take_my_cpu().current()
+}
+
+pub fn current_process() -> Option<Arc<ProcessControlBlock>> {
+    current_task().unwrap().process.upgrade()
+}
+
+pub fn current_trap_cx_user_va() -> usize {
+    current_task()
+        .unwrap()
+        .acquire_inner_lock()
+        .res
+        .as_ref()
+        .unwrap()
+        .trap_cx_user_va()
 }

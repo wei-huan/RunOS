@@ -2,12 +2,11 @@ mod round_robin;
 
 use crate::config::PAGE_SIZE;
 use crate::cpu::take_my_cpu;
-use crate::fs::{open, DiskInodeType, File, OpenFlags};
-use crate::mm::{add_free, UserBuffer};
-use crate::task::{TaskContext, TaskControlBlock};
+use crate::fs::{open, DiskInodeType, OpenFlags};
+use crate::mm::add_free;
+use crate::task::{ProcessControlBlock, TaskContext, TaskControlBlock};
 use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use core::arch::global_asm;
 use lazy_static::*;
 use round_robin::RoundRobinScheduler;
@@ -21,7 +20,9 @@ pub trait Scheduler {
 
 lazy_static! {
     pub static ref SCHEDULER: RoundRobinScheduler = RoundRobinScheduler::new();
-    pub static ref PID2TCB: Mutex<BTreeMap<usize, Arc<TaskControlBlock>>> =
+    pub static ref PID2PCB: Mutex<BTreeMap<usize, Arc<ProcessControlBlock>>> =
+        Mutex::new(BTreeMap::new());
+    pub static ref TID2TCB: Mutex<BTreeMap<usize, Arc<TaskControlBlock>>> =
         Mutex::new(BTreeMap::new());
 }
 
@@ -30,12 +31,10 @@ pub fn schedule() {
 }
 
 pub fn add_task(task: Arc<TaskControlBlock>) {
-    PID2TCB.lock().insert(task.getpid(), Arc::clone(&task));
     SCHEDULER.add_task(task);
 }
 
 pub fn add_task2designate_ready_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
-    PID2TCB.lock().insert(task.getpid(), Arc::clone(&task));
     SCHEDULER.add_task2designate_ready_queue(task, queue_id);
 }
 
@@ -44,15 +43,35 @@ pub fn have_ready_task() -> bool {
     SCHEDULER.have_ready_task()
 }
 
-pub fn pid2task(pid: usize) -> Option<Arc<TaskControlBlock>> {
-    let map = PID2TCB.lock();
+pub fn pid2process(pid: usize) -> Option<Arc<ProcessControlBlock>> {
+    let map = PID2PCB.lock();
     map.get(&pid).map(Arc::clone)
 }
 
-pub fn remove_from_pid2task(pid: usize) {
-    let mut map = PID2TCB.lock();
+pub fn insert_into_pid2process(pid: usize, process: Arc<ProcessControlBlock>) {
+    PID2PCB.lock().insert(pid, process);
+}
+
+pub fn remove_from_pid2process(pid: usize) {
+    let mut map = PID2PCB.lock();
     if map.remove(&pid).is_none() {
-        panic!("cannot find pid {} in pid2task!", pid);
+        panic!("cannot find pid {} in pid2process!", pid);
+    }
+}
+
+pub fn tid2task(tid: usize) -> Option<Arc<TaskControlBlock>> {
+    let map = TID2TCB.lock();
+    map.get(&tid).map(Arc::clone)
+}
+
+pub fn insert_into_tid2task(tid: usize, task: Arc<TaskControlBlock>) {
+    TID2TCB.lock().insert(tid, task);
+}
+
+pub fn remove_from_tid2task(tid: usize) {
+    let mut map = TID2TCB.lock();
+    if map.remove(&tid).is_none() {
+        panic!("cannot find pid {} in tid2task!", tid);
     }
 }
 
@@ -62,18 +81,18 @@ extern "C" {
 }
 
 lazy_static! {
-    pub static ref INITPROC: Arc<TaskControlBlock> = Arc::new({
+    pub static ref INITPROC: Arc<ProcessControlBlock> = {
         let inode = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File).unwrap();
         // println!("open initproc finish");
         let v = inode.read_all();
         // println!("read_all initproc finish");
-        TaskControlBlock::new(v.as_slice())
-    });
+        ProcessControlBlock::new(v.as_slice())
+    };
 }
 
 pub fn add_initproc() {
     add_initproc_into_fs();
-    add_task2designate_ready_queue(INITPROC.clone(), 0);
+    let _initproc = INITPROC.clone();
     // println!("add_initproc finish");
 }
 
@@ -99,37 +118,38 @@ pub fn add_initproc_into_fs() {
     let app_start = unsafe { core::slice::from_raw_parts_mut(num_app_ptr.add(1), 3) };
 
     // find if there already exits
-    if let Some(inode) = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File) {
-        println!("Already have initproc in FS");
-        inode.delete();
-    }
-    if let Some(inode) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
-        println!("Already have init user_shell in FS");
-        inode.delete();
-    }
+    // if let Some(inode) = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File) {
+    //     println!("Already have initproc in FS");
+    //     inode.delete();
+    // }
+    // if let Some(inode) = open("/", "user_shell", OpenFlags::RDONLY, DiskInodeType::File) {
+    //     println!("Already have init user_shell in FS");
+    //     inode.delete();
+    // }
 
     //Write apps initproc to disk from mem
-    if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
-        let mut data: Vec<&'static mut [u8]> = Vec::new();
-        data.push(unsafe {
-            core::slice::from_raw_parts_mut(app_start[0] as *mut u8, app_start[1] - app_start[0])
-        });
-        inode.write(UserBuffer::new(data));
-    } else {
-        panic!("initproc create fail!");
-    }
+    // if let Some(inode) = open("/", "initproc", OpenFlags::CREATE, DiskInodeType::File) {
+    //     let mut data: Vec<&'static mut [u8]> = Vec::new();
+    //     data.push(unsafe {
+    //         core::slice::from_raw_parts_mut(app_start[0] as *mut u8, app_start[1] - app_start[0])
+    //     });
+    //     inode.write(UserBuffer::new(data));
+    // } else {
+    //     panic!("initproc create fail!");
+    // }
     //Write apps user_shell to disk from mem
-    if let Some(inode) = open("/", "user_shell", OpenFlags::CREATE, DiskInodeType::File) {
-        let mut data: Vec<&'static mut [u8]> = Vec::new();
-        data.push(unsafe {
-            core::slice::from_raw_parts_mut(app_start[1] as *mut u8, app_start[2] - app_start[1])
-        });
-        // println!("Start write user_shell ");
-        inode.write(UserBuffer::new(data));
-        // println!("User_shell OK");
-    } else {
-        panic!("user_shell create fail!");
-    }
+    // if let Some(inode) = open("/", "user_shell", OpenFlags::CREATE, DiskInodeType::File) {
+    //     let mut data: Vec<&'static mut [u8]> = Vec::new();
+    //     data.push(unsafe {
+    //         core::slice::from_raw_parts_mut(app_start[1] as *mut u8, app_start[2] - app_start[1])
+    //     });
+    //     //data.extend_from_slice()
+    //     // println!("Start write user_shell ");
+    //     inode.write(UserBuffer::new(data));
+    //     // println!("User_shell OK");
+    // } else {
+    //     panic!("user_shell create fail!");
+    // }
     // recycle pages
     let mut start_ppn = app_start[0] / PAGE_SIZE + 1;
     while start_ppn < app_start[2] / PAGE_SIZE {
