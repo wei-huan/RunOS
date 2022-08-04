@@ -23,10 +23,10 @@ impl RoundRobinScheduler {
         }
         Self { ready_queues }
     }
-    pub fn add_task2designate_ready_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
-        // log::debug!("Hart {} add task {} to ready queue {}",hart_id(), task.pid.0, queue_id);
-        self.ready_queues[queue_id].lock().push_back(task);
-    }
+    // pub fn add_task2designate_ready_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
+    //     // log::debug!("Hart {} add task {} to ready queue {}",hart_id(), task.pid.0, queue_id);
+    //     self.ready_queues[queue_id].lock().push_back(task);
+    // }
     fn ready_queue_len(&self, queue_id: usize) -> usize {
         self.ready_queues[queue_id].lock().len()
     }

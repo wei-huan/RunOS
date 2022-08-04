@@ -196,10 +196,6 @@ pub fn sys_clone(
         if stack_ptr != 0 {
             trap_cx.set_sp(stack_ptr);
         }
-        // set new tls
-        if clone_flags.contains(CloneFlags::CLONE_SETTLS) {
-            trap_cx.x[4] = newtls;
-        }
         // for child process, fork returns 0
         trap_cx.x[10] = 0;
         let new_pid = new_process.getpid();

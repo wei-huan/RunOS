@@ -8,8 +8,7 @@ use crate::mm::{
 use crate::scheduler::{add_task, insert_into_pid2process, insert_into_tid2task};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    kstack_alloc, pid_alloc, tid_alloc, AuxHeader, PidHandle, SignalActions, TaskContext,
-    TaskControlBlock, TaskControlBlockInner, TaskStatus, AT_EXECFN, AT_NULL, AT_RANDOM,
+    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
@@ -17,8 +16,6 @@ use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
 use spin::{Mutex, MutexGuard};
-
-use super::TaskUserRes;
 
 pub struct ProcessControlBlock {
     // immutable

@@ -34,9 +34,9 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
-pub fn add_task2designate_ready_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
-    SCHEDULER.add_task2designate_ready_queue(task, queue_id);
-}
+// pub fn add_task2designate_ready_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
+//     SCHEDULER.add_task2designate_ready_queue(task, queue_id);
+// }
 
 #[allow(unused)]
 pub fn have_ready_task() -> bool {
