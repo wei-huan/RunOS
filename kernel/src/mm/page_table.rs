@@ -115,30 +115,32 @@ impl PageTable {
         }
         result
     }
-    pub fn set_pte_flags(&self, vpn: VirtPageNum, flags: PTEFlags) {
+    pub fn set_pte_flags(&mut self, vpn: VirtPageNum, flags: PTEFlags) {
         if let Some(pte) = self.find_pte(vpn) {
             if !pte.is_valid() {
                 panic!("invalid pte in set_pte_flags function");
             }
-            let mut cur_flags = pte.flags();
+            let mut new_flags = pte.flags();
             if flags.contains(PTEFlags::R) {
-                cur_flags.set(PTEFlags::R, true);
+                new_flags.set(PTEFlags::R, true);
             } else {
-                cur_flags.set(PTEFlags::R, false);
+                new_flags.set(PTEFlags::R, false);
             }
             if flags.contains(PTEFlags::W) {
-                cur_flags.set(PTEFlags::W, true);
+                new_flags.set(PTEFlags::W, true);
             } else {
-                cur_flags.set(PTEFlags::W, false);
+                new_flags.set(PTEFlags::W, false);
             }
             if flags.contains(PTEFlags::X) {
-                cur_flags.set(PTEFlags::X, true);
+                new_flags.set(PTEFlags::X, true);
             } else {
-                cur_flags.set(PTEFlags::X, false);
+                new_flags.set(PTEFlags::X, false);
             }
-            *pte = PageTableEntry::new(pte.ppn(), pte.rsw(), cur_flags);
+            log::trace!("new_flags: {:?}", new_flags);
+            *pte = PageTableEntry::new(pte.ppn(), pte.rsw(), new_flags);
+        } else {
+            log::warn!("set_pte_flags function not found pte in page table");
         }
-        log::trace!("set_pte_flags function not found pte in page table");
     }
     /// Temporarily used to get arguments from user space.
     pub fn from_token(satp: usize) -> Self {

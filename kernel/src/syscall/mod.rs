@@ -100,8 +100,15 @@ const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     // let pid = current_process().unwrap().getpid();
-    // if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-    //     log::debug!("process{} syscall: {}", pid, syscall_id);
+    // let lid = current_task()
+    //     .unwrap()
+    //     .acquire_inner_lock()
+    //     .res
+    //     .as_ref()
+    //     .unwrap()
+    //     .lid;
+    // if pid >= 3 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
+    //     log::debug!("process{} thread{} syscall: {}", pid, lid, syscall_id);
     // }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
@@ -190,11 +197,11 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETSOCKOPT => 0,
         SYSCALL_SBRK => sys_sbrk(args[0] as isize),
         SYSCALL_BRK => sys_brk(args[0]),
-        SYSCALL_CLONE => sys_fork(
-            args[0] as usize,
-            args[1] as usize,
+        SYSCALL_CLONE => sys_clone(
+            args[0] as _,
+            args[1] as _,
             args[2] as _,
-            args[3] as usize,
+            args[3] as _,
             args[4] as _,
         ),
         SYSCALL_MUNMAP => sys_munmap(args[0] as usize, args[1] as usize),

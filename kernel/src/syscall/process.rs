@@ -15,6 +15,7 @@ use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
+use core::arch::asm;
 use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
@@ -98,53 +99,114 @@ pub fn sys_getegid() -> isize {
     0 // root group
 }
 
-// For user, tid is pid in kernel
 pub fn sys_gettid() -> isize {
     current_task().unwrap().gettid() as isize
+}
+
+bitflags! {
+    pub struct CloneFlags: u32 {
+        const CSIGNAL		        = 0x000000ff;	/* signal mask to be sent at exit */
+        const CLONE_VM	            = 0x00000100;	/* set if VM shared between processes */
+        const CLONE_FS	            = 0x00000200;	/* set if fs info shared between processes */
+        const CLONE_FILES	        = 0x00000400;	/* set if open files shared between processes */
+        const CLONE_SIGHAND         = 0x00000800;	/* set if signal handlers and blocked signals shared */
+        const CLONE_PIDFD	        = 0x00001000;	/* set if a pidfd should be placed in parent */
+        const CLONE_PTRACE	        = 0x00002000;	/* set if we want to let tracing continue on the child too */
+        const CLONE_VFORK	        = 0x00004000;	/* set if the parent wants the child to wake it up on mm_release */
+        const CLONE_PARENT	        = 0x00008000;	/* set if we want to have the same parent as the cloner */
+        const CLONE_THREAD	        = 0x00010000;	/* Same thread group? */
+        const CLONE_NEWNS	        = 0x00020000;	/* New mount namespace group */
+        const CLONE_SYSVSEM	        = 0x00040000;	/* share system V SEM_UNDO semantics */
+        const CLONE_SETTLS	        = 0x00080000;	/* create a new TLS for the child */
+        const CLONE_PARENT_SETTID	= 0x00100000;	/* set the TID in the parent */
+        const CLONE_CHILD_CLEARTID	= 0x00200000;	/* clear the TID in the child */
+        const CLONE_DETACHED		= 0x00400000;	/* Unused, ignored */
+        const CLONE_UNTRACED		= 0x00800000;	/* set if the tracing process can't force CLONE_PTRACE on this clone */
+        const CLONE_CHILD_SETTID	= 0x01000000;	/* set the TID in the child */
+        const CLONE_NEWCGROUP		= 0x02000000;	/* New cgroup namespace */
+        const CLONE_NEWUTS		    = 0x04000000;	/* New utsname namespace */
+        const CLONE_NEWIPC		    = 0x08000000;	/* New ipc namespace */
+        const CLONE_NEWUSER		    = 0x10000000;	/* New user namespace */
+        const CLONE_NEWPID		    = 0x20000000;	/* New pid namespace */
+        const CLONE_NEWNET		    = 0x40000000;	/* New network namespace */
+        const CLONE_IO		        = 0x80000000;	/* Clone io context */
+    }
 }
 
 //  __clone(func, stack, flags, arg, ptid, tls, ctid)
 //            a0,    a1,    a2,  a3,   a4,  a5,   a6
 // 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
-pub fn sys_fork(
-    flags: usize,
+// TODO: deal with exit signal mask
+pub fn sys_clone(
+    flags: u32,
     stack_ptr: usize,
-    ptid_ptr: *const u32,
+    ptid_ptr: *mut u32,
     newtls: usize,
-    ctid_ptr: *const u32,
+    ctid_ptr: *mut u32,
 ) -> isize {
     let current_process = current_process().unwrap();
+    let clone_flags = CloneFlags::from_bits(flags).unwrap();
     let token = current_user_token();
-    log::trace!(
-        "sys_fork ptid: {}, ctid: {}",
-        ptid_ptr as usize,
-        ctid_ptr as usize
-    );
-    // if ptid_ptr as usize != 0 {
-    //     let ptid = *translated_ref(token, ptid_ptr);
-    //     log::debug!("ptid: {}", ptid);
-    // }
-    // if ctid_ptr as usize != 0 {
-    //     let ctid = *translated_ref(token, ctid_ptr);
-    //     log::debug!("ctid: {}", ctid);
-    // }
-    let new_process = current_process.fork();
-    let new_task = new_process.acquire_inner_lock().get_task(0);
-    let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
-    // set new stack
-    if stack_ptr != 0 {
-        trap_cx.set_sp(stack_ptr);
+    // log::debug!(
+    //     "sys_clone flags: {:?}, stack_ptr: {:#X?}, ptid: {:#X?}, newtls: {}, ctid: {:#X?}",
+    //     clone_flags,
+    //     stack_ptr,
+    //     ptid_ptr as usize,
+    //     newtls,
+    //     ctid_ptr as usize
+    // );
+    if clone_flags.contains(CloneFlags::CLONE_THREAD) {
+        let current_task = current_task().unwrap();
+        let mut new_task = current_task.clone_thread(current_process.clone(), flags);
+        let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
+        // set new stack
+        if stack_ptr != 0 {
+            trap_cx.set_sp(stack_ptr);
+        }
+        // set new tls
+        if clone_flags.contains(CloneFlags::CLONE_SETTLS) {
+            trap_cx.x[4] = newtls;
+        }
+        // for child task, clone returns 0
+        trap_cx.x[10] = 0;
+        let new_tid = new_task.gettid();
+        if clone_flags.contains(CloneFlags::CLONE_PARENT_SETTID) && ptid_ptr as usize != 0 {
+            *translated_refmut(
+                current_process.acquire_inner_lock().get_user_token(),
+                ptid_ptr,
+            ) = new_tid as u32;
+        }
+        if clone_flags.contains(CloneFlags::CLONE_CHILD_CLEARTID) && ctid_ptr as usize != 0 {
+            // new_task_inner.clear_child_tid = Some(ClearChildTid {ctid: *translated_ref(
+            //     current_process.acquire_inner_lock().get_user_token(),
+            //     ctid_ptr,
+            // ),
+            // addr: ctid_ptr as usize});
+        }
+        println!("clone syscall before back");
+        new_tid as isize
+    } else {
+        let new_process = current_process.fork(flags);
+        let mut new_task = new_process.acquire_inner_lock().get_task(0);
+        // modify trap context of new_task, because it returns immediately after switching
+        // we do not have to move to next instruction since we have done it before
+        let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
+        // set new stack
+        if stack_ptr != 0 {
+            trap_cx.set_sp(stack_ptr);
+        }
+        // set new tls
+        if clone_flags.contains(CloneFlags::CLONE_SETTLS) {
+            trap_cx.x[4] = newtls;
+        }
+        // for child process, fork returns 0
+        trap_cx.x[10] = 0;
+        let new_pid = new_process.getpid();
+        // let child process run first
+        suspend_current_and_run_next();
+        new_pid as isize
     }
-    let new_pid = new_process.getpid();
-    // modify trap context of new_task, because it returns immediately after switching
-    // we do not have to move to next instruction since we have done it before
-    // for child process, fork returns 0
-    trap_cx.x[10] = 0;
-    // let child process run first
-    suspend_current_and_run_next();
-    // println!("here_5");
-    new_pid as isize
 }
 
 pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
@@ -252,13 +314,8 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         panic! {"Extended option not support yet..."};
     }
     loop {
-        let current_process = current_process().unwrap();
-        // No any child process waiting
-        // if !have_ready_task() && !task.acquire_inner_lock().have_children() && {
-
-        // }
-        // find a child process
         // ---- access current PCB exclusively
+        let current_process = current_process().unwrap();
         let mut inner = current_process.acquire_inner_lock();
         if !inner
             .children
@@ -553,20 +610,24 @@ pub fn sys_sigaction(
     }
 }
 
-pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
+pub fn sys_mprotect(start: usize, length: usize, prot: usize) -> isize {
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
     log::trace!(
         "sys_mprotect addr: {:#X} len: {:#X} flags: {:?}",
-        addr,
-        len,
+        start,
+        length,
         flags
     );
-    let start = VirtPageNum::from(VirtAddr::from(addr).floor());
-    let end = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
+    let end = VirtAddr::from(start + length).ceil();
+    let start = VirtAddr::from(start).floor();
     let current_process = current_process().unwrap();
     let mut inner = current_process.acquire_inner_lock();
     for vpn in start..end {
         inner.addrspace.set_pte_flags(vpn, flags);
+    }
+    unsafe {
+        asm!("sfence.vma");
+        asm!("fence.i");
     }
     0
 }

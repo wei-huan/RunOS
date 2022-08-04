@@ -8,7 +8,8 @@ use crate::mm::{
 use crate::scheduler::{add_task, insert_into_pid2process, insert_into_tid2task};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
+    kstack_alloc, pid_alloc, tid_alloc, AuxHeader, PidHandle, SignalActions, TaskContext,
+    TaskControlBlock, TaskControlBlockInner, TaskStatus, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
@@ -16,6 +17,8 @@ use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
 use spin::{Mutex, MutexGuard};
+
+use super::TaskUserRes;
 
 pub struct ProcessControlBlock {
     // immutable
@@ -333,7 +336,7 @@ impl ProcessControlBlock {
         trap_cx.x[13] = auxv_base;
         *task_inner.get_trap_cx() = trap_cx;
     }
-    pub fn fork(self: &Arc<ProcessControlBlock>) -> Arc<ProcessControlBlock> {
+    pub fn fork(self: &Arc<ProcessControlBlock>, _flags: u32) -> Arc<ProcessControlBlock> {
         // assert_eq!(
         //     self.acquire_inner_lock().thread_count(),
         //     1,
@@ -458,10 +461,12 @@ impl ProcessControlBlock {
 
             // map mmap section at fixed place
             log::trace!("mmap at fixed place start before map: {:#X}", start);
-            inner.mmap_area_hint = inner
-                .addrspace
-                .create_mmap_section(start, length, mmap_perm)
-                .into();
+            inner.mmap_area_hint = inner.mmap_area_hint.max(
+                inner
+                    .addrspace
+                    .create_mmap_section(start, length, mmap_perm)
+                    .into(),
+            );
             log::trace!(
                 "mmap at fixed place hint after map: {:#X}",
                 inner.mmap_area_hint
@@ -470,21 +475,24 @@ impl ProcessControlBlock {
         // no conflict, just map it
         else if mmap_flag.contains(MMapFlags::MAP_FIXED) {
             log::trace!("mmap start before map: {:#X}", start);
-            // TODO mmap_area_hint new appropriate?
-            inner.mmap_area_hint = inner
-                .addrspace
-                .create_mmap_section(start, length, mmap_perm)
-                .into();
+            inner.mmap_area_hint = inner.mmap_area_hint.max(
+                inner
+                    .addrspace
+                    .create_mmap_section(start, length, mmap_perm)
+                    .into(),
+            );
             log::trace!("mmap hint after map: {:#X}", inner.mmap_area_hint);
         }
         // have conflict, but can pick a new place to map
         else {
             start = inner.mmap_area_hint;
             log::trace!("mmap need to pick new place start before map: {:#X}", start);
-            inner.mmap_area_hint = inner
-                .addrspace
-                .create_mmap_section(start, length, mmap_perm)
-                .into();
+            inner.mmap_area_hint = inner.mmap_area_hint.max(
+                inner
+                    .addrspace
+                    .create_mmap_section(start, length, mmap_perm)
+                    .into(),
+            );
             log::trace!(
                 "mmap need to pick new place hint after map: {:#X}",
                 inner.mmap_area_hint

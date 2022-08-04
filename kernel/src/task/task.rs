@@ -1,7 +1,9 @@
-use super::context::TaskContext;
-use super::process::ProcessControlBlock;
 use crate::mm::PhysPageNum;
-use crate::task::{kstack_alloc, tid_alloc, Arc, KernelStack, SignalFlags, TaskUserRes, TidHandle};
+use crate::scheduler::{add_task, insert_into_tid2task};
+use crate::task::{
+    kstack_alloc, tid_alloc, Arc, KernelStack, ProcessControlBlock, SignalFlags, TaskContext,
+    TaskUserRes, TidHandle,
+};
 use crate::trap::TrapContext;
 use alloc::sync::Weak;
 use spin::{Mutex, MutexGuard};
@@ -10,7 +12,6 @@ use spin::{Mutex, MutexGuard};
 pub enum TaskStatus {
     Ready,
     Running,
-    Zombie,
 }
 
 pub struct TaskControlBlock {
@@ -45,9 +46,6 @@ impl TaskControlBlockInner {
     fn get_status(&self) -> TaskStatus {
         self.task_status
     }
-    pub fn is_zombie(&self) -> bool {
-        self.get_status() == TaskStatus::Zombie
-    }
     pub fn get_lid(&self) -> usize {
         self.res.as_ref().unwrap().lid
     }
@@ -60,6 +58,7 @@ impl TaskControlBlock {
     pub fn acquire_inner_lock(&self) -> MutexGuard<TaskControlBlockInner> {
         self.inner.lock()
     }
+    // only for main thread
     pub fn new(process: Arc<ProcessControlBlock>, lid: usize, is_alloc_user_res: bool) -> Self {
         let tid_handle = tid_alloc();
         let res = TaskUserRes::new(process.clone(), lid, is_alloc_user_res);
@@ -83,6 +82,52 @@ impl TaskControlBlock {
                 trap_ctx_backup: None,
             }),
         };
+        task
+    }
+    pub fn clone_thread(
+        self: &Arc<TaskControlBlock>,
+        process: Arc<ProcessControlBlock>,
+        _flags: u32,
+    ) -> Arc<TaskControlBlock> {
+        let kernel_stack = kstack_alloc();
+        let kernel_stack_top = kernel_stack.get_top();
+        let tid = tid_alloc();
+        let lid = process.acquire_inner_lock().tasks.len() + 1;
+        let res = TaskUserRes::new(process.clone(), lid, true);
+        let trap_cx_ppn = res.trap_cx_ppn();
+        let self_inner = self.acquire_inner_lock();
+        // create new thread
+        let task = Arc::new(TaskControlBlock {
+            tid,
+            process: Arc::downgrade(&process),
+            kernel_stack,
+            inner: Mutex::new(TaskControlBlockInner {
+                res: Some(res),
+                trap_cx_ppn,
+                task_cx: TaskContext::goto_trap_return(kernel_stack_top),
+                task_status: TaskStatus::Ready,
+                signals: self_inner.signals.clone(),
+                signal_mask: self_inner.signal_mask.clone(),
+                handling_sig: -1,
+                killed: false,
+                frozen: false,
+                trap_ctx_backup: None,
+            }),
+        });
+        let task_inner = task.acquire_inner_lock();
+        let trap_cx = task_inner.get_trap_cx();
+        // copy trap_cx from the parent thread
+        *trap_cx = *self_inner.get_trap_cx();
+        // modify kstack_top in trap_cx of this thread
+        trap_cx.kernel_sp = kernel_stack_top;
+        drop(self_inner);
+        drop(task_inner);
+        // add new thread to process
+        let mut process_inner = process.acquire_inner_lock();
+        process_inner.tasks.push(task.clone());
+        drop(process_inner);
+        insert_into_tid2task(task.gettid(), task.clone());
+        add_task(task.clone());
         task
     }
     // pub fn getpid(&self) -> usize {

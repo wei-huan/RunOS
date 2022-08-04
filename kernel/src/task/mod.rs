@@ -133,14 +133,11 @@ fn call_user_signal_handler(sig: usize, signal: SignalFlags) {
     // handle flag
     task_inner.handling_sig = sig as isize;
     task_inner.signals ^= signal;
-
     // backup trapframe
     let mut trap_ctx = task_inner.get_trap_cx();
     task_inner.trap_ctx_backup = Some(*trap_ctx);
-
     // modify trapframe
     trap_ctx.sepc = handler;
-
     // put args (a0)
     trap_ctx.x[10] = sig;
 }
