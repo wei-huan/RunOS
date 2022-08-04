@@ -6,6 +6,7 @@ mod process;
 mod sysinfo;
 mod syslog;
 mod utsname;
+mod futex;
 
 use crate::cpu::{current_process, current_task};
 use crate::task::SignalAction;
@@ -17,6 +18,7 @@ use process::*;
 use sysinfo::*;
 use syslog::*;
 use utsname::*;
+use futex::*;
 
 const SYSCALL_GETCWD: usize = 17;
 const SYSCALL_DUP: usize = 23;
