@@ -3,7 +3,15 @@ use crate::rustsbi::console_putchar;
 #[cfg(not(feature = "rustsbi"))]
 use crate::opensbi::console_putchar;
 
+use spin::Mutex;
 use core::fmt::{self, Write};
+use lazy_static::*;
+
+struct Console;
+
+lazy_static!{
+    pub static ref CONSOLE_MUTEX: Mutex<Console> = Mutex::new(Console);
+}
 
 struct Stdout;
 
