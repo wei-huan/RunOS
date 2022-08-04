@@ -184,7 +184,7 @@ pub fn sys_clone(
             // ),
             // addr: ctid_ptr as usize});
         }
-        println!("clone syscall before back");
+        // println!("clone syscall before back");
         new_tid as isize
     } else {
         let new_process = current_process.fork(flags);

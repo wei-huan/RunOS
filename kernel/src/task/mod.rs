@@ -18,7 +18,8 @@ pub use task::*;
 
 use crate::cpu::{current_process, current_task, take_current_task};
 use crate::scheduler::{
-    remove_from_pid2process, remove_from_tid2task, save_current_and_back_to_schedule, INITPROC,
+    add_task, remove_from_pid2process, remove_from_tid2task, save_current_and_back_to_schedule,
+    INITPROC,
 };
 use alloc::sync::Arc;
 
@@ -36,6 +37,24 @@ pub fn suspend_current_and_run_next() {
     // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);
     // log::debug!("back to suspend");
+}
+
+pub fn block_current_and_run_next() {
+    let task = take_current_task().unwrap();
+    let mut task_inner = task.acquire_inner_lock();
+    let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
+    task_inner.task_status = TaskStatus::Block;
+    drop(task_inner);
+    drop(task);
+    save_current_and_back_to_schedule(task_cx_ptr);
+}
+
+pub fn unblock_task(task: Arc<TaskControlBlock>) {
+    let mut task_inner = task.acquire_inner_lock();
+    assert!(task_inner.task_status == TaskStatus::Block);
+    task_inner.task_status = TaskStatus::Ready;
+    drop(task_inner);
+    add_task(task);
 }
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务

@@ -89,10 +89,8 @@ pub fn sys_futex(
         val3
     );
     let token = current_user_token();
-    if op & FUTEX_CLOCK_REALTIME != 0 {
-        if cmd != FUTEX_WAIT {
-            return -EPERM; // ENOSYS
-        }
+    if op & FUTEX_CLOCK_REALTIME != 0 && cmd != FUTEX_WAIT {
+        return -EPERM; // ENOSYS
     }
     let ret = match cmd {
         FUTEX_WAIT => {
@@ -101,7 +99,7 @@ pub fn sys_futex(
                 let usec = *translated_ref(token, unsafe { timeout.add(1) });
                 sec as usize * USEC_PER_SEC + usec as usize
             } else {
-                usize::MAX // inf
+                usize::MAX
             };
             futex_wait(uaddr as usize, val, t)
         }
@@ -113,7 +111,6 @@ pub fn sys_futex(
 }
 
 pub fn futex_wait(uaddr: usize, val: u32, timeout: usize) -> isize {
-    // futex_wait_setup
     let flag = FUTEX_QUEUE.read().contains_key(&uaddr);
     let mut fq_writer = FUTEX_QUEUE.write();
     let fq = if flag {
@@ -140,13 +137,11 @@ pub fn futex_wait(uaddr: usize, val: u32, timeout: usize) -> isize {
         drop(fq_writer);
         return -EAGAIN;
     }
-
     // futex_wait_queue_me
     let task = current_task().unwrap();
     fq_lock.push_back(task.clone());
     drop(fq_lock);
     drop(fq_writer);
-
     block_current_and_run_next();
     return 0;
 }

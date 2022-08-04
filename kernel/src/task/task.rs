@@ -12,6 +12,7 @@ use spin::{Mutex, MutexGuard};
 pub enum TaskStatus {
     Ready,
     Running,
+    Block,
 }
 
 pub struct TaskControlBlock {
