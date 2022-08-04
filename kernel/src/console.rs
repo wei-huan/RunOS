@@ -7,7 +7,7 @@ use spin::Mutex;
 use core::fmt::{self, Write};
 use lazy_static::*;
 
-struct Console;
+pub struct Console;
 
 lazy_static!{
     pub static ref CONSOLE_MUTEX: Mutex<Console> = Mutex::new(Console);
@@ -25,6 +25,7 @@ impl Write for Stdout{
 }
 
 pub fn print(args: fmt::Arguments) {
+    CONSOLE_MUTEX.lock();
     Stdout.write_fmt(args).unwrap();
 }
 

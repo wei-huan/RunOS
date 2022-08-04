@@ -79,18 +79,15 @@ pub fn sys_futex(
 ) -> isize {
     let mut flags = 0;
     let cmd = op & FUTEX_CMD_MASK;
-    log::debug!(
-        "sys_futex uaddr {:#X?}, op: {}, val: {}, timeout {:#X?}, uaddr2 {:#X?}, val3 {}",
-        uaddr,
-        cmd,
-        val,
-        timeout,
-        uaddr2,
-        val3
-    );
+    // log::debug!(
+    //     "sys_futex uaddr {:#X}, op: {}, val: {}",
+    //     uaddr as usize,
+    //     cmd,
+    //     val,
+    // );
     let token = current_user_token();
     if op & FUTEX_CLOCK_REALTIME != 0 && cmd != FUTEX_WAIT {
-        return -EPERM; // ENOSYS
+        return -EPERM;
     }
     let ret = match cmd {
         FUTEX_WAIT => {
@@ -105,7 +102,7 @@ pub fn sys_futex(
         }
         FUTEX_WAKE => futex_wake(uaddr as usize, val),
         FUTEX_REQUEUE => futex_requeue(uaddr as usize, val, uaddr2 as usize, timeout as u32),
-        _ => ENOSYS,
+        _ => EPERM,
     };
     return ret;
 }

@@ -33,7 +33,7 @@ pub fn sys_yield() -> isize {
     0
 }
 
-pub fn sys_get_time(time_val: *mut TimeVal) -> isize {
+pub fn sys_get_time(time_val: *mut TimeSpec) -> isize {
     get_time_val(time_val)
 }
 
@@ -49,10 +49,6 @@ pub fn sys_times(times: *mut Times) -> isize {
     0
 }
 
-// struct timespec {
-//     time_t   tv_sec;        /* seconds */
-//     long     tv_nsec;       /* nanoseconds */
-// };
 pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
     if tp as usize == 0 {
         return 0;
@@ -184,7 +180,8 @@ pub fn sys_clone(
             // ),
             // addr: ctid_ptr as usize});
         }
-        // println!("clone syscall before back");
+        // let child process run first
+        suspend_current_and_run_next();
         new_tid as isize
     } else {
         let new_process = current_process.fork(flags);
@@ -196,6 +193,10 @@ pub fn sys_clone(
         if stack_ptr != 0 {
             trap_cx.set_sp(stack_ptr);
         }
+        // set new tls
+        if clone_flags.contains(CloneFlags::CLONE_SETTLS) {
+            trap_cx.x[4] = newtls;
+        }
         // for child process, fork returns 0
         trap_cx.x[10] = 0;
         let new_pid = new_process.getpid();
@@ -205,20 +206,14 @@ pub fn sys_clone(
     }
 }
 
-pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
-    let (mut sec, mut usec) = get_time_sec_usec();
+// no signal interrupt, always success
+pub fn sys_sleep(req: &TimeSpec, _rem: &mut TimeSpec) -> isize {
     let token = current_user_token();
-    let req_sec = *translated_ref(token, &(time_req.sec));
-    let req_usec = *translated_ref(token, &(time_req.usec));
-    let (end_sec, end_usec) = (req_sec + sec, req_usec + usec);
-    // println!("end_sec: {}", end_sec);
-    // println!("end_usec: {}", end_usec);
+    let req_sec = *translated_ref(token, &(req.sec));
+    let req_usec = *translated_ref(token, &(req.usec));
+    let end_usec = req_sec as usize * USEC_PER_SEC + req_usec as usize + get_time_us();
     loop {
-        (sec, usec) = get_time_sec_usec();
-        // println!("sec: {}", sec);
-        // println!("usec: {}", usec);
-        if (sec < end_sec) || (usec < end_usec) {
-            *translated_refmut(token, time_remain) = TimeVal { sec: 0, usec: 0 };
+        if get_time_us() < end_usec {
             suspend_current_and_run_next();
         } else {
             return 0;

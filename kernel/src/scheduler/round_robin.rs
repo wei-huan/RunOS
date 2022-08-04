@@ -47,7 +47,9 @@ impl Scheduler for RoundRobinScheduler {
             interrupt_off();
             let mut cpu = take_my_cpu();
             if let Some(last_task) = cpu.take_current() {
-                add_task(last_task);
+                if last_task.acquire_inner_lock().task_status == TaskStatus::Ready {
+                    add_task(last_task);
+                }
             }
             if let Some(task) = self.fetch_task() {
                 // if hart_id() == 1 {

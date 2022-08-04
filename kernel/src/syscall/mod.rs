@@ -10,7 +10,7 @@ mod utsname;
 
 use crate::cpu::{current_process, current_task};
 use crate::task::SignalAction;
-use crate::timer::{TimeVal, Times};
+use crate::timer::{TimeSpec, Times};
 
 pub use errorno::*;
 use fs::*;
@@ -101,17 +101,17 @@ const SYSCALL_PRLIMIT: usize = 261;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    // let pid = current_process().unwrap().getpid();
-    // let lid = current_task()
-    //     .unwrap()
-    //     .acquire_inner_lock()
-    //     .res
-    //     .as_ref()
-    //     .unwrap()
-    //     .lid;
-    // if pid >= 3 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-    //     log::debug!("process{} thread{} syscall: {}", pid, lid, syscall_id);
-    // }
+    let pid = current_process().unwrap().getpid();
+    let lid = current_task()
+        .unwrap()
+        .acquire_inner_lock()
+        .res
+        .as_ref()
+        .unwrap()
+        .lid;
+    if pid >= 3 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
+        log::debug!("process{} thread{} syscall: {}", pid, lid, syscall_id);
+    }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),
@@ -165,8 +165,8 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[4] as _,
             args[5] as _,
         ),
-        SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
-            &mut *(args[1] as *mut TimeVal)
+        SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeSpec) }, unsafe {
+            &mut *(args[1] as *mut TimeSpec)
         }),
         SYSCALL_CLOCK_GETTIME => sys_clock_get_time(args[0] as usize, args[1] as *mut u64),
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
@@ -183,7 +183,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SIGRETURN => sys_sigretrun(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
-        SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
+        SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeSpec),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_GETPPID => sys_getppid(),
         SYSCALL_GETUID => sys_getuid(),
