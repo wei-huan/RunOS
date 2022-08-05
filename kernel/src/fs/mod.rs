@@ -8,26 +8,6 @@ use crate::mm::UserBuffer;
 use alloc::sync::Arc;
 
 #[derive(Clone)]
-pub struct FileDescripter {
-    cloexec: bool,
-    pub fclass: FileClass,
-}
-
-impl FileDescripter {
-    pub fn new(cloexec: bool, fclass: FileClass) -> Self {
-        Self { cloexec, fclass }
-    }
-
-    pub fn set_cloexec(&mut self, flag: bool) {
-        self.cloexec = flag;
-    }
-
-    pub fn get_cloexec(&self) -> bool {
-        self.cloexec
-    }
-}
-
-#[derive(Clone)]
 pub enum FileClass {
     File(Arc<OSInode>),
     Abstr(Arc<dyn File + Send + Sync>),
@@ -42,7 +22,7 @@ pub trait File: Send + Sync {
 
 pub use finfo::*;
 pub use inode::{
-    ch_dir, clear_cache, init_rootfs, list_apps, list_files, open, DiskInodeType, OSInode,
+    ch_dir, clear_cache, init_rootfs, list_apps, open, DiskInodeType, OSInode,
     OpenFlags,
 };
 pub use mount::MNT_TABLE;

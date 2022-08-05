@@ -13,10 +13,19 @@ const MSEC_PER_SEC: usize = 1000;
 pub const USEC_PER_SEC: usize = 1000_000;
 pub const NSEC_PER_SEC: usize = 1000_000_000;
 
+
+#[repr(C)]
+#[derive(Copy, Clone)]
+pub struct TimeSpec {
+    pub tv_sec: usize,  /* seconds */
+    pub tv_nsec: usize, /* nanoseconds */
+}
+
+#[repr(C)]
 #[derive(Copy, Clone)]
 pub struct TimeVal {
-    pub sec: u64,
-    pub usec: u64,
+    pub tv_sec: u64,   /* seconds */
+    pub tv_usec: u64,  /* microseconds */
 }
 
 #[derive(Copy, Clone)]
@@ -85,8 +94,8 @@ pub fn compare_time_sec_usec(t_sec: usize, t_usec: usize, f_sec: usize, f_usec: 
 
 pub fn get_time_val(time_val: *mut TimeVal) -> isize {
     let token = current_user_token();
-    let (sec, usec) = get_time_sec_usec();
-    *translated_refmut(token, time_val) = TimeVal { sec, usec };
+    let (tv_sec, tv_usec) = get_time_sec_usec();
+    *translated_refmut(token, time_val) = TimeVal { tv_sec, tv_usec };
     0
 }
 

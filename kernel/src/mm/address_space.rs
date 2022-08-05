@@ -395,7 +395,7 @@ impl AddrSpace {
         let mut at_base = 0;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
-            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+            // let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
             // let name = sect.get_name(&elf).unwrap();
             // log::debug!(
             //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",

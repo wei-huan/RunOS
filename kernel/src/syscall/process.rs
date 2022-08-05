@@ -1,4 +1,4 @@
-use crate::config::page_aligned_up;
+use crate::config::{page_aligned_up, FD_LIMIT};
 use crate::cpu::{current_process, current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
@@ -6,9 +6,10 @@ use crate::mm::{
     translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
 };
 use crate::scheduler::{add_task, pid2process, tid2task};
-use crate::syscall::{EINVAL, ESRCH};
+use crate::syscall::{EINVAL, EPERM, ESRCH};
 use crate::task::{
-    exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,
+    exit_current_and_run_next, suspend_current_and_run_next, ClearChildTid, SignalAction,
+    SignalFlags, MAX_SIG,
 };
 use crate::timer::*;
 use alloc::string::String;
@@ -49,19 +50,14 @@ pub fn sys_times(times: *mut Times) -> isize {
     0
 }
 
-// struct timespec {
-//     time_t   tv_sec;        /* seconds */
-//     long     tv_nsec;       /* nanoseconds */
-// };
 pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
     if tp as usize == 0 {
         return 0;
     }
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
     let token = current_user_token();
-    let ticks = get_time();
-    let sec = (ticks / timer_freq) as u64;
-    let nsec = ((ticks % timer_freq) * (NSEC_PER_SEC / timer_freq)) as u64;
+    let time = get_time_ns();
+    let sec = (time / NSEC_PER_SEC) as u64;
+    let nsec = (time % NSEC_PER_SEC) as u64;
     *translated_refmut(token, tp) = sec;
     *translated_refmut(token, unsafe { tp.add(1) }) = nsec;
     0
@@ -70,8 +66,15 @@ pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
 pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
     // log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
     let token = current_user_token();
-    let tid = current_task().unwrap().gettid() as u32;
-    *translated_refmut(token, ptr) = tid;
+    let task = current_task().unwrap();
+    let task_inner = task.acquire_inner_lock();
+    let ctid = if let Some(p) = &task_inner.clear_child_tid {
+        p.ctid
+    } else {
+        0
+    };
+    *translated_refmut(token, ptr) = ctid;
+    let tid = task.gettid();
     tid as isize
 }
 
@@ -178,13 +181,17 @@ pub fn sys_clone(
             ) = new_tid as u32;
         }
         if clone_flags.contains(CloneFlags::CLONE_CHILD_CLEARTID) && ctid_ptr as usize != 0 {
-            // new_task_inner.clear_child_tid = Some(ClearChildTid {ctid: *translated_ref(
-            //     current_process.acquire_inner_lock().get_user_token(),
-            //     ctid_ptr,
-            // ),
-            // addr: ctid_ptr as usize});
+            let mut new_task_inner = new_task.acquire_inner_lock();
+            new_task_inner.clear_child_tid = Some(ClearChildTid {
+                ctid: *translated_ref(
+                    current_process.acquire_inner_lock().get_user_token(),
+                    ctid_ptr,
+                ),
+                addr: ctid_ptr as usize,
+            });
         }
-        println!("clone syscall before back");
+        // let child thread run first
+        // suspend_current_and_run_next();
         new_tid as isize
     } else {
         let new_process = current_process.fork(flags);
@@ -209,20 +216,14 @@ pub fn sys_clone(
     }
 }
 
-pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
-    let (mut sec, mut usec) = get_time_sec_usec();
+// no signal interrupt, always success
+pub fn sys_sleep(req: &TimeVal, _rem: &mut TimeVal) -> isize {
     let token = current_user_token();
-    let req_sec = *translated_ref(token, &(time_req.sec));
-    let req_usec = *translated_ref(token, &(time_req.usec));
-    let (end_sec, end_usec) = (req_sec + sec, req_usec + usec);
-    // println!("end_sec: {}", end_sec);
-    // println!("end_usec: {}", end_usec);
+    let req_sec = *translated_ref(token, &(req.tv_sec));
+    let req_usec = *translated_ref(token, &(req.tv_usec));
+    let end_usec = req_sec as usize * USEC_PER_SEC + req_usec as usize + get_time_us();
     loop {
-        (sec, usec) = get_time_sec_usec();
-        // println!("sec: {}", sec);
-        // println!("usec: {}", usec);
-        if (sec < end_sec) || (usec < end_usec) {
-            *translated_refmut(token, time_remain) = TimeVal { sec: 0, usec: 0 };
+        if get_time_us() < end_usec {
             suspend_current_and_run_next();
         } else {
             return 0;
@@ -231,9 +232,9 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
-    log::trace!("sys_exec");
     let token = current_user_token();
     let path = translated_str(token, path);
+    log::trace!("sys_exec, path: {:#?}", path);
     let mut args_vec: Vec<String> = Vec::new();
     loop {
         let arg_str_ptr = *translated_ref(token, args);
@@ -418,7 +419,6 @@ pub fn sys_sbrk(increment: isize) -> isize {
         }
         // 回收 heap 段
         if inner.heap_pointer as isize + increment <= inner.heap_start as isize {
-            // todo 回收 .heap 段
             inner.addrspace.dealloc_heap_section();
             return 0;
         } else {
@@ -453,7 +453,7 @@ pub fn sys_mmap(
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
-    log::trace!("sys_unmmap");
+    log::trace!("sys_munmap, start: {:#X?}, length: {:#X?}", start, length);
     let current_process = current_process().unwrap();
     current_process.munmap(start, length)
 }
@@ -462,18 +462,48 @@ const RLIMIT_CPU: usize = 0;
 const RLIMIT_FSIZE: usize = 1;
 const RLIMIT_DATA: usize = 2;
 const RLIMIT_STACK: usize = 3;
-const RLIMIT_NOFILE: usize = 7;
-const RLIMIT_AS: usize = 9;
+const RLIMIT_NOFILE: usize = 7; /* max number of open files */
+const RLIMIT_AS: usize = 9; /* address space limit */
 
-pub struct RLimit {
-    pub rlim_cur: usize, /* Soft limit */
-    pub rlim_max: usize, /* Hard limit (ceiling for rlim_cur) */
+#[repr(C)]
+pub struct RLimit64 {
+    pub rlim_cur: usize, /* The current (soft) limit.  */
+    pub rlim_max: usize, /* The hard limit.  */
 }
 
-const FDMAX: usize = 10;
-
-pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut RLimit) -> isize {
-    // log::debug!("sys_prlimit res: {}", res);
+pub fn sys_prlimit64(
+    pid: usize,
+    res: usize,
+    rlim: *const RLimit64,
+    old_rlim: *mut RLimit64,
+) -> isize {
+    log::trace!("sys_prlimit64: pid: {}, res: {}", pid, res);
+    let token = current_user_token();
+    let process = current_process().unwrap();
+    let mut inner = process.acquire_inner_lock();
+    if pid != 0 {
+        unimplemented!("sys_prlimit64 not ok with other process yet");
+    }
+    match res {
+        RLIMIT_NOFILE => {
+            if rlim as usize != 0 {
+                let rlimit = translated_ref(token, rlim);
+                log::debug!("rlimit: cur {} max{}", rlimit.rlim_cur, rlimit.rlim_max);
+                inner.fd_limit = rlimit.rlim_max;
+            }
+            if old_rlim as usize != 0 {
+                let old_rlimit = translated_refmut(token, old_rlim);
+                log::debug!(
+                    "rlimit: cur {} max{}",
+                    old_rlimit.rlim_cur,
+                    old_rlimit.rlim_max
+                );
+                old_rlimit.rlim_cur = inner.fd_limit;
+                old_rlimit.rlim_max = inner.fd_limit;
+            }
+        }
+        _ => {}
+    };
     0
 }
 
@@ -499,7 +529,8 @@ pub fn sys_kill(pid: usize, signum: i32) -> isize {
     }
 }
 
-pub fn sys_tkill(tid: usize, signum: u32) -> isize {
+pub fn sys_tkill(tid: usize, signum: i32) -> isize {
+    log::debug!("sys_tkill tid: {}, signum: {}", tid, signum);
     if let Some(task) = tid2task(tid) {
         if let Some(flag) = SignalFlags::from_bits(1 << signum) {
             let mut task_inner = task.acquire_inner_lock();
@@ -522,7 +553,7 @@ const SIG_SETMASK: isize = 2;
 
 pub fn sys_sigprocmask(how: isize, set_ptr: *const u128, oldset_ptr: *mut u128) -> isize {
     log::trace!(
-        "sys_sigprocmask how: {},  set_ptr: {},  oldset_ptr: {}",
+        "sys_sigprocmask how: {}, set_ptr: {:#X?}, oldset_ptr: {:#X?}",
         how,
         set_ptr as usize,
         oldset_ptr as usize
@@ -535,16 +566,21 @@ pub fn sys_sigprocmask(how: isize, set_ptr: *const u128, oldset_ptr: *mut u128) 
             *translated_refmut::<u128>(token, oldset_ptr) = old_mask as u128;
         }
         if set_ptr as usize != 0 {
-            let new_mask = *translated_ref::<u128>(token, set_ptr) as u32;
             match how {
                 SIG_BLOCK => {
-                    inner.signal_mask = SignalFlags::from_bits(new_mask | old_mask).unwrap()
+                    let block_signals = *translated_ref::<u128>(token, set_ptr) as u32;
+                    inner.signal_mask = SignalFlags::from_bits(block_signals | old_mask).unwrap()
                 }
                 SIG_UNBLOCK => {
-                    inner.signal_mask = SignalFlags::from_bits(old_mask & (!new_mask)).unwrap()
+                    let unblock_signals = *translated_ref::<u128>(token, set_ptr) as u32;
+                    inner.signal_mask =
+                        SignalFlags::from_bits(old_mask & (!unblock_signals)).unwrap()
                 }
-                SIG_SETMASK => inner.signal_mask = SignalFlags::from_bits(new_mask).unwrap(),
-                _ => return -1,
+                SIG_SETMASK => {
+                    let new_mask = *translated_ref::<u128>(token, set_ptr) as u32;
+                    inner.signal_mask = SignalFlags::from_bits(new_mask).unwrap()
+                }
+                _ => return -EPERM,
             };
         }
         0

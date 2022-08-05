@@ -119,23 +119,20 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::InstructionPageFault)
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
-            log::debug!(
+            log::warn!(
                 "[kernel] process{} thread{} {:?} in application, bad addr = {:#X}, bad instruction = {:#X}, kernel killed it.",
                 current_process().unwrap().getpid(),
-                current_task().unwrap().gettid(),
+                current_task().unwrap().acquire_inner_lock().res.as_ref().unwrap().lid,
                 scause.cause(),
                 stval,
                 current_trap_cx().sepc,
             );
-            // let heap_base = current_task().unwrap().acquire_inner_lock().heap_start;
-            // let heap_top = current_task().unwrap().acquire_inner_lock().heap_pointer;
-            // println!("heap_base = {:#x?}, heap_top = {:#x?}", heap_base, heap_top);
             // page fault exit code
             exit_current_and_run_next(-2, false);
             current_add_signal(SignalFlags::SIGSEGV);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            log::debug!("[kernel] IllegalInstruction in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
+            log::warn!("[kernel] IllegalInstruction in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
             stval,
             current_trap_cx().sepc);
             // illegal instruction exit code

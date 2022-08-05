@@ -23,10 +23,6 @@ impl RoundRobinScheduler {
         }
         Self { ready_queues }
     }
-    pub fn add_task2designate_ready_queue(&self, task: Arc<TaskControlBlock>, queue_id: usize) {
-        // log::debug!("Hart {} add task {} to ready queue {}",hart_id(), task.pid.0, queue_id);
-        self.ready_queues[queue_id].lock().push_back(task);
-    }
     fn ready_queue_len(&self, queue_id: usize) -> usize {
         self.ready_queues[queue_id].lock().len()
     }
@@ -50,9 +46,6 @@ impl Scheduler for RoundRobinScheduler {
                 add_task(last_task);
             }
             if let Some(task) = self.fetch_task() {
-                // if hart_id() == 1 {
-                //     log::trace!("have task");
-                // }
                 let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
                 // access coming task TCB exclusively
                 let mut task_inner = task.acquire_inner_lock();

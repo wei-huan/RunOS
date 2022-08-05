@@ -2,6 +2,7 @@
 
 mod errorno;
 mod fs;
+mod futex;
 mod process;
 mod sysinfo;
 mod syslog;
@@ -12,6 +13,8 @@ use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
 
 pub use errorno::*;
+pub use futex::*;
+
 use fs::*;
 use process::*;
 use sysinfo::*;
@@ -95,7 +98,7 @@ const SYSCALL_EXECVE: usize = 221;
 const SYSCALL_MMAP: usize = 222;
 const SYSCALL_MPROTECT: usize = 226;
 const SYSCALL_WAIT4: usize = 260;
-const SYSCALL_PRLIMIT: usize = 261;
+const SYSCALL_PRLIMIT64: usize = 261;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
@@ -108,7 +111,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     //     .unwrap()
     //     .lid;
     // if pid >= 3 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-    //     log::debug!("process{} thread{} syscall: {}", pid, lid, syscall_id);
+    //     log::debug!("process{} thread{} syscall {}", pid, lid, syscall_id);
     // }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
@@ -155,7 +158,14 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SET_ROBUST_LIST => 0,
         SYSCALL_GET_ROBUST_LIST => 0,
         SYSCALL_SET_TID_ADDRESS => sys_set_tid_address(args[0] as _),
-        SYSCALL_FUTEX => 0,
+        SYSCALL_FUTEX => sys_futex(
+            args[0] as _,
+            args[1],
+            args[2] as _,
+            args[3] as _,
+            args[4] as _,
+            args[5] as _,
+        ),
         SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
             &mut *(args[1] as *mut TimeVal)
         }),
@@ -183,18 +193,18 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETEGID => sys_getegid(),
         SYSCALL_GETTID => sys_gettid(),
         SYSCALL_SYSINFO => sys_sysinfo(args[0] as *mut u8),
-        SYSCALL_SOCKET => 0,
-        SYSCALL_SOCKETPAIR => 0,
-        SYSCALL_BIND => 0,
-        SYSCALL_LISTEN => 0,
-        SYSCALL_ACCEPT => 0,
-        SYSCALL_CONNECT => 0,
-        SYSCALL_GETSOCKNAME => 0,
-        SYSCALL_GETPAIRNAME => 0,
-        SYSCALL_SENDTO => 0,
-        SYSCALL_RECVFROM => 0,
-        SYSCALL_SETSOCKOPT => 0,
-        SYSCALL_GETSOCKOPT => 0,
+        // SYSCALL_SOCKET => 0,
+        // SYSCALL_SOCKETPAIR => 0,
+        // SYSCALL_BIND => 0,
+        // SYSCALL_LISTEN => 0,
+        // SYSCALL_ACCEPT => 0,
+        // SYSCALL_CONNECT => 0,
+        // SYSCALL_GETSOCKNAME => 0,
+        // SYSCALL_GETPAIRNAME => 0,
+        // SYSCALL_SENDTO => 0,
+        // SYSCALL_RECVFROM => 0,
+        // SYSCALL_SETSOCKOPT => 0,
+        // SYSCALL_GETSOCKOPT => 0,
         SYSCALL_SBRK => sys_sbrk(args[0] as isize),
         SYSCALL_BRK => sys_brk(args[0]),
         SYSCALL_CLONE => sys_clone(
@@ -216,7 +226,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         ),
         SYSCALL_MPROTECT => sys_mprotect(args[0], args[1], args[2]),
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
-        SYSCALL_PRLIMIT => sys_prlimit(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
+        SYSCALL_PRLIMIT64 => sys_prlimit64(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
         SYSCALL_MEMBARRIER => 0,
         _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }

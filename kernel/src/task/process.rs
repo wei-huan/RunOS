@@ -1,5 +1,5 @@
-use crate::config::MMAP_BASE;
-use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
+use crate::config::{page_aligned_up, FD_LIMIT, MMAP_BASE};
+use crate::fs::{File, FileClass, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, MapPermission,
@@ -8,8 +8,7 @@ use crate::mm::{
 use crate::scheduler::{add_task, insert_into_pid2process, insert_into_tid2task};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    kstack_alloc, pid_alloc, tid_alloc, AuxHeader, PidHandle, SignalActions, TaskContext,
-    TaskControlBlock, TaskControlBlockInner, TaskStatus, AT_EXECFN, AT_NULL, AT_RANDOM,
+    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::string::String;
@@ -18,8 +17,6 @@ use alloc::vec;
 use alloc::vec::Vec;
 use spin::{Mutex, MutexGuard};
 
-use super::TaskUserRes;
-
 pub struct ProcessControlBlock {
     // immutable
     pub pid: PidHandle,
@@ -27,7 +24,7 @@ pub struct ProcessControlBlock {
     inner: Mutex<ProcessControlBlockInner>,
 }
 
-pub type FDTable = Vec<Option<FileDescripter>>;
+pub type FDTable = Vec<Option<FileClass>>;
 pub struct ProcessControlBlockInner {
     pub entry_point: usize,
     pub is_zombie: bool,
@@ -37,6 +34,7 @@ pub struct ProcessControlBlockInner {
     pub tasks: Vec<Arc<TaskControlBlock>>,
     pub exit_code: i32,
     pub fd_table: FDTable,
+    pub fd_limit: usize,
     pub current_path: String,
     pub heap_start: usize,
     pub heap_pointer: usize,
@@ -94,21 +92,13 @@ impl ProcessControlBlock {
                 exit_code: 0,
                 fd_table: vec![
                     // 0 -> stdin
-                    Some(FileDescripter::new(
-                        false,
-                        FileClass::Abstr(Arc::new(Stdin)),
-                    )),
+                    Some(FileClass::Abstr(Arc::new(Stdin))),
                     // 1 -> stdout
-                    Some(FileDescripter::new(
-                        false,
-                        FileClass::Abstr(Arc::new(Stdout)),
-                    )),
+                    Some(FileClass::Abstr(Arc::new(Stdout))),
                     // 2 -> stderr
-                    Some(FileDescripter::new(
-                        false,
-                        FileClass::Abstr(Arc::new(Stdout)),
-                    )),
+                    Some(FileClass::Abstr(Arc::new(Stdout))),
                 ],
+                fd_limit: FD_LIMIT,
                 current_path: String::from("/"),
                 mmap_area_hint: MMAP_BASE,
                 signal_actions: SignalActions::default(),
@@ -167,21 +157,14 @@ impl ProcessControlBlock {
         // fresh fd_table
         process_inner.fd_table = vec![
             // 0 -> stdin
-            Some(FileDescripter::new(
-                false,
-                FileClass::Abstr(Arc::new(Stdin)),
-            )),
+            Some(FileClass::Abstr(Arc::new(Stdin))),
             // 1 -> stdout
-            Some(FileDescripter::new(
-                false,
-                FileClass::Abstr(Arc::new(Stdout)),
-            )),
+            Some(FileClass::Abstr(Arc::new(Stdout))),
             // 2 -> stderr
-            Some(FileDescripter::new(
-                false,
-                FileClass::Abstr(Arc::new(Stdout)),
-            )),
+            Some(FileClass::Abstr(Arc::new(Stdout))),
         ];
+        // reset fd_limit
+        process_inner.fd_limit = FD_LIMIT;
         // get main task and allocate user resource
         let task = process_inner.get_task(0);
         drop(process_inner);
@@ -370,6 +353,7 @@ impl ProcessControlBlock {
                 tasks: Vec::new(),
                 exit_code: 0,
                 fd_table: new_fd_table,
+                fd_limit: parent_inner.fd_limit,
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_hint: parent_inner.mmap_area_hint,
                 signal_actions: parent_inner.signal_actions.clone(),
@@ -510,7 +494,7 @@ impl ProcessControlBlock {
             return -EBADF;
         }
         if let Some(file) = &fd_table[fd as usize] {
-            match &file.fclass {
+            match &file {
                 FileClass::File(f) => {
                     if !f.readable() {
                         return -EPERM;
@@ -532,6 +516,7 @@ impl ProcessControlBlock {
         };
     }
     pub fn munmap(&self, start: usize, _length: usize) -> isize {
+        let start = page_aligned_up(start);
         let mut inner = self.acquire_inner_lock();
         inner
             .addrspace
