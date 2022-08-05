@@ -10,11 +10,11 @@ mod utsname;
 
 use crate::cpu::{current_process, current_task};
 use crate::task::SignalAction;
-use crate::timer::{TimeSpec, Times};
+use crate::timer::{TimeVal, Times};
 
 pub use errorno::*;
 use fs::*;
-use futex::*;
+pub use futex::*;
 use process::*;
 use sysinfo::*;
 use syslog::*;
@@ -165,8 +165,8 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[4] as _,
             args[5] as _,
         ),
-        SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeSpec) }, unsafe {
-            &mut *(args[1] as *mut TimeSpec)
+        SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
+            &mut *(args[1] as *mut TimeVal)
         }),
         SYSCALL_CLOCK_GETTIME => sys_clock_get_time(args[0] as usize, args[1] as *mut u64),
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
@@ -183,7 +183,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SIGRETURN => sys_sigretrun(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
-        SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeSpec),
+        SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_GETPPID => sys_getppid(),
         SYSCALL_GETUID => sys_getuid(),
@@ -192,18 +192,18 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETEGID => sys_getegid(),
         SYSCALL_GETTID => sys_gettid(),
         SYSCALL_SYSINFO => sys_sysinfo(args[0] as *mut u8),
-        SYSCALL_SOCKET => 0,
-        SYSCALL_SOCKETPAIR => 0,
-        SYSCALL_BIND => 0,
-        SYSCALL_LISTEN => 0,
-        SYSCALL_ACCEPT => 0,
-        SYSCALL_CONNECT => 0,
-        SYSCALL_GETSOCKNAME => 0,
-        SYSCALL_GETPAIRNAME => 0,
-        SYSCALL_SENDTO => 0,
-        SYSCALL_RECVFROM => 0,
-        SYSCALL_SETSOCKOPT => 0,
-        SYSCALL_GETSOCKOPT => 0,
+        // SYSCALL_SOCKET => 0,
+        // SYSCALL_SOCKETPAIR => 0,
+        // SYSCALL_BIND => 0,
+        // SYSCALL_LISTEN => 0,
+        // SYSCALL_ACCEPT => 0,
+        // SYSCALL_CONNECT => 0,
+        // SYSCALL_GETSOCKNAME => 0,
+        // SYSCALL_GETPAIRNAME => 0,
+        // SYSCALL_SENDTO => 0,
+        // SYSCALL_RECVFROM => 0,
+        // SYSCALL_SETSOCKOPT => 0,
+        // SYSCALL_GETSOCKOPT => 0,
         SYSCALL_SBRK => sys_sbrk(args[0] as isize),
         SYSCALL_BRK => sys_brk(args[0]),
         SYSCALL_CLONE => sys_clone(

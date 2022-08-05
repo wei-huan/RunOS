@@ -122,7 +122,7 @@ pub fn user_trap_handler() -> ! {
             log::warn!(
                 "[kernel] process{} thread{} {:?} in application, bad addr = {:#X}, bad instruction = {:#X}, kernel killed it.",
                 current_process().unwrap().getpid(),
-                current_task().unwrap().gettid(),
+                current_task().unwrap().acquire_inner_lock().res.as_ref().unwrap().lid,
                 scause.cause(),
                 stval,
                 current_trap_cx().sepc,

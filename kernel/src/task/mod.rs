@@ -9,18 +9,20 @@ mod task;
 
 pub use action::*;
 pub use aux::*;
-pub use context::TaskContext;
+pub use context::*;
 pub use id::*;
-pub use idle_task::{idle_task, TIME_TO_SCHEDULE};
+pub use idle_task::*;
 pub use process::*;
 pub use signal::*;
 pub use task::*;
 
 use crate::cpu::{current_process, current_task, take_current_task};
+use crate::mm::translated_refmut;
 use crate::scheduler::{
     add_task, remove_from_pid2process, remove_from_tid2task, save_current_and_back_to_schedule,
     INITPROC,
 };
+use crate::syscall::futex_wake;
 use alloc::sync::Arc;
 
 pub fn suspend_current_and_run_next() {
@@ -40,7 +42,7 @@ pub fn suspend_current_and_run_next() {
 }
 
 pub fn block_current_and_run_next() {
-    let task = current_task().unwrap();
+    let task = take_current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
     let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
     task_inner.task_status = TaskStatus::Block;
@@ -63,10 +65,22 @@ pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
     // take from Processor
     let task = take_current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
+
+    // do futex_wake if clear_child_tid is set
+    if let Some(p) = &task_inner.clear_child_tid {
+        *translated_refmut(
+            process.acquire_inner_lock().get_user_token(),
+            p.addr as *mut u32,
+        ) = 0;
+        futex_wake(p.addr, 1);
+    }
+
     // remove from pid2task
     remove_from_tid2task(task.gettid());
     // get local id in process to check if main thread
     let lid = task_inner.get_lid();
+    // record exit code
+    task_inner.exit_code = exit_code;
     task_inner.res = None;
     drop(task_inner);
     drop(task);

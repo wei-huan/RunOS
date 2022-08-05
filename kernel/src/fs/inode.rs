@@ -143,7 +143,7 @@ impl OSInode {
         let mut inner = self.inner.lock();
         let offset = inner.offset;
         if let Some((name, off, first_clu, attr)) = inner.inode.dirent_info(offset as usize) {
-            let mut d_type: u8 = 0;
+            let d_type: u8;
             if attr.contains(FileAttributes::DIRECTORY) {
                 d_type = DT_DIR;
             } else if attr.contains(FileAttributes::ARCHIVE) {

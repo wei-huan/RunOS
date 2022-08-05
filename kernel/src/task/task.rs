@@ -11,8 +11,13 @@ use spin::{Mutex, MutexGuard};
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskStatus {
     Ready,
-    Running,
     Block,
+    Running,
+}
+#[derive(Debug)]
+pub struct ClearChildTid {
+    pub ctid: u32,
+    pub addr: usize,
 }
 
 pub struct TaskControlBlock {
@@ -29,6 +34,7 @@ pub struct TaskControlBlockInner {
     pub task_cx: TaskContext,
     pub trap_cx_ppn: PhysPageNum,
     pub task_status: TaskStatus,
+    pub exit_code: i32,
     pub signals: SignalFlags,
     pub signal_mask: SignalFlags,
     // the signal which is being handling
@@ -38,6 +44,7 @@ pub struct TaskControlBlockInner {
     // if the task is frozen by a signal
     pub frozen: bool,
     pub trap_ctx_backup: Option<TrapContext>,
+    pub clear_child_tid: Option<ClearChildTid>,
 }
 
 impl TaskControlBlockInner {
@@ -75,12 +82,14 @@ impl TaskControlBlock {
                 trap_cx_ppn,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
+                exit_code: 0,
                 signals: SignalFlags::empty(),
                 signal_mask: SignalFlags::empty(),
                 handling_sig: -1,
                 killed: false,
                 frozen: false,
                 trap_ctx_backup: None,
+                clear_child_tid: None,
             }),
         };
         task
@@ -93,7 +102,7 @@ impl TaskControlBlock {
         let kernel_stack = kstack_alloc();
         let kernel_stack_top = kernel_stack.get_top();
         let tid = tid_alloc();
-        let lid = process.acquire_inner_lock().tasks.len() + 1;
+        let lid = process.acquire_inner_lock().tasks.len();
         let res = TaskUserRes::new(process.clone(), lid, true);
         let trap_cx_ppn = res.trap_cx_ppn();
         let self_inner = self.acquire_inner_lock();
@@ -107,12 +116,14 @@ impl TaskControlBlock {
                 trap_cx_ppn,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
+                exit_code: self_inner.exit_code,
                 signals: self_inner.signals.clone(),
                 signal_mask: self_inner.signal_mask.clone(),
                 handling_sig: -1,
                 killed: false,
                 frozen: false,
                 trap_ctx_backup: None,
+                clear_child_tid: None,
             }),
         });
         let task_inner = task.acquire_inner_lock();

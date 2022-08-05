@@ -702,11 +702,6 @@ pub fn sys_faccessat(fd: usize, path: *const u8, _time: usize, flags: u32) -> is
     }
 }
 
-#[repr(C)]
-struct Timespec {
-    tv_sec: usize,  /* seconds */
-    tv_nsec: usize, /* nanoseconds */
-}
 
 pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isize {
     let current_process = current_process().unwrap();
