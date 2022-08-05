@@ -24,6 +24,7 @@ use crate::scheduler::{
 };
 use crate::syscall::futex_wake;
 use alloc::sync::Arc;
+use alloc::vec::Vec;
 
 pub fn suspend_current_and_run_next() {
     // There must be an application running.
@@ -62,36 +63,32 @@ pub fn unblock_task(task: Arc<TaskControlBlock>) {
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
     let process = current_process().unwrap();
-    // take from Processor
+    let mut process_inner = process.acquire_inner_lock();
+    // take task from Processor
     let task = take_current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
 
     // do futex_wake if clear_child_tid is set
     if let Some(p) = &task_inner.clear_child_tid {
-        *translated_refmut(
-            process.acquire_inner_lock().get_user_token(),
-            p.addr as *mut u32,
-        ) = 0;
+        *translated_refmut(process_inner.get_user_token(), p.addr as *mut u32) = 0;
         futex_wake(p.addr, 1);
     }
-
+    // dealloc task user resource
+    let lid = task.getlid();
+    process_inner.dealloc_task_user_res(lid);
     // remove from pid2task
-    remove_from_tid2task(task.gettid());
-    // get local id in process to check if main thread
-    let lid = task_inner.get_lid();
+    let tid = task.gettid();
+    remove_from_tid2task(tid);
     // record exit code
     task_inner.exit_code = exit_code;
-    task_inner.res = None;
+
     drop(task_inner);
     drop(task);
     // main thread exit or exit group
     if lid == 0 || is_group {
-        remove_from_pid2process(process.getpid());
-        let mut process_inner = process.acquire_inner_lock();
         process_inner.is_zombie = true;
         // record exit code
         process_inner.exit_code = exit_code;
-
         {
             let mut initproc_inner = INITPROC.acquire_inner_lock();
             for child in process_inner.children.iter() {
@@ -99,23 +96,27 @@ pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
                 initproc_inner.children.push(child.clone());
             }
         }
+        process_inner.children.clear();
 
+        remove_from_pid2process(process.getpid());
         // deallocate user res (including tid/trap_cx/ustack) of all threads
         // it has to be done before we dealloc the whole memory_set
         // otherwise they will be deallocated twice
+        let mut lid_vec = Vec::new();
         for task in process_inner.tasks.iter() {
-            let mut task_inner = task.acquire_inner_lock();
-            task_inner.res = None;
+            lid_vec.push(task.getlid());
         }
-
-        process_inner.children.clear();
-        // drop inner
+        for lid in lid_vec {
+            process_inner.dealloc_task_user_res(lid);
+        }
+        // drop address space
         process_inner.addrspace.recycle_data_pages();
         // drop file descriptors
         process_inner.fd_table.clear();
     }
-    // **** release current TCB
-    // drop task manually to maintain rc correctly
+    // **** release current PCB
+    drop(process_inner);
+    // drop process manually to maintain rc correctly
     drop(process);
     // jump to schedule cycle
     // we do not have to save task context

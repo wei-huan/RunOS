@@ -1,17 +1,18 @@
-use crate::config::{page_aligned_up, FD_LIMIT, MMAP_BASE};
+use crate::config::{page_aligned_up, FD_LIMIT, MMAP_BASE, PAGE_SIZE, USER_STACK_SIZE};
 use crate::fs::{File, FileClass, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, MapPermission,
-    UserBuffer, VirtAddr,
+    PhysPageNum, UserBuffer, VirtAddr,
 };
 use crate::scheduler::{add_task, insert_into_pid2process, insert_into_tid2task};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
+    pid_alloc, trap_cx_bottom_from_lid, ustack_bottom_from_lid, AuxHeader, PidHandle,
+    SignalActions, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
@@ -66,11 +67,51 @@ impl ProcessControlBlockInner {
     pub fn get_task(&self, lid: usize) -> Arc<TaskControlBlock> {
         self.tasks[lid].clone()
     }
+    pub fn alloc_task_user_res(&mut self, lid: usize) {
+        // alloc user stack
+        let ustack_bottom = ustack_bottom_from_lid(lid);
+        let ustack_top = ustack_bottom + USER_STACK_SIZE;
+        self.addrspace.insert_framed_area(
+            ".ustack".to_string(),
+            ustack_bottom.into(),
+            ustack_top.into(),
+            MapPermission::R | MapPermission::W | MapPermission::U,
+        );
+        // alloc trap_cx
+        let trap_cx_bottom = trap_cx_bottom_from_lid(lid);
+        let trap_cx_top = trap_cx_bottom + PAGE_SIZE;
+        self.addrspace.insert_framed_area(
+            ".trap_cx".to_string(),
+            trap_cx_bottom.into(),
+            trap_cx_top.into(),
+            MapPermission::R | MapPermission::W,
+        );
+    }
+    pub fn dealloc_task_user_res(&mut self, lid: usize) {
+        // dealloc ustack manually
+        let ustack_bottom_va: VirtAddr = ustack_bottom_from_lid(lid).into();
+        self.addrspace
+            .remove_area_with_start_vpn(ustack_bottom_va.into());
+        // dealloc trap_cx manually
+        let trap_cx_bottom_va: VirtAddr = trap_cx_bottom_from_lid(lid).into();
+        self.addrspace
+            .remove_area_with_start_vpn(trap_cx_bottom_va.into());
+    }
+    pub fn trap_cx_ppn(&self, lid: usize) -> PhysPageNum {
+        let trap_cx_bottom_va: VirtAddr = trap_cx_bottom_from_lid(lid).into();
+        self.addrspace
+            .translate(trap_cx_bottom_va.into())
+            .unwrap()
+            .ppn()
+    }
 }
 
 impl ProcessControlBlock {
     pub fn acquire_inner_lock(&self) -> MutexGuard<ProcessControlBlockInner> {
         self.inner.lock()
+    }
+    pub fn lid_alloc(&self) -> usize {
+        self.acquire_inner_lock().tasks.len()
     }
     // only for initproc
     pub fn new(elf_data: &[u8]) -> Arc<Self> {
@@ -108,7 +149,7 @@ impl ProcessControlBlock {
         insert_into_tid2task(main_task.gettid(), main_task.clone());
         // prepare trap_cx of main thread
         let task_inner = main_task.acquire_inner_lock();
-        let ustack_top = task_inner.res.as_ref().unwrap().ustack_top();
+        let ustack_top = main_task.ustack_top();
         let kstack_top = main_task.kernel_stack.get_top();
         let trap_cx = task_inner.get_trap_cx();
         *trap_cx = TrapContext::app_init_context(
@@ -122,7 +163,6 @@ impl ProcessControlBlock {
         // add main thread to the process
         let mut process_inner = process.acquire_inner_lock();
         process_inner.tasks.push(main_task.clone());
-
         drop(task_inner);
         drop(process_inner);
         insert_into_pid2process(process.getpid(), process.clone());
@@ -165,16 +205,19 @@ impl ProcessControlBlock {
         ];
         // reset fd_limit
         process_inner.fd_limit = FD_LIMIT;
-        // get main task and allocate user resource
+        // get main task
         let task = process_inner.get_task(0);
+        let mut task_inner = task.acquire_inner_lock();
+        // get main task and allocate user resource
+        if task_inner.is_alloc_user_res == false {
+            process_inner.alloc_task_user_res(0);
+            task_inner.is_alloc_user_res = true;
+        }
+        // set new trap_cx_ppn for main thread in new address space
+        task_inner.trap_cx_ppn = process_inner.trap_cx_ppn(0);
         drop(process_inner);
 
-        let mut task_inner = task.acquire_inner_lock();
-        task_inner.res.as_mut().unwrap().alloc_user_res();
-        task_inner.trap_cx_ppn = task_inner.res.as_mut().unwrap().trap_cx_ppn();
-
-        let mut user_sp = task_inner.res.as_ref().unwrap().ustack_top();
-
+        let mut user_sp = task.ustack_top();
         ////////////// *envp[] ///////////////////
         let mut env: Vec<String> = Vec::new();
         env.push(String::from("SHELL=/user_shell"));

@@ -1,8 +1,9 @@
-use crate::mm::PhysPageNum;
+use crate::config::USER_STACK_SIZE;
+use crate::mm::{PhysPageNum, VirtAddr};
 use crate::scheduler::{add_task, insert_into_tid2task};
 use crate::task::{
-    kstack_alloc, tid_alloc, Arc, KernelStack, ProcessControlBlock, SignalFlags, TaskContext,
-    TaskUserRes, TidHandle,
+    kstack_alloc, tid_alloc, trap_cx_bottom_from_lid, ustack_bottom_from_lid, Arc, KernelStack,
+    ProcessControlBlock, SignalFlags, TaskContext, TidHandle,
 };
 use crate::trap::TrapContext;
 use alloc::sync::Weak;
@@ -22,6 +23,7 @@ pub struct ClearChildTid {
 
 pub struct TaskControlBlock {
     // immutable
+    pub lid: usize, // local id in task group
     pub tid: TidHandle,
     pub process: Weak<ProcessControlBlock>,
     pub kernel_stack: KernelStack,
@@ -30,7 +32,7 @@ pub struct TaskControlBlock {
 }
 
 pub struct TaskControlBlockInner {
-    pub res: Option<TaskUserRes>,
+    pub is_alloc_user_res: bool,
     pub task_cx: TaskContext,
     pub trap_cx_ppn: PhysPageNum,
     pub task_status: TaskStatus,
@@ -55,31 +57,42 @@ impl TaskControlBlockInner {
     fn get_status(&self) -> TaskStatus {
         self.task_status
     }
-    pub fn get_lid(&self) -> usize {
-        self.res.as_ref().unwrap().lid
-    }
 }
 
 impl TaskControlBlock {
     pub fn gettid(&self) -> usize {
         self.tid.0
     }
+    pub fn getlid(&self) -> usize {
+        self.lid
+    }
     pub fn acquire_inner_lock(&self) -> MutexGuard<TaskControlBlockInner> {
         self.inner.lock()
     }
-    // only for main thread
+    pub fn trap_cx_user_va(&self) -> usize {
+        trap_cx_bottom_from_lid(self.lid)
+    }
+    pub fn ustack_top(&self) -> usize {
+        ustack_bottom_from_lid(self.lid) + USER_STACK_SIZE
+    }
+    // only for main task
     pub fn new(process: Arc<ProcessControlBlock>, lid: usize, is_alloc_user_res: bool) -> Self {
         let tid_handle = tid_alloc();
-        let res = TaskUserRes::new(process.clone(), lid, is_alloc_user_res);
-        let trap_cx_ppn = res.trap_cx_ppn();
+        let trap_cx_ppn = if is_alloc_user_res == true {
+            process.acquire_inner_lock().alloc_task_user_res(lid);
+            process.acquire_inner_lock().trap_cx_ppn(lid)
+        } else {
+            process.acquire_inner_lock().trap_cx_ppn(0)
+        };
         let kernel_stack = kstack_alloc();
         let kernel_stack_top = kernel_stack.get_top();
         let task = Self {
+            lid,
             tid: tid_handle,
             kernel_stack,
             process: Arc::downgrade(&process),
             inner: Mutex::new(TaskControlBlockInner {
-                res: Some(res),
+                is_alloc_user_res: is_alloc_user_res,
                 trap_cx_ppn,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
@@ -103,17 +116,18 @@ impl TaskControlBlock {
         let kernel_stack = kstack_alloc();
         let kernel_stack_top = kernel_stack.get_top();
         let tid = tid_alloc();
-        let lid = process.acquire_inner_lock().tasks.len();
-        let res = TaskUserRes::new(process.clone(), lid, true);
-        let trap_cx_ppn = res.trap_cx_ppn();
+        let lid = process.lid_alloc();
+        process.acquire_inner_lock().alloc_task_user_res(lid);
+        let trap_cx_ppn = process.acquire_inner_lock().trap_cx_ppn(lid);
         let self_inner = self.acquire_inner_lock();
         // create new thread
         let task = Arc::new(TaskControlBlock {
+            lid,
             tid,
             process: Arc::downgrade(&process),
             kernel_stack,
             inner: Mutex::new(TaskControlBlockInner {
-                res: Some(res),
+                is_alloc_user_res: true,
                 trap_cx_ppn,
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
@@ -143,14 +157,4 @@ impl TaskControlBlock {
         add_task(task.clone());
         task
     }
-    // pub fn getpid(&self) -> usize {
-    //     self.pid.0
-    // }
-    // pub fn get_parent(&self) -> Option<Arc<TaskControlBlock>> {
-    //     let inner = self.acquire_inner_lock();
-    //     inner.parent.as_ref().unwrap().upgrade()
-    // }
-    // pub fn getppid(&self) -> usize {
-    //     self.get_parent().unwrap().pid.0
-    // }
 }

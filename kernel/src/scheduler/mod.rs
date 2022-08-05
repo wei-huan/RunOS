@@ -67,7 +67,7 @@ pub fn insert_into_tid2task(tid: usize, task: Arc<TaskControlBlock>) {
 pub fn remove_from_tid2task(tid: usize) {
     let mut map = TID2TCB.lock();
     if map.remove(&tid).is_none() {
-        panic!("cannot find pid {} in tid2task!", tid);
+        panic!("cannot find tid {} in tid2task!", tid);
     }
 }
 

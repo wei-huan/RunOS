@@ -20,11 +20,13 @@ use core::arch::asm;
 use core::sync::atomic::Ordering;
 
 pub fn sys_exit(exit_code: i32) -> ! {
+    log::trace!("sys_exit exit_code {}", exit_code);
     exit_current_and_run_next(exit_code, false);
     panic!("Unreachable in sys_exit!");
 }
 
 pub fn sys_exit_group(exit_code: i32) -> ! {
+    log::trace!("sys_exit_group exit_code {}", exit_code);
     exit_current_and_run_next(exit_code, true);
     panic!("Unreachable in sys_exit_group!");
 }
