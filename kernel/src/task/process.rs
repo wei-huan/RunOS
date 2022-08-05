@@ -1,4 +1,4 @@
-use crate::config::MMAP_BASE;
+use crate::config::{page_aligned_up, MMAP_BASE};
 use crate::fs::{File, FileClass, FileDescripter, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
@@ -529,6 +529,7 @@ impl ProcessControlBlock {
         };
     }
     pub fn munmap(&self, start: usize, _length: usize) -> isize {
+        let start = page_aligned_up(start);
         let mut inner = self.acquire_inner_lock();
         inner
             .addrspace

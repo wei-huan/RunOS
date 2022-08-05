@@ -453,7 +453,7 @@ pub fn sys_mmap(
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
-    log::debug!("sys_unmmap");
+    log::debug!("sys_munmap");
     let current_process = current_process().unwrap();
     current_process.munmap(start, length)
 }

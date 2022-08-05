@@ -13,8 +13,9 @@ use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
 
 pub use errorno::*;
-use fs::*;
 pub use futex::*;
+
+use fs::*;
 use process::*;
 use sysinfo::*;
 use syslog::*;
