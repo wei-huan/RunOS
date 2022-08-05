@@ -1,4 +1,4 @@
-use crate::config::page_aligned_up;
+use crate::config::{page_aligned_up, FD_LIMIT};
 use crate::cpu::{current_process, current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, DiskInodeType, OpenFlags};
@@ -453,7 +453,7 @@ pub fn sys_mmap(
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
-    log::debug!("sys_munmap");
+    log::trace!("sys_munmap, start: {:#X?}, length: {:#X?}", start, length);
     let current_process = current_process().unwrap();
     current_process.munmap(start, length)
 }
@@ -462,18 +462,48 @@ const RLIMIT_CPU: usize = 0;
 const RLIMIT_FSIZE: usize = 1;
 const RLIMIT_DATA: usize = 2;
 const RLIMIT_STACK: usize = 3;
-const RLIMIT_NOFILE: usize = 7;
-const RLIMIT_AS: usize = 9;
+const RLIMIT_NOFILE: usize = 7; /* max number of open files */
+const RLIMIT_AS: usize = 9; /* address space limit */
 
-pub struct RLimit {
-    pub rlim_cur: usize, /* Soft limit */
-    pub rlim_max: usize, /* Hard limit (ceiling for rlim_cur) */
+#[repr(C)]
+pub struct RLimit64 {
+    pub rlim_cur: usize, /* The current (soft) limit.  */
+    pub rlim_max: usize, /* The hard limit.  */
 }
 
-const FDMAX: usize = 10;
-
-pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut RLimit) -> isize {
-    // log::debug!("sys_prlimit res: {}", res);
+pub fn sys_prlimit64(
+    pid: usize,
+    res: usize,
+    rlim: *const RLimit64,
+    old_rlim: *mut RLimit64,
+) -> isize {
+    log::trace!("sys_prlimit64: pid: {}, res: {}", pid, res);
+    let token = current_user_token();
+    let process = current_process().unwrap();
+    let mut inner = process.acquire_inner_lock();
+    if pid != 0 {
+        unimplemented!("sys_prlimit64 not ok with other process yet");
+    }
+    match res {
+        RLIMIT_NOFILE => {
+            if rlim as usize != 0 {
+                let rlimit = translated_ref(token, rlim);
+                log::debug!("rlimit: cur {} max{}", rlimit.rlim_cur, rlimit.rlim_max);
+                inner.fd_limit = rlimit.rlim_max;
+            }
+            if old_rlim as usize != 0 {
+                let old_rlimit = translated_refmut(token, old_rlim);
+                log::debug!(
+                    "rlimit: cur {} max{}",
+                    old_rlimit.rlim_cur,
+                    old_rlimit.rlim_max
+                );
+                old_rlimit.rlim_cur = inner.fd_limit;
+                old_rlimit.rlim_max = inner.fd_limit;
+            }
+        }
+        _ => {}
+    };
     0
 }
 
@@ -499,7 +529,8 @@ pub fn sys_kill(pid: usize, signum: i32) -> isize {
     }
 }
 
-pub fn sys_tkill(tid: usize, signum: u32) -> isize {
+pub fn sys_tkill(tid: usize, signum: i32) -> isize {
+    log::debug!("sys_tkill tid: {}, signum: {}", tid, signum);
     if let Some(task) = tid2task(tid) {
         if let Some(flag) = SignalFlags::from_bits(1 << signum) {
             let mut task_inner = task.acquire_inner_lock();
@@ -542,7 +573,8 @@ pub fn sys_sigprocmask(how: isize, set_ptr: *const u128, oldset_ptr: *mut u128) 
                 }
                 SIG_UNBLOCK => {
                     let unblock_signals = *translated_ref::<u128>(token, set_ptr) as u32;
-                    inner.signal_mask = SignalFlags::from_bits(old_mask & (!unblock_signals)).unwrap()
+                    inner.signal_mask =
+                        SignalFlags::from_bits(old_mask & (!unblock_signals)).unwrap()
                 }
                 SIG_SETMASK => {
                     let new_mask = *translated_ref::<u128>(token, set_ptr) as u32;

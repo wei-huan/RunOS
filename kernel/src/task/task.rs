@@ -51,6 +51,7 @@ impl TaskControlBlockInner {
     pub fn get_trap_cx(&self) -> &'static mut TrapContext {
         self.trap_cx_ppn.get_mut()
     }
+    #[allow(unused)]
     fn get_status(&self) -> TaskStatus {
         self.task_status
     }

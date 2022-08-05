@@ -326,31 +326,6 @@ pub fn list_apps() {
     println!("**************/")
 }
 
-// TODO: 对所有的Inode加锁！
-// 在这一层实现互斥访问
-pub fn list_files(work_path: &str, path: &str) {
-    let work_inode = {
-        if work_path == "/" || (path.len() > 0 && path.chars().nth(0).unwrap() == '/') {
-            //println!("curr is root");
-            ROOT_INODE.clone()
-        } else {
-            ROOT_INODE.find_vfile_bypath(work_path).unwrap()
-        }
-    };
-    let cur_inode = work_inode.find_vfile_bypath(path).unwrap();
-
-    let mut file_vec = cur_inode.ls().unwrap();
-    file_vec.sort();
-    for i in 0..file_vec.len() {
-        if file_vec[i].1.contains(FileAttributes::DIRECTORY) {
-            // println!("{}  ", color_text!(file_vec[i].0, 96));
-        } else {
-            // TODO: 统一配色！
-            println!("{}  ", file_vec[i].0);
-        }
-    }
-}
-
 bitflags! {
     pub struct OpenFlags: u32 {
         const RDONLY = 0;
