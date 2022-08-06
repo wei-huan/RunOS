@@ -8,9 +8,10 @@ use crate::mm::{
 use crate::scheduler::{add_task, insert_into_pid2process, insert_into_tid2task};
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
+    pid_alloc, AuxHeader, PidHandle, SignalAction, TaskControlBlock, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
@@ -39,7 +40,7 @@ pub struct ProcessControlBlockInner {
     pub heap_start: usize,
     pub heap_pointer: usize,
     pub mmap_area_hint: usize,
-    pub signal_actions: SignalActions,
+    pub signal_actions: BTreeMap<u32, SignalAction>,
 }
 
 impl ProcessControlBlockInner {
@@ -101,7 +102,7 @@ impl ProcessControlBlock {
                 fd_limit: FD_LIMIT,
                 current_path: String::from("/"),
                 mmap_area_hint: MMAP_BASE,
-                signal_actions: SignalActions::default(),
+                signal_actions: BTreeMap::new(),
             }),
         });
         let main_task = Arc::new(TaskControlBlock::new(process.clone(), 0, true));

@@ -4,6 +4,7 @@ mod errorno;
 mod fs;
 mod futex;
 mod process;
+mod signal;
 mod sysinfo;
 mod syslog;
 mod utsname;
@@ -17,6 +18,7 @@ pub use futex::*;
 
 use fs::*;
 use process::*;
+use signal::*;
 use sysinfo::*;
 use syslog::*;
 use utsname::*;

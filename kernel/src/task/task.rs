@@ -1,12 +1,14 @@
 use crate::mm::PhysPageNum;
 use crate::scheduler::{add_task, insert_into_tid2task};
 use crate::task::{
-    kstack_alloc, tid_alloc, Arc, KernelStack, ProcessControlBlock, SignalFlags, TaskContext,
-    TaskUserRes, TidHandle,
+    kstack_alloc, tid_alloc, Arc, KernelStack, ProcessControlBlock, TaskContext, TaskUserRes,
+    TidHandle,
 };
 use crate::trap::TrapContext;
 use alloc::sync::Weak;
 use spin::{Mutex, MutexGuard};
+
+use super::SigSet;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum TaskStatus {
@@ -35,8 +37,8 @@ pub struct TaskControlBlockInner {
     pub trap_cx_ppn: PhysPageNum,
     pub task_status: TaskStatus,
     pub exit_code: i32,
-    pub signals: SignalFlags,
-    pub signal_mask: SignalFlags,
+    pub signals: SigSet,
+    pub signal_mask: SigSet,
     // the signal which is being handling
     pub handling_sig: isize,
     // if the task is killed
@@ -84,8 +86,8 @@ impl TaskControlBlock {
                 task_cx: TaskContext::goto_trap_return(kernel_stack_top),
                 task_status: TaskStatus::Ready,
                 exit_code: 0,
-                signals: SignalFlags::empty(),
-                signal_mask: SignalFlags::empty(),
+                signals: SigSet::default(),
+                signal_mask: SigSet::default(),
                 handling_sig: -1,
                 killed: false,
                 frozen: false,

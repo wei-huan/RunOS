@@ -1,31 +1,28 @@
-use crate::task::{SignalFlags, MAX_SIG};
+use bitflags::*;
+
+use super::SigSet;
 
 /// Action for a signal
 #[repr(C)]
-#[derive(Debug, Clone, Copy)]
+#[derive(Default, Debug, Clone)]
 pub struct SignalAction {
-    pub handler: usize,
-    pub mask: SignalFlags,
+    pub sa_handler: usize, // type: void (*__sighandler_t) (int)
+    pub sa_mask: SigSet,
+    pub sa_flags: SAFlags,
+    pub sa_restorer: usize,
 }
 
-impl Default for SignalAction {
-    fn default() -> Self {
-        Self {
-            handler: 0,
-            mask: SignalFlags::from_bits(40).unwrap(),
-        }
-    }
-}
-
-#[derive(Clone)]
-pub struct SignalActions {
-    pub table: [SignalAction; MAX_SIG + 1],
-}
-
-impl Default for SignalActions {
-    fn default() -> Self {
-        Self {
-            table: [SignalAction::default(); MAX_SIG + 1],
-        }
+bitflags! {
+    #[derive(Default)]
+    pub struct SAFlags: usize {
+        const SA_NOCLDSTOP = 1;		 /* Don't send SIGCHLD when children stop.  */
+        const SA_NOCLDWAIT = 2;		 /* Don't create zombie on child death.  */
+        const SA_SIGINFO   = 4;  	 /* Invoke signal-catching function with
+                                        three arguments instead of one.  */
+        const SA_ONSTACK   = 0x08000000; /* Use signal stack by using `sa_restorer'. */
+        const SA_RESTART   = 0x10000000; /* Restart syscall on signal return.  */
+        const SA_NODEFER   = 0x40000000; /* Don't automatically block the signal when
+                                            its handler is being executed.  */
+        const SA_RESETHAND = 0x80000000; /* Reset to SIG_DFL on entry to handler.  */
     }
 }
