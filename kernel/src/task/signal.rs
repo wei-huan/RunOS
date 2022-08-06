@@ -61,8 +61,8 @@ impl SigSet {
     pub fn clear_sig(&mut self, signum: usize) {
         self.sig[signum / NSIG] &= !(0x01 << (signum % NSIG - 1));
     }
-    pub fn is_sig_set(&self, signum: usize) -> bool {
-        self.sig[signum / NSIG] & 0x01 << (signum % NSIG - 1) > 0
+    pub fn contains_sig(&self, signum: usize) -> bool {
+        (self.sig[signum / NSIG] & 0x01 << (signum % NSIG - 1)) > 0
     }
     pub fn block_with_other(&mut self, other: SigSet) {
         for i in 0..NSIG_WORDS {
@@ -72,6 +72,23 @@ impl SigSet {
     pub fn unblock_with_other(&mut self, other: SigSet) {
         for i in 0..NSIG_WORDS {
             self.sig[i] &= !other.sig[i];
+        }
+    }
+    pub fn check_error(&self) -> Option<(i32, &'static str)> {
+        if self.contains_sig(SIGINT) {
+            Some((-2, "Killed, SIGINT=2"))
+        } else if self.contains_sig(SIGILL) {
+            Some((-4, "Illegal Instruction, SIGILL=4"))
+        } else if self.contains_sig(SIGABRT) {
+            Some((-6, "Aborted, SIGABRT=6"))
+        } else if self.contains_sig(SIGFPE) {
+            Some((-8, "Erroneous Arithmetic Operation, SIGFPE=8"))
+        } else if self.contains_sig(SIGKILL) {
+            Some((-9, "Killed, SIGKILL=9"))
+        } else if self.contains_sig(SIGSEGV) {
+            Some((-11, "Segmentation Fault, SIGSEGV=11"))
+        } else {
+            None
         }
     }
 }

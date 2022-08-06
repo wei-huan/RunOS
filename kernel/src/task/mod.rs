@@ -124,23 +124,23 @@ pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     task_inner.signals.check_error()
 }
 
-pub fn current_add_signal(signal: SignalFlags) {
+pub fn current_add_signal(signal: usize) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
-    task_inner.signals |= signal;
+    task_inner.signals.add_sig(signal);
 }
 
-fn call_kernel_signal_handler(signal: SignalFlags) {
+fn call_kernel_signal_handler(signal: usize) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
     match signal {
-        SignalFlags::SIGSTOP => {
+        SIGSTOP => {
             task_inner.frozen = true;
-            task_inner.signals ^= SignalFlags::SIGSTOP;
+            task_inner.signals.clear_sig(SIGSTOP);
         }
-        SignalFlags::SIGCONT => {
-            if task_inner.signals.contains(SignalFlags::SIGCONT) {
-                task_inner.signals ^= SignalFlags::SIGCONT;
+        SIGCONT => {
+            if task_inner.signals.contains_sig(SIGCONT) {
+                task_inner.signals.clear_sig(SIGCONT);
                 task_inner.frozen = false;
             }
         }
@@ -150,17 +150,17 @@ fn call_kernel_signal_handler(signal: SignalFlags) {
     }
 }
 
-fn call_user_signal_handler(sig: usize, signal: SignalFlags) {
+fn call_user_signal_handler(sig: usize) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
     let process = current_process().unwrap();
     let process_inner = process.acquire_inner_lock();
-    let handler = process_inner.signal_actions.table[sig].handler;
+    let handler = process_inner.signal_actions[&(sig as u32)].sa_handler;
     // change current mask
-    task_inner.signal_mask = process_inner.signal_actions.table[sig].mask;
+    task_inner.signal_mask = process_inner.signal_actions[&(sig as u32)].sa_mask;
     // handle flag
     task_inner.handling_sig = sig as isize;
-    task_inner.signals ^= signal;
+    task_inner.signals.clear_sig(sig);
     // backup trapframe
     let mut trap_ctx = task_inner.get_trap_cx();
     task_inner.trap_ctx_backup = Some(*trap_ctx);
@@ -171,49 +171,40 @@ fn call_user_signal_handler(sig: usize, signal: SignalFlags) {
 }
 
 fn check_pending_signals() {
-    for sig in 0..(MAX_SIG + 1) {
+    for sig in 1..(NSIG + 1) {
         let task = current_task().unwrap();
         let task_inner = task.acquire_inner_lock();
         let process = current_process().unwrap();
         let process_inner = process.acquire_inner_lock();
-        let signal = SignalFlags::from_bits(1 << sig).unwrap();
-        if task_inner.signals.contains(signal) && (!task_inner.signal_mask.contains(signal)) {
+        if task_inner.signals.contains_sig(sig) && (!task_inner.signal_mask.contains_sig(sig)) {
             if task_inner.handling_sig == -1 {
                 drop(task_inner);
                 drop(task);
                 drop(process_inner);
                 drop(process);
-                if signal == SignalFlags::SIGKILL
-                    || signal == SignalFlags::SIGSTOP
-                    || signal == SignalFlags::SIGCONT
-                    || signal == SignalFlags::SIGDEF
-                {
+                if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
                     // signal is a kernel signal
-                    call_kernel_signal_handler(signal);
+                    call_kernel_signal_handler(sig);
                 } else {
                     // signal is a user signal
-                    call_user_signal_handler(sig, signal);
+                    call_user_signal_handler(sig);
                     return;
                 }
             } else {
-                if !process_inner.signal_actions.table[task_inner.handling_sig as usize]
-                    .mask
-                    .contains(signal)
+                if !process_inner.signal_actions[&(task_inner.handling_sig as u32)]
+                    .sa_mask
+                    .contains_sig(sig)
                 {
                     drop(task_inner);
                     drop(task);
                     drop(process_inner);
                     drop(process);
-                    if signal == SignalFlags::SIGKILL
-                        || signal == SignalFlags::SIGSTOP
-                        || signal == SignalFlags::SIGCONT
-                        || signal == SignalFlags::SIGDEF
-                    {
+                    if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
                         // signal is a kernel signal
-                        call_kernel_signal_handler(signal);
+                        call_kernel_signal_handler(sig);
                     } else {
                         // signal is a user signal
-                        call_user_signal_handler(sig, signal);
+                        call_user_signal_handler(sig);
                         return;
                     }
                 }

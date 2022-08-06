@@ -6,7 +6,7 @@ use crate::cpu::{
 use crate::syscall::syscall;
 use crate::task::{
     check_signals_error_of_current, current_add_signal, exit_current_and_run_next, handle_signals,
-    suspend_current_and_run_next, SignalFlags, TIME_TO_SCHEDULE,
+    suspend_current_and_run_next, SIGILL, SIGSEGV, TIME_TO_SCHEDULE,
 };
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
@@ -129,7 +129,7 @@ pub fn user_trap_handler() -> ! {
             );
             // page fault exit code
             exit_current_and_run_next(-2, false);
-            current_add_signal(SignalFlags::SIGSEGV);
+            current_add_signal(SIGSEGV);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             log::warn!("[kernel] IllegalInstruction in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
@@ -137,7 +137,7 @@ pub fn user_trap_handler() -> ! {
             current_trap_cx().sepc);
             // illegal instruction exit code
             exit_current_and_run_next(-3, false);
-            current_add_signal(SignalFlags::SIGILL);
+            current_add_signal(SIGILL);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
             set_next_trigger();
