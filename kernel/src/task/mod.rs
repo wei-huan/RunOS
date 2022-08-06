@@ -87,19 +87,16 @@ pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
     // main thread exit or exit group
     if lid == 0 || is_group {
         remove_from_pid2process(process.getpid());
+        let mut initproc_inner = INITPROC.acquire_inner_lock();
         let mut process_inner = process.acquire_inner_lock();
+        for child in process_inner.children.iter() {
+            child.acquire_inner_lock().parent = Some(Arc::downgrade(&INITPROC));
+            initproc_inner.children.push(child.clone());
+        }
+        drop(initproc_inner);
         process_inner.is_zombie = true;
         // record exit code
         process_inner.exit_code = exit_code;
-
-        {
-            let mut initproc_inner = INITPROC.acquire_inner_lock();
-            for child in process_inner.children.iter() {
-                child.acquire_inner_lock().parent = Some(Arc::downgrade(&INITPROC));
-                initproc_inner.children.push(child.clone());
-            }
-        }
-
         // deallocate user res (including tid/trap_cx/ustack) of all threads
         // it has to be done before we dealloc the whole memory_set
         // otherwise they will be deallocated twice
