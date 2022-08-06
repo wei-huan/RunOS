@@ -19,8 +19,7 @@ pub use task::*;
 use crate::cpu::{current_process, current_task, take_current_task};
 use crate::mm::translated_refmut;
 use crate::scheduler::{
-    add_task, remove_from_pid2process, remove_from_tid2task, save_current_and_back_to_schedule,
-    INITPROC,
+    add_task, remove_from_tid2task, save_current_and_back_to_schedule, INITPROC,
 };
 use crate::syscall::futex_wake;
 use alloc::sync::Arc;
@@ -86,7 +85,6 @@ pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
     drop(task);
     // main thread exit or exit group
     if lid == 0 || is_group {
-        remove_from_pid2process(process.getpid());
         let mut initproc_inner = INITPROC.acquire_inner_lock();
         let mut process_inner = process.acquire_inner_lock();
         for child in process_inner.children.iter() {
