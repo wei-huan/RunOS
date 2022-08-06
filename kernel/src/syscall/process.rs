@@ -311,6 +311,7 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
 /// Else If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, suspend_current_and_run_next.
 pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
+    log::debug!("sys_wait4 pid: {}", pid);
     if option != 0 {
         panic! {"Extended option not support yet..."};
     }
@@ -339,7 +340,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             // ++++ temporarily access child PCB exclusively
             let exit_code = child.acquire_inner_lock().exit_code;
             // ++++ release child PCB
-            let ret_status = exit_code << 8;
+            let ret_status = (exit_code & 0xff) << 8;
             if (wstatus as usize) != 0 {
                 *translated_refmut(inner.addrspace.token(), wstatus) = ret_status;
             }
@@ -648,7 +649,7 @@ pub fn sys_sigaction(
 
 pub fn sys_mprotect(start: usize, length: usize, prot: usize) -> isize {
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
-    log::trace!(
+    log::debug!(
         "sys_mprotect addr: {:#X} len: {:#X} flags: {:?}",
         start,
         length,
