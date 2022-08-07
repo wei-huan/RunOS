@@ -46,7 +46,7 @@ const SIG_UNBLOCK: isize = 1;
 const SIG_SETMASK: isize = 2;
 
 pub fn sys_sigprocmask(how: isize, set_ptr: *const SigSet, oldset_ptr: *mut SigSet) -> isize {
-    log::trace!(
+    log::debug!(
         "sys_sigprocmask how: {}, set_ptr: {:#X?}, oldset_ptr: {:#X?}",
         how,
         set_ptr as usize,
@@ -95,8 +95,8 @@ pub fn sys_sigretrun() -> isize {
     }
 }
 
-fn check_sigaction_error(signal: usize, action: usize, old_action: usize) -> bool {
-    if action == 0 || old_action == 0 || signal == SIGKILL || signal == SIGSTOP {
+fn check_sigaction_error(signal: usize) -> bool {
+    if signal == SIGKILL || signal == SIGSTOP {
         true
     } else {
         false
@@ -108,12 +108,17 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    log::debug!("sys_sigaction");
+    log::debug!(
+        "sys_sigaction signum: {}, action: {:#X?}, old_action: {:#X?}",
+        signum,
+        action as usize,
+        old_action as usize
+    );
     let token = current_user_token();
     let process = current_process().unwrap();
     let mut inner = process.acquire_inner_lock();
     if signum > 0 && signum as usize <= NSIG {
-        if check_sigaction_error(signum as usize, action as usize, old_action as usize) {
+        if check_sigaction_error(signum as usize) {
             return -EINVAL;
         }
         if let Some(old) = inner.signal_actions.get(&(signum as u32)) {

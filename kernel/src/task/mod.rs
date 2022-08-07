@@ -16,13 +16,15 @@ pub use process::*;
 pub use signal::*;
 pub use task::*;
 
+use crate::config::TRAMPOLINE;
 use crate::cpu::{current_process, current_task, take_current_task};
-use crate::mm::translated_refmut;
+use crate::mm::{translated_byte_buffer, translated_refmut, UserBuffer};
 use crate::scheduler::{
     add_task, remove_from_tid2task, save_current_and_back_to_schedule, INITPROC,
 };
 use crate::syscall::futex_wake;
 use alloc::sync::Arc;
+use core::mem::size_of;
 
 pub fn suspend_current_and_run_next() {
     // There must be an application running.
@@ -166,8 +168,32 @@ fn call_user_signal_handler(sig: usize) {
     task_inner.trap_ctx_backup = Some(*trap_ctx);
     // modify trapframe
     trap_ctx.sepc = handler;
+    extern "C" {
+        fn __sigreturn();
+        fn __uservec();
+    }
+    //put ra
+    trap_ctx.x[1] = __sigreturn as usize - __uservec as usize + TRAMPOLINE;
     // put args (a0)
     trap_ctx.x[10] = sig;
+    // put args (a2)
+    if process_inner.signal_actions[&(sig as u32)]
+        .sa_flags
+        .contains(SAFlags::SA_SIGINFO)
+    {
+        let token = process_inner.get_user_token();
+        println!("here call_user_signal_handler");
+        trap_ctx.x[2] -= size_of::<UContext>();     // sp -= sizeof(ucontext)
+        trap_ctx.x[12] = trap_ctx.x[2];             // a2  = sp
+        let mut userbuf = UserBuffer::new(translated_byte_buffer(
+            token,
+            trap_ctx.x[2] as *const u8,
+            size_of::<UContext>(),
+        ));
+        let mut ucontext = UContext::new();
+        *ucontext.mc_pc() = trap_ctx.sepc;
+        userbuf.write(ucontext.as_bytes()); // copy ucontext to userspace
+    }
 }
 
 fn check_pending_signals() {
@@ -182,7 +208,7 @@ fn check_pending_signals() {
                 drop(task);
                 drop(process_inner);
                 drop(process);
-                if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
+                if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT || sig == SIGDEF {
                     // signal is a kernel signal
                     call_kernel_signal_handler(sig);
                 } else {
@@ -199,7 +225,7 @@ fn check_pending_signals() {
                     drop(task);
                     drop(process_inner);
                     drop(process);
-                    if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
+                    if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT || sig == SIGDEF {
                         // signal is a kernel signal
                         call_kernel_signal_handler(sig);
                     } else {

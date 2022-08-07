@@ -98,12 +98,17 @@ pub fn user_trap_handler() -> ! {
     // }
     let scause = scause::read();
     let stval = stval::read();
+    let mut is_sigreturn = false;
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
             log::trace!("UserEnvCall");
             let mut cx = current_trap_cx();
             // jump to syscall next instruction anyway, avoid re-trigger
             cx.sepc += 4;
+            // get system call return value
+            if cx.x[17] == 139 {
+                is_sigreturn = true;
+            }
             // get system call return value
             let result = syscall(
                 cx.x[17],
@@ -152,8 +157,9 @@ pub fn user_trap_handler() -> ! {
         }
     }
     // handle signals (handle the sent signal)
-    handle_signals();
-
+    if !is_sigreturn {
+        handle_signals();
+    }
     // check error signals (if error then exit)
     if let Some((errno, msg)) = check_signals_error_of_current() {
         log::error!("[kernel] {}", msg);

@@ -1,3 +1,7 @@
+use core::mem::size_of;
+
+pub const SIGDEF: usize = 0;
+
 /* ISO C99 signals.  */
 pub const SIGINT: usize = 2; /* Interactive attention signal.  */
 pub const SIGILL: usize = 4; /* Illegal instruction.  */
@@ -49,7 +53,7 @@ pub const NSIG_BPW: usize = 32;
 pub const NSIG_WORDS: usize = NSIG / NSIG_BPW;
 
 #[repr(C)]
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct SigSet {
     sig: [usize; NSIG_WORDS],
 }
@@ -90,5 +94,29 @@ impl SigSet {
         } else {
             None
         }
+    }
+}
+
+#[repr(C)]
+pub struct UContext {
+    pub __bits: [usize; 25],
+}
+
+impl UContext {
+    pub fn new() -> Self {
+        Self { __bits: [0; 25] }
+    }
+
+    pub fn as_bytes(&self) -> &[u8] {
+        let size = core::mem::size_of::<Self>();
+        unsafe { core::slice::from_raw_parts(self as *const _ as usize as *mut u8, size) }
+    }
+
+    pub fn pc_offset() -> usize {
+        176
+    }
+
+    pub fn mc_pc(&mut self) -> &mut usize {
+        &mut self.__bits[Self::pc_offset() / size_of::<usize>()]
     }
 }

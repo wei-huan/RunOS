@@ -343,7 +343,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             // ++++ release child PCB
             let ret_status = (exit_code & 0xff) << 8;
             if (wstatus as usize) != 0 {
-                *translated_refmut(inner.addrspace.token(), wstatus) = ret_status;
+                *translated_refmut(inner.get_user_token(), wstatus) = ret_status;
             }
             return found_pid as isize;
         } else {
