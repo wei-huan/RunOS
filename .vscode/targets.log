@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Aug  7 10:01:08 2022
+# Make data base, printed on Sun Aug  7 12:33:00 2022
 
 # Variables
 
@@ -219,6 +219,8 @@ GDK_BACKEND = x11
 # environment
 LC_PAPER = zh_CN.UTF-8
 # environment
+NO_AT_BRIDGE = 1
+# environment
 QT_ACCESSIBILITY = 1
 # environment
 DEFAULTS_PATH = /usr/share/gconf/ubuntu.default.path
@@ -271,7 +273,7 @@ _CE_CONDA =
 # environment
 LANG = C
 # variable set hash-table stats:
-# Load=130/1024=13%, Rehash=0, Collisions=27/173=16%
+# Load=131/1024=13%, Rehash=0, Collisions=27/174=16%
 
 # Pattern-specific Variable Values
 
@@ -280,6 +282,7 @@ LANG = C
 # Directories
 
 # . (device 66310, inode 23088373): 25 files, no impossibilities.
+ 
 
 # 25 files, no impossibilities in 1 directories.
 
@@ -288,7 +291,6 @@ LANG = C
 # No implicit rules.
 
 # Files
- 
 
 user:
 #  Phony target (prerequisite of .PHONY).
@@ -445,6 +447,6 @@ disasm:
 # strcache performance: lookups = 68 / hit rate = 41%
 # hash-table stats:
 # Load=40/8192=0%, Rehash=0, Collisions=1/68=1%
-# Finished Make data base on Sun Aug  7 10:01:08 2022
+# Finished Make data base on Sun Aug  7 12:33:00 2022
 
  

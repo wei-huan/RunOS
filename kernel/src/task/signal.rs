@@ -66,7 +66,7 @@ impl SigSet {
         self.sig[signum / NSIG] &= !(0x01 << (signum % NSIG - 1));
     }
     pub fn contains_sig(&self, signum: usize) -> bool {
-        (self.sig[signum / NSIG] & 0x01 << (signum % NSIG - 1)) > 0
+        (self.sig[signum / NSIG] & (0x01 << (signum % NSIG - 1))) > 0
     }
     pub fn block_with_other(&mut self, other: SigSet) {
         for i in 0..NSIG_WORDS {

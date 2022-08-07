@@ -64,7 +64,7 @@ pub fn sys_futex(
 ) -> isize {
     let mut flags = 0;
     let cmd = futex_op & FUTEX_CMD_MASK;
-    log::trace!(
+    log::debug!(
         "sys_futex uaddr {:#X}, op: {}, val: {}",
         uaddr as usize,
         cmd,

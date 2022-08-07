@@ -4,7 +4,7 @@ use crate::mm::{
 };
 use crate::scheduler::{pid2process, tid2task};
 use crate::syscall::{EINVAL, EPERM, ESRCH};
-use crate::task::{SigSet, SignalAction, NSIG, SIGKILL, SIGSTOP};
+use crate::task::{SigSet, SignalAction, UContext, NSIG, SIGDEF, SIGKILL, SIGSTOP};
 
 // just add sig to main thread
 pub fn sys_kill(pid: usize, signum: i32) -> isize {
@@ -41,48 +41,50 @@ pub fn sys_tkill(tid: usize, signum: i32) -> isize {
     }
 }
 
-const SIG_BLOCK: isize = 0;
-const SIG_UNBLOCK: isize = 1;
-const SIG_SETMASK: isize = 2;
+// const SIG_BLOCK: isize = 0;
+// const SIG_UNBLOCK: isize = 1;
+// const SIG_SETMASK: isize = 2;
 
 pub fn sys_sigprocmask(how: isize, set_ptr: *const SigSet, oldset_ptr: *mut SigSet) -> isize {
-    log::debug!(
+    log::trace!(
         "sys_sigprocmask how: {}, set_ptr: {:#X?}, oldset_ptr: {:#X?}",
         how,
         set_ptr as usize,
         oldset_ptr as usize
     );
-    let token = current_user_token();
-    if let Some(task) = current_task() {
-        let mut inner = task.acquire_inner_lock();
-        let old_mask = inner.signal_mask;
-        if oldset_ptr as usize != 0 {
-            *translated_refmut(token, oldset_ptr) = old_mask;
-        }
-        if set_ptr as usize != 0 {
-            match how {
-                SIG_BLOCK => {
-                    let block_signals = *translated_ref(token, set_ptr);
-                    inner.signal_mask.block_with_other(block_signals);
-                }
-                SIG_UNBLOCK => {
-                    let unblock_signals = *translated_ref(token, set_ptr);
-                    inner.signal_mask.unblock_with_other(unblock_signals);
-                }
-                SIG_SETMASK => {
-                    inner.signal_mask = *translated_ref(token, set_ptr);
-                }
-                _ => return -EPERM,
-            };
-        }
-        0
-    } else {
-        -ESRCH
-    }
+    // let token = current_user_token();
+    // if let Some(task) = current_task() {
+    //     let mut inner = task.acquire_inner_lock();
+    //     let old_mask = inner.signal_mask;
+    //     if oldset_ptr as usize != 0 {
+    //         *translated_refmut(token, oldset_ptr) = old_mask;
+    //     }
+    //     if set_ptr as usize != 0 {
+    //         match how {
+    //             SIG_BLOCK => {
+    //                 let block_signals = *translated_ref(token, set_ptr);
+    //                 inner.signal_mask.block_with_other(block_signals);
+    //             }
+    //             SIG_UNBLOCK => {
+    //                 let unblock_signals = *translated_ref(token, set_ptr);
+    //                 inner.signal_mask.unblock_with_other(unblock_signals);
+    //             }
+    //             SIG_SETMASK => {
+    //                 inner.signal_mask = *translated_ref(token, set_ptr);
+    //             }
+    //             _ => return -EPERM,
+    //         };
+    //     }
+    //     0
+    // } else {
+    //     -ESRCH
+    // }
+    0
 }
 
 pub fn sys_sigretrun() -> isize {
     log::debug!("sys_sigretrun");
+    let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
         inner.handling_sig = -1;
@@ -128,14 +130,20 @@ pub fn sys_sigaction(
         } else {
             if old_action as usize != 0 {
                 let sigact_old = translated_refmut(token, old_action);
-                sigact_old.sa_handler = 0;
+                sigact_old.sa_handler = SIGDEF;
                 sigact_old.sa_mask = SigSet::default();
             }
         }
         if action as usize != 0 {
-            inner
-                .signal_actions
-                .insert(signum as u32, (*translated_ref(token, action)).clone());
+            let new_action = *translated_ref(token, action);
+            // log::debug!(
+            //     "new_action handler {:#X?}, mask {:?}, sa_flags {:?}, sa_restorer {:#X?}",
+            //     new_action.sa_handler,
+            //     new_action.sa_mask,
+            //     new_action.sa_flags,
+            //     new_action.sa_restorer
+            // );
+            inner.signal_actions.insert(signum as u32, new_action);
         }
         return 0;
     } else {

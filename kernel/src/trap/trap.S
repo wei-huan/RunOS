@@ -97,7 +97,6 @@ __kernelvec:
     .section .text.trampoline
     .globl __uservec
     .globl __restore
-    .globl __sigreturn
     .align 2
 __uservec:
     # # Disable all interrupts
@@ -168,8 +167,3 @@ __restore:
     # back to user stack
     ld sp, 2*8(sp)
     sret
-
-__sigreturn:
-    li a7, 139
-    # syscall SIGRETURN
-    ecall

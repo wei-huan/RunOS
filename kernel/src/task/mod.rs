@@ -16,15 +16,17 @@ pub use process::*;
 pub use signal::*;
 pub use task::*;
 
-use crate::config::TRAMPOLINE;
 use crate::cpu::{current_process, current_task, take_current_task};
+use crate::hart_id;
 use crate::mm::{translated_byte_buffer, translated_refmut, UserBuffer};
 use crate::scheduler::{
     add_task, remove_from_tid2task, save_current_and_back_to_schedule, INITPROC,
 };
 use crate::syscall::futex_wake;
+use crate::trap::AFTER_SIG;
 use alloc::sync::Arc;
 use core::mem::size_of;
+use core::sync::atomic::Ordering;
 
 pub fn suspend_current_and_run_next() {
     // There must be an application running.
@@ -169,22 +171,25 @@ fn call_user_signal_handler(sig: usize) {
     // modify trapframe
     trap_ctx.sepc = handler;
     extern "C" {
-        fn __sigreturn();
+        fn __restore();
         fn __uservec();
     }
-    //put ra
-    trap_ctx.x[1] = __sigreturn as usize - __uservec as usize + TRAMPOLINE;
+    // //put ra
+    // trap_ctx.x[1] = __restore as usize - __uservec as usize + TRAMPOLINE;
     // put args (a0)
     trap_ctx.x[10] = sig;
-    // put args (a2)
     if process_inner.signal_actions[&(sig as u32)]
         .sa_flags
         .contains(SAFlags::SA_SIGINFO)
     {
         let token = process_inner.get_user_token();
-        println!("here call_user_signal_handler");
-        trap_ctx.x[2] -= size_of::<UContext>();     // sp -= sizeof(ucontext)
-        trap_ctx.x[12] = trap_ctx.x[2];             // a2  = sp
+        trap_ctx.x[2] -= size_of::<UContext>(); // sp -= sizeof(ucontext)
+        trap_ctx.x[12] = trap_ctx.x[2]; // a2  = sp
+        log::debug!(
+            "sighandler prepare: sp = {:#x?}, a2 = {:#x?}",
+            trap_ctx.x[2],
+            trap_ctx.x[12]
+        );
         let mut userbuf = UserBuffer::new(translated_byte_buffer(
             token,
             trap_ctx.x[2] as *const u8,
@@ -194,6 +199,8 @@ fn call_user_signal_handler(sig: usize) {
         *ucontext.mc_pc() = trap_ctx.sepc;
         userbuf.write(ucontext.as_bytes()); // copy ucontext to userspace
     }
+    if AFTER_SIG.compare_exchange(2, hart_id(), Ordering::Acquire, Ordering::Relaxed) == Ok(2) {}
+    log::debug!("sig{} handler address {:#X?}", sig, handler);
 }
 
 fn check_pending_signals() {
@@ -203,12 +210,13 @@ fn check_pending_signals() {
         let process = current_process().unwrap();
         let process_inner = process.acquire_inner_lock();
         if task_inner.signals.contains_sig(sig) && (!task_inner.signal_mask.contains_sig(sig)) {
+            log::debug!("process{}, task{} contains_sig{}", process.getpid(), task.gettid(), sig);
             if task_inner.handling_sig == -1 {
                 drop(task_inner);
                 drop(task);
                 drop(process_inner);
                 drop(process);
-                if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT || sig == SIGDEF {
+                if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
                     // signal is a kernel signal
                     call_kernel_signal_handler(sig);
                 } else {
@@ -221,11 +229,12 @@ fn check_pending_signals() {
                     .sa_mask
                     .contains_sig(sig)
                 {
+                    log::warn!("can't be here");
                     drop(task_inner);
                     drop(task);
                     drop(process_inner);
                     drop(process);
-                    if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT || sig == SIGDEF {
+                    if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
                         // signal is a kernel signal
                         call_kernel_signal_handler(sig);
                     } else {
