@@ -133,9 +133,9 @@ impl TaskControlBlock {
         let trap_cx = task_inner.get_trap_cx();
         // copy trap_cx from the parent thread
         *trap_cx = *self_inner.get_trap_cx();
+        drop(self_inner);
         // modify kstack_top in trap_cx of this thread
         trap_cx.kernel_sp = kernel_stack_top;
-        drop(self_inner);
         drop(task_inner);
         // add new thread to process
         let mut process_inner = process.acquire_inner_lock();
@@ -145,14 +145,4 @@ impl TaskControlBlock {
         add_task(task.clone());
         task
     }
-    // pub fn getpid(&self) -> usize {
-    //     self.pid.0
-    // }
-    // pub fn get_parent(&self) -> Option<Arc<TaskControlBlock>> {
-    //     let inner = self.acquire_inner_lock();
-    //     inner.parent.as_ref().unwrap().upgrade()
-    // }
-    // pub fn getppid(&self) -> usize {
-    //     self.get_parent().unwrap().pid.0
-    // }
 }

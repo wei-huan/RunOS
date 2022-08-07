@@ -209,8 +209,8 @@ pub fn sys_clone(
         // for child process, fork returns 0
         trap_cx.x[10] = 0;
         let new_pid = new_process.getpid();
-        // // let child process run first
-        // suspend_current_and_run_next();
+        // let child process run first
+        suspend_current_and_run_next();
         new_pid as isize
     }
 }

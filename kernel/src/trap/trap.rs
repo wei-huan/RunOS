@@ -10,7 +10,6 @@ use crate::task::{
 };
 use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
-use core::sync::atomic::{AtomicUsize, Ordering};
 use riscv::register::{
     mtvec::TrapMode,
     scause::{self, Exception, Interrupt, Trap},
@@ -91,23 +90,20 @@ fn set_user_trap_entry() {
     }
 }
 
-pub static AFTER_SIG: AtomicUsize = AtomicUsize::new(2);
-
 #[no_mangle]
 pub fn user_trap_handler() -> ! {
     set_kernel_trap_entry();
     let scause = scause::read();
     let stval = stval::read();
-    // if AFTER_SIG.compare_exchange(hart_id(), 3, Ordering::Acquire, Ordering::Relaxed)
-    //     == Ok(hart_id())
-    // {
-    //     log::debug!("user_trap_handler after sig for {}", scause.bits());
-    // }
+    let mut is_sigreturn = false;
     match scause.cause() {
         Trap::Exception(Exception::UserEnvCall) => {
             let mut cx = current_trap_cx();
             // jump to syscall next instruction anyway, avoid re-trigger
             cx.sepc += 4;
+            if cx.x[17] == 139 {
+                is_sigreturn = true;
+            }
             // get system call return value
             let result = syscall(
                 cx.x[17],
@@ -155,13 +151,10 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
-    // if AFTER_SIG.compare_exchange(3, 2, Ordering::Acquire, Ordering::Relaxed)
-    //     == Ok(3)
-    // {
-    //     log::debug!("user_trap_handler after sig after deal");
-    // }
     // handle signals (handle the sent signal)
-    handle_signals();
+    if !is_sigreturn {
+        handle_signals();
+    }
     // check error signals (if error then exit)
     if let Some((errno, msg)) = check_signals_error_of_current() {
         log::error!("[kernel] {}", msg);

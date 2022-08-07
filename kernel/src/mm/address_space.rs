@@ -3,7 +3,9 @@ use super::{
     page_table::{PTEFlags, PageTable, PageTableEntry},
     section::{MapPermission, MapType, Section},
 };
-use crate::config::{DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, USER_STACK_BASE};
+use crate::config::{
+    DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, SIGRETURN_TRAMPOLINE, TRAMPOLINE, USER_STACK_BASE,
+};
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::platform::MMIO;
 use crate::task::{
@@ -217,9 +219,17 @@ impl AddrSpace {
             PTEFlags::R | PTEFlags::X,
         )
     }
+    fn map_sigreturn_trampoline(&mut self) {
+        self.page_table.map(
+            VirtAddr::from(SIGRETURN_TRAMPOLINE).into(),
+            PhysAddr::from(strampoline as usize).into(),
+            PTEFlags::R | PTEFlags::X | PTEFlags::U,
+        );
+    }
     pub fn create_kernel_space() -> Self {
         let mut kernel_space = Self::new_empty();
         // map trampoline
+        kernel_space.map_sigreturn_trampoline();
         kernel_space.map_trampoline();
         // map kernel sections
         // println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
@@ -369,6 +379,7 @@ impl AddrSpace {
         let mut auxv: Vec<AuxHeader> = Vec::new();
         let mut user_space = Self::new_empty();
         // map trampoline
+        user_space.map_sigreturn_trampoline();
         user_space.map_trampoline();
         // map program headers of elf, with U flag
         let elf = xmas_elf::ElfFile::new(elf_data).unwrap();

@@ -16,17 +16,15 @@ pub use process::*;
 pub use signal::*;
 pub use task::*;
 
+use crate::config::SIGRETURN_TRAMPOLINE;
 use crate::cpu::{current_process, current_task, take_current_task};
-use crate::hart_id;
 use crate::mm::{translated_byte_buffer, translated_refmut, UserBuffer};
 use crate::scheduler::{
     add_task, remove_from_tid2task, save_current_and_back_to_schedule, INITPROC,
 };
 use crate::syscall::futex_wake;
-use crate::trap::AFTER_SIG;
 use alloc::sync::Arc;
 use core::mem::size_of;
-use core::sync::atomic::Ordering;
 
 pub fn suspend_current_and_run_next() {
     // There must be an application running.
@@ -45,12 +43,15 @@ pub fn suspend_current_and_run_next() {
 }
 
 pub fn block_current_and_run_next() {
-    let task = take_current_task().unwrap();
+    let task = current_task().unwrap();
+    // println!("futex_wait8");
     let mut task_inner = task.acquire_inner_lock();
+    // println!("futex_wait9");
     let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
     task_inner.task_status = TaskStatus::Block;
     drop(task_inner);
     drop(task);
+    // println!("futex_wait10");
     save_current_and_back_to_schedule(task_cx_ptr);
 }
 
@@ -171,11 +172,11 @@ fn call_user_signal_handler(sig: usize) {
     // modify trapframe
     trap_ctx.sepc = handler;
     extern "C" {
-        fn __restore();
+        fn __sigreturn();
         fn __uservec();
     }
-    // //put ra
-    // trap_ctx.x[1] = __restore as usize - __uservec as usize + TRAMPOLINE;
+    //put ra
+    trap_ctx.x[1] = __sigreturn as usize - __uservec as usize + SIGRETURN_TRAMPOLINE;
     // put args (a0)
     trap_ctx.x[10] = sig;
     if process_inner.signal_actions[&(sig as u32)]
@@ -185,11 +186,11 @@ fn call_user_signal_handler(sig: usize) {
         let token = process_inner.get_user_token();
         trap_ctx.x[2] -= size_of::<UContext>(); // sp -= sizeof(ucontext)
         trap_ctx.x[12] = trap_ctx.x[2]; // a2  = sp
-        log::debug!(
-            "sighandler prepare: sp = {:#x?}, a2 = {:#x?}",
-            trap_ctx.x[2],
-            trap_ctx.x[12]
-        );
+        // log::debug!(
+        //     "sighandler prepare: sp = {:#x?}, a2 = {:#x?}",
+        //     trap_ctx.x[2],
+        //     trap_ctx.x[12]
+        // );
         let mut userbuf = UserBuffer::new(translated_byte_buffer(
             token,
             trap_ctx.x[2] as *const u8,
@@ -199,8 +200,7 @@ fn call_user_signal_handler(sig: usize) {
         *ucontext.mc_pc() = trap_ctx.sepc;
         userbuf.write(ucontext.as_bytes()); // copy ucontext to userspace
     }
-    if AFTER_SIG.compare_exchange(2, hart_id(), Ordering::Acquire, Ordering::Relaxed) == Ok(2) {}
-    log::debug!("sig{} handler address {:#X?}", sig, handler);
+    // log::debug!("sig{} handler address {:#X?}", sig, handler);
 }
 
 fn check_pending_signals() {
@@ -210,7 +210,12 @@ fn check_pending_signals() {
         let process = current_process().unwrap();
         let process_inner = process.acquire_inner_lock();
         if task_inner.signals.contains_sig(sig) && (!task_inner.signal_mask.contains_sig(sig)) {
-            log::debug!("process{}, task{} contains_sig{}", process.getpid(), task.gettid(), sig);
+            log::debug!(
+                "process {}, task {} contains_sig {}",
+                process.getpid(),
+                task.gettid(),
+                sig
+            );
             if task_inner.handling_sig == -1 {
                 drop(task_inner);
                 drop(task);
@@ -249,6 +254,15 @@ fn check_pending_signals() {
 }
 
 pub fn handle_signals() {
+    // 禁止信号嵌套
+    let task = current_task().unwrap();
+    let task_inner = task.acquire_inner_lock();
+    if task_inner.handling_sig != -1 {
+        println!("now handle_signals return");
+        return;
+    }
+    drop(task_inner);
+    drop(task);
     check_pending_signals();
     loop {
         let task = current_task().unwrap();

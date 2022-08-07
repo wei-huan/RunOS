@@ -183,7 +183,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         ),
         SYSCALL_SIGPROCMASK => sys_sigprocmask(args[0] as _, args[1] as _, args[2] as _),
         SYSCALL_RT_SIGTIMEDWAIT => 0,
-        SYSCALL_SIGRETURN => sys_sigretrun(),
+        SYSCALL_SIGRETURN => sys_sigreturn(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
         SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),

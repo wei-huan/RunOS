@@ -8,6 +8,7 @@ use crate::timer::{TimeSpec, NSEC_PER_SEC};
 use alloc::collections::{BTreeMap, VecDeque};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use lazy_static::*;
 use spin::{Lazy, RwLock};
 
 const FUTEX_WAIT: usize = 0;
@@ -51,8 +52,10 @@ impl FutexQueue {
     }
 }
 
-pub static FUTEX_QUEUE_MAP: Lazy<RwLock<BTreeMap<usize, FutexQueue>>> =
-    Lazy::new(|| RwLock::new(BTreeMap::new()));
+lazy_static! {
+    pub static ref FUTEX_QUEUE_MAP: RwLock<BTreeMap<usize, FutexQueue>> =
+        RwLock::new(BTreeMap::new());
+}
 
 pub fn sys_futex(
     uaddr: *const u32,
@@ -62,7 +65,6 @@ pub fn sys_futex(
     uaddr2: *const u32,
     val3: u32,
 ) -> isize {
-    let mut flags = 0;
     let cmd = futex_op & FUTEX_CMD_MASK;
     log::debug!(
         "sys_futex uaddr {:#X}, op: {}, val: {}",
@@ -84,10 +86,6 @@ pub fn sys_futex(
             };
             futex_wait(uaddr as usize, val, timeout)
         }
-        FUTEX_FD => {
-            log::error!("FUTEX_FD not implement yet");
-            EPERM
-        }
         FUTEX_WAKE => futex_wake(uaddr as usize, val),
         FUTEX_REQUEUE => futex_requeue(uaddr as usize, val, uaddr2 as usize, timeout as u32),
         _ => EPERM,
@@ -98,10 +96,16 @@ pub fn sys_futex(
 pub fn futex_wait(uaddr: usize, val: u32, timeout: usize) -> isize {
     let token = current_user_token();
     let uval = translated_ref(token, uaddr as *const u32);
+    log::debug!(
+        "futex_wait: uval: {:x?}, val: {:x?}, timeout: {}",
+        uval,
+        val,
+        timeout
+    );
     if *uval != val {
+        println!("futex_wait1");
         return -EAGAIN;
     }
-
     let is_have_queue = FUTEX_QUEUE_MAP.read().contains_key(&uaddr);
     let mut futex_write = FUTEX_QUEUE_MAP.write();
     let futex_queue = if is_have_queue {
@@ -110,16 +114,13 @@ pub fn futex_wait(uaddr: usize, val: u32, timeout: usize) -> isize {
         futex_write.insert(uaddr, FutexQueue::new());
         futex_write.get(&uaddr).unwrap()
     };
-    // log::debug!(
-    //     "futex_wait: uval: {:x?}, val: {:x?}, timeout: {}",
-    //     uval, val, timeout
-    // );
     let mut queue_write = futex_queue.0.write();
     let task = current_task().unwrap();
-    queue_write.push_back(task.clone());
+    queue_write.push_back(task);
     drop(queue_write);
     drop(futex_write);
     block_current_and_run_next();
+    println!("futex_wait11");
     return 0;
 }
 
@@ -136,30 +137,31 @@ pub fn futex_wake(uaddr: usize, nr_wake: u32) -> isize {
             wakeup_queue.push(task);
         }
     });
+    let real_wake: isize = wakeup_queue.len() as isize;
     drop(queue_write);
 
     for task in wakeup_queue.into_iter() {
         unblock_task(task);
     }
-    return nr_wake as isize;
+    return real_wake;
 }
 
 pub fn futex_requeue(uaddr: usize, nr_wake: u32, uaddr2: usize, nr_limit: u32) -> isize {
     if !FUTEX_QUEUE_MAP.read().contains_key(&uaddr) {
         return 0;
     }
-
+    let is_have_queue2 = FUTEX_QUEUE_MAP.read().contains_key(&uaddr2);
     let mut futex_write = FUTEX_QUEUE_MAP.write();
     let mut queue_write = futex_write.get(&uaddr).unwrap().0.write();
 
     let mut wakeup_queue = Vec::new();
     let mut requeue_queue = Vec::new();
-
     (0..nr_wake as usize).for_each(|_| {
         if let Some(task) = queue_write.pop_front() {
             wakeup_queue.push(task);
         }
     });
+    let real_nwake: isize = wakeup_queue.len() as isize;
 
     (0..nr_limit as usize).for_each(|_| {
         if let Some(task) = queue_write.pop_front() {
@@ -175,22 +177,20 @@ pub fn futex_requeue(uaddr: usize, nr_wake: u32, uaddr2: usize, nr_limit: u32) -
 
     // requeue...
     if nr_limit == 0 {
-        return nr_wake as isize;
+        return real_nwake as isize;
     }
 
-    let flag2 = FUTEX_QUEUE_MAP.read().contains_key(&uaddr2);
-    let fq2 = if flag2 {
+    let queue2 = if is_have_queue2 {
         futex_write.get(&uaddr2).unwrap()
     } else {
         futex_write.insert(uaddr2, FutexQueue::new());
         futex_write.get(&uaddr2).unwrap()
     };
 
-    let mut queue2_write = fq2.0.write();
+    let mut queue2_write = queue2.0.write();
 
     for task in requeue_queue.into_iter() {
         queue2_write.push_back(task);
     }
-
-    return nr_wake as isize;
+    return real_nwake as isize;
 }

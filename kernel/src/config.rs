@@ -8,6 +8,7 @@ pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;
 
 // Kernel and User Address Space 's Address
 pub const TRAMPOLINE: usize = usize::MAX - PAGE_SIZE + 1;
+pub const SIGRETURN_TRAMPOLINE: usize = TRAMPOLINE - PAGE_SIZE;
 
 // Kernel Address Space 's Address
 pub const KERNEL_STACK_BASE: usize = TRAMPOLINE - 2 * PAGE_SIZE; // stack grow down, so stack base address is high end
@@ -15,7 +16,7 @@ pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
 pub const BOOT_STACK_SIZE: usize = PAGE_SIZE * 4; // 16 KB
 
 // User Address Space 's Address
-pub const TRAP_CONTEXT_BASE: usize = TRAMPOLINE - PAGE_SIZE;
+pub const TRAP_CONTEXT_BASE: usize = SIGRETURN_TRAMPOLINE - PAGE_SIZE;
 pub const USER_STACK_BASE: usize = 0xFFFFFFC000000000; // stack grow down, so stack base address is high end
 pub const USER_STACK_SIZE: usize = PAGE_SIZE * 8;
 pub const MMAP_BASE: usize = 0x10_0000_0000; // 0xFFFFFFC000000000;

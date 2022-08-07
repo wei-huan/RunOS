@@ -82,19 +82,19 @@ pub fn sys_sigprocmask(how: isize, set_ptr: *const SigSet, oldset_ptr: *mut SigS
     0
 }
 
-pub fn sys_sigretrun() -> isize {
-    log::debug!("sys_sigretrun");
+pub fn sys_sigreturn() -> isize {
+    log::debug!("sys_sigreturn");
     let token = current_user_token();
-    if let Some(task) = current_task() {
-        let mut inner = task.acquire_inner_lock();
-        inner.handling_sig = -1;
-        // restore the trap context
-        let trap_ctx = inner.get_trap_cx();
-        *trap_ctx = inner.trap_ctx_backup.unwrap();
-        0
-    } else {
-        -1
-    }
+    let task = current_task().unwrap();
+    let mut inner = task.acquire_inner_lock();
+    inner.handling_sig = -1;
+    // restore the trap context
+    let trap_ctx = inner.get_trap_cx();
+    let mc_pc_ptr = trap_ctx.x[2] + UContext::pc_offset();
+    let mc_pc = *translated_ref(token, mc_pc_ptr as *mut u32) as usize;
+    *trap_ctx = inner.trap_ctx_backup.unwrap();
+    trap_ctx.sepc = mc_pc;
+    0
 }
 
 fn check_sigaction_error(signal: usize) -> bool {
@@ -110,7 +110,7 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    log::debug!(
+    log::trace!(
         "sys_sigaction signum: {}, action: {:#X?}, old_action: {:#X?}",
         signum,
         action as usize,
