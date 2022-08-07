@@ -75,9 +75,8 @@ pub fn sys_sigprocmask(how: isize, set_ptr: *const SigSet, oldset_ptr: *mut SigS
     //             _ => return -EPERM,
     //         };
     //     }
-    //     0
     // } else {
-    //     -ESRCH
+    //     return -ESRCH
     // }
     0
 }

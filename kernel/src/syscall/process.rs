@@ -490,18 +490,18 @@ pub fn sys_prlimit64(
         RLIMIT_NOFILE => {
             if rlim as usize != 0 {
                 let rlimit = translated_ref(token, rlim);
-                log::debug!("rlimit: cur {} max{}", rlimit.rlim_cur, rlimit.rlim_max);
-                inner.fd_limit = rlimit.rlim_max;
+                log::trace!("rlimit: cur {} max {}", rlimit.rlim_cur, rlimit.rlim_max);
+                inner.fd_limit = rlimit.rlim_max - 1;
             }
             if old_rlim as usize != 0 {
                 let old_rlimit = translated_refmut(token, old_rlim);
-                log::debug!(
-                    "rlimit: cur {} max{}",
+                log::trace!(
+                    "rlimit: cur {} max {}",
                     old_rlimit.rlim_cur,
                     old_rlimit.rlim_max
                 );
-                old_rlimit.rlim_cur = inner.fd_limit;
-                old_rlimit.rlim_max = inner.fd_limit;
+                old_rlimit.rlim_cur = inner.fd_limit + 1;
+                old_rlimit.rlim_max = inner.fd_limit + 1;
             }
         }
         _ => {}

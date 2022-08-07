@@ -37,7 +37,6 @@ pub fn suspend_current_and_run_next() {
     drop(task_inner);
     drop(task);
     // jump to scheduling cycle
-    // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);
     // log::debug!("back to suspend");
 }
@@ -65,11 +64,12 @@ pub fn unblock_task(task: Arc<TaskControlBlock>) {
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
 pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
+    // println!("exit0");
     let process = current_process().unwrap();
     // take from Processor
     let task = take_current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
-
+    // println!("exit1");
     // do futex_wake if clear_child_tid is set
     if let Some(p) = &task_inner.clear_child_tid {
         *translated_refmut(
@@ -78,7 +78,7 @@ pub fn exit_current_and_run_next(exit_code: i32, is_group: bool) {
         ) = 0;
         futex_wake(p.addr, 1);
     }
-
+    // println!("exit2");
     // remove from pid2task
     remove_from_tid2task(task.gettid());
     // get local id in process to check if main thread

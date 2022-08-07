@@ -66,7 +66,7 @@ pub fn sys_futex(
     val3: u32,
 ) -> isize {
     let cmd = futex_op & FUTEX_CMD_MASK;
-    log::debug!(
+    log::trace!(
         "sys_futex uaddr {:#X}, op: {}, val: {}",
         uaddr as usize,
         cmd,
@@ -96,14 +96,13 @@ pub fn sys_futex(
 pub fn futex_wait(uaddr: usize, val: u32, timeout: usize) -> isize {
     let token = current_user_token();
     let uval = translated_ref(token, uaddr as *const u32);
-    log::debug!(
+    log::trace!(
         "futex_wait: uval: {:x?}, val: {:x?}, timeout: {}",
         uval,
         val,
         timeout
     );
     if *uval != val {
-        println!("futex_wait1");
         return -EAGAIN;
     }
     let is_have_queue = FUTEX_QUEUE_MAP.read().contains_key(&uaddr);
@@ -120,7 +119,6 @@ pub fn futex_wait(uaddr: usize, val: u32, timeout: usize) -> isize {
     drop(queue_write);
     drop(futex_write);
     block_current_and_run_next();
-    println!("futex_wait11");
     return 0;
 }
 

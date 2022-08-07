@@ -293,11 +293,11 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     log::trace!("sys_dup3: old_fd {}, new_fd {}", old_fd, new_fd);
     let current_process = current_process().unwrap();
     let mut inner = current_process.acquire_inner_lock();
-    if old_fd >= inner.fd_table.len() || inner.fd_table[old_fd].is_none() {
-        return -EPERM;
-    }
     if old_fd > inner.fd_limit {
         return -EMFILE;
+    }
+    if old_fd >= inner.fd_table.len() || inner.fd_table[old_fd].is_none() {
+        return -EPERM;
     }
     while new_fd >= inner.fd_table.len() {
         inner.fd_table.push(None);
