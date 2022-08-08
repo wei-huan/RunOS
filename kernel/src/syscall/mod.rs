@@ -71,6 +71,7 @@ const SYSCALL_RT_SIGTIMEDWAIT: usize = 137;
 const SYSCALL_SIGRETURN: usize = 139;
 const SYSCALL_TIMES: usize = 153;
 const SYSCALL_UNAME: usize = 160;
+const SYSCALL_GETRUSAGE: usize = 165;
 const SYSCALL_GET_TIMEOFDAY: usize = 169;
 const SYSCALL_GETPID: usize = 172;
 const SYSCALL_GETPPID: usize = 173;
@@ -187,6 +188,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SIGRETURN => sys_sigretrun(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
+        SYSCALL_GETRUSAGE => 0,
         SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_GETPPID => sys_getppid(),

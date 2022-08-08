@@ -567,7 +567,7 @@ impl AddrSpace {
         // clear bss section
         // user_space.clear_bss_pages();
 
-        let mut heap_start_virt: VirtAddr = max_end_vpn.into();
+        let heap_start_virt: VirtAddr = max_end_vpn.into();
         let mut heap_start: usize = heap_start_virt.into();
         heap_start += PAGE_SIZE;
         
