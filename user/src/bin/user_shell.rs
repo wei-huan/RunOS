@@ -32,8 +32,8 @@ fn final_round_one_test() {
     static_tests.push("memstream\0");
     // static_tests.push("pthread_cancel_points\0");
     // static_tests.push("pthread_cancel\0");
-    // static_tests.push("pthread_cond\0");
-    // static_tests.push("pthread_tsd\0");
+    static_tests.push("pthread_cond\0");
+    static_tests.push("pthread_tsd\0");
     static_tests.push("qsort\0");
     static_tests.push("random\0");
     static_tests.push("search_hsearch\0");
@@ -103,7 +103,7 @@ fn final_round_one_test() {
     static_tests.push("regex_negated_range\0");
     static_tests.push("regexec_nosub\0");
     static_tests.push("rewind_clear_error\0");
-    // static_tests.push("rlimit_open_files\0");
+    static_tests.push("rlimit_open_files\0");
     static_tests.push("scanf_bytes_consumed\0");
     static_tests.push("scanf_match_literal_eof\0");
     static_tests.push("scanf_nullbyte_char\0");
@@ -156,8 +156,8 @@ fn final_round_one_test() {
     dynamic_tests.push("memstream\0");
     // dynamic_tests.push("pthread_cancel_points\0");
     // dynamic_tests.push("pthread_cancel\0");
-    // dynamic_tests.push("pthread_cond\0");
-    // dynamic_tests.push("pthread_tsd\0");
+    dynamic_tests.push("pthread_cond\0");
+    dynamic_tests.push("pthread_tsd\0");
     dynamic_tests.push("qsort\0");
     dynamic_tests.push("random\0");
     dynamic_tests.push("search_hsearch\0");
@@ -188,8 +188,8 @@ fn final_round_one_test() {
     dynamic_tests.push("swprintf\0");
     dynamic_tests.push("tgmath\0");
     dynamic_tests.push("time\0");
-    // dynamic_tests.push("tls_init\0");
-    // dynamic_tests.push("tls_local_exec\0");
+    dynamic_tests.push("tls_init\0");
+    dynamic_tests.push("tls_local_exec\0");
     dynamic_tests.push("udiv\0");
     dynamic_tests.push("ungetc\0");
     // dynamic_tests.push("utime\0");
@@ -221,12 +221,12 @@ fn final_round_one_test() {
     dynamic_tests.push("printf_fmt_g_round\0");
     dynamic_tests.push("printf_fmt_g_zeros\0");
     dynamic_tests.push("printf_fmt_n\0");
-    // dynamic_tests.push("pthread_robust_detach\0");
-    // dynamic_tests.push("pthread_cond_smasher\0");
+    dynamic_tests.push("pthread_robust_detach\0");
+    dynamic_tests.push("pthread_cond_smasher\0");
     // dynamic_tests.push("pthread_condattr_setclock\0");
     // dynamic_tests.push("pthread_exit_cancel\0");
-    // dynamic_tests.push("pthread_once_deadlock\0");
-    // dynamic_tests.push("pthread_rwlock_ebusy\0");
+    dynamic_tests.push("pthread_once_deadlock\0");
+    dynamic_tests.push("pthread_rwlock_ebusy\0");
     dynamic_tests.push("putenv_doublefree\0");
     dynamic_tests.push("regex_backref_0\0");
     dynamic_tests.push("regex_bracket_icase\0");
@@ -235,7 +235,7 @@ fn final_round_one_test() {
     dynamic_tests.push("regex_negated_range\0");
     dynamic_tests.push("regexec_nosub\0");
     dynamic_tests.push("rewind_clear_error\0");
-    // dynamic_tests.push("rlimit_open_files\0");
+    dynamic_tests.push("rlimit_open_files\0");
     dynamic_tests.push("scanf_bytes_consumed\0");
     dynamic_tests.push("scanf_match_literal_eof\0");
     dynamic_tests.push("scanf_nullbyte_char\0");
@@ -246,7 +246,7 @@ fn final_round_one_test() {
     dynamic_tests.push("strverscmp\0");
     dynamic_tests.push("statvfs\0");
     // dynamic_tests.push("syscall_sign_extend\0");
-    // dynamic_tests.push("tls_get_new_dtv\0");
+    dynamic_tests.push("tls_get_new_dtv\0");
     dynamic_tests.push("uselocale_0\0");
     dynamic_tests.push("wcsncpy_read_overflow\0");
     dynamic_tests.push("wcsstr_false_negative\0");

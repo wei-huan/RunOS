@@ -68,15 +68,15 @@ impl Scheduler for RoundRobinScheduler {
         }
     }
     fn add_task(&self, task: Arc<TaskControlBlock>) {
-        let (_, selected) = self
-            .ready_queues
-            .iter()
-            .enumerate()
-            .min_by_key(|queue| queue.1.lock().len())
-            .unwrap_or((0, &self.ready_queues[0]));
-        // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
-        selected.lock().push_back(task);
-        // self.ready_queues[0].lock().push_back(task);
+        // let (_, selected) = self
+        //     .ready_queues
+        //     .iter()
+        //     .enumerate()
+        //     .min_by_key(|queue| queue.1.lock().len())
+        //     .unwrap_or((0, &self.ready_queues[0]));
+        // // log::debug!("Hart {} add task {} to queue {}", hart_id(), task.pid.0, i);
+        // selected.lock().push_back(task);
+        self.ready_queues[0].lock().push_back(task);
     }
     fn fetch_task(&self) -> Option<Arc<TaskControlBlock>> {
         self.ready_queues[hart_id()].lock().pop_front()

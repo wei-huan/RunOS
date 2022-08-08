@@ -111,7 +111,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         .unwrap()
         .lid;
     if pid >= 3 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-        log::debug!("process{} thread{} syscall {}", pid, lid, syscall_id);
+        log::trace!("process{} thread{} syscall {}", pid, lid, syscall_id);
     }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
