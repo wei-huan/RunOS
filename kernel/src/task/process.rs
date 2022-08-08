@@ -416,7 +416,7 @@ impl ProcessControlBlock {
         // prot << 1 is equal to meaning of MapPermission
         let mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
-        log::trace!(
+        log::debug!(
             "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
             start,
             length,
@@ -441,7 +441,7 @@ impl ProcessControlBlock {
             && mmap_flag.contains(MMapFlags::MAP_FIXED)
         {
             // adjust mmap section
-            log::trace!("start fixing mmap conflict");
+            log::debug!("start fixing mmap conflict");
             inner.addrspace.fix_mmap_section_conflict(start, length);
 
             // map mmap section at fixed place
@@ -459,7 +459,7 @@ impl ProcessControlBlock {
         }
         // no conflict, just map it
         else if mmap_flag.contains(MMapFlags::MAP_FIXED) {
-            log::trace!("mmap start before map: {:#X}", start);
+            log::debug!("mmap start before map: {:#X}", start);
             inner.mmap_area_hint = inner.mmap_area_hint.max(
                 inner
                     .addrspace

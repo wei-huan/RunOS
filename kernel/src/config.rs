@@ -1,7 +1,7 @@
 pub const PAGE_SIZE: usize = 4096;
 pub const PAGE_SIZE_BITS: usize = 0xc;
 pub const MEMORY_END: usize = 0x82800000;
-pub const KERNEL_HEAP_SIZE: usize = 0x30_0000;
+pub const KERNEL_HEAP_SIZE: usize = 0x60_0000;
 
 // for buddy_system_allocator
 pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;

@@ -27,7 +27,7 @@ pub fn sys_kill(pid: usize, signum: i32) -> isize {
 }
 
 pub fn sys_tkill(tid: usize, signum: i32) -> isize {
-    log::debug!("sys_tkill tid: {}, signum: {}", tid, signum);
+    log::trace!("sys_tkill tid: {}, signum: {}", tid, signum);
     if let Some(task) = tid2task(tid) {
         if signum > 0 && signum as usize <= NSIG {
             let mut task_inner = task.acquire_inner_lock();
