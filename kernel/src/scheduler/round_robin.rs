@@ -50,9 +50,6 @@ impl Scheduler for RoundRobinScheduler {
                 add_task(last_task);
             }
             if let Some(task) = self.fetch_task() {
-                // if hart_id() == 1 {
-                //     log::trace!("have task");
-                // }
                 let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();
                 // access coming task TCB exclusively
                 let mut task_inner = task.acquire_inner_lock();

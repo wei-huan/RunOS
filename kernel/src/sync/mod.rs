@@ -1,5 +1,5 @@
 mod interrupt;
 mod up;
 
+pub use interrupt::{interrupt_get, interrupt_off, interrupt_on};
 pub use up::UPSafeCell;
-pub use interrupt::{IntrLock, interrupt_on, interrupt_off, interrupt_get};
