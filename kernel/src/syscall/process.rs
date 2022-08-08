@@ -413,8 +413,6 @@ pub struct RLimit {
     pub rlim_max: usize, /* Hard limit (ceiling for rlim_cur) */
 }
 
-const FDMAX: usize = 10;
-
 pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut RLimit) -> isize {
     // log::debug!("sys_prlimit res: {}", res);
     0
