@@ -7,6 +7,7 @@ mod key;
 mod process;
 mod sysinfo;
 mod syslog;
+mod usage;
 mod utsname;
 
 use crate::cpu::current_task;
@@ -20,6 +21,7 @@ use key::*;
 use process::*;
 use sysinfo::*;
 use syslog::*;
+use usage::*;
 use utsname::*;
 
 const SYSCALL_GETCWD: usize = 17;
@@ -148,12 +150,9 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_READV => sys_readv(args[0], args[1] as *const crate::fs::IOVec, args[2]),
         SYSCALL_WRITEV => sys_writev(args[0], args[1] as *const crate::fs::IOVec, args[2]),
         SYSCALL_PREAD => sys_pread(args[0], args[1] as _, args[2], args[3]),
-        SYSCALL_READLINKAT => sys_readlinkat(
-            args[0] as _,
-            args[1] as _,
-            args[2] as _,
-            args[3] as _,
-        ),
+        SYSCALL_READLINKAT => {
+            sys_readlinkat(args[0] as _, args[1] as _, args[2] as _, args[3] as _)
+        }
         SYSCALL_SENDFILE => sys_sendfile(
             args[0] as isize,
             args[1] as isize,
