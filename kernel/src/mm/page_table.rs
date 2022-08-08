@@ -7,7 +7,6 @@ use alloc::string::String;
 use alloc::vec;
 use alloc::vec::Vec;
 use bitflags::bitflags;
-use log::warn;
 
 bitflags! {
     pub struct PTEFlags: u8 {
