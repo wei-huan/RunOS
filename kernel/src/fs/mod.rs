@@ -22,7 +22,7 @@ pub trait File: Send + Sync {
 
 pub use finfo::*;
 pub use inode::{
-    ch_dir, clear_cache, init_rootfs, list_apps, list_files, open, DiskInodeType, OSInode,
+    ch_dir, clear_cache, init_rootfs, list_apps, open, DiskInodeType, OSInode,
     OpenFlags,
 };
 pub use mount::MNT_TABLE;

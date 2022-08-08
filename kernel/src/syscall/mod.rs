@@ -1,7 +1,9 @@
+// syscall id: https://www.robalni.org/riscv/linux-syscalls-64.html
 #![allow(unused)]
 
 mod errorno;
 mod fs;
+mod key;
 mod process;
 mod sysinfo;
 mod syslog;
@@ -12,7 +14,9 @@ use crate::task::SignalAction;
 use crate::timer::{TimeVal, Times};
 
 pub use errorno::*;
+
 use fs::*;
+use key::*;
 use process::*;
 use sysinfo::*;
 use syslog::*;
@@ -44,6 +48,7 @@ const SYSCALL_WRITEV: usize = 66;
 const SYSCALL_PREAD: usize = 67;
 const SYSCALL_PWRITE: usize = 68;
 const SYSCALL_SENDFILE: usize = 71;
+const SYSCALL_READLINKAT: usize = 78;
 const SYSCALL_FSTATAT: usize = 79;
 const SYSCALL_FSTAT: usize = 80;
 const SYSCALL_UTIMENSAT: usize = 88;
@@ -58,6 +63,8 @@ const SYSCALL_CLOCK_GETTIME: usize = 113;
 const SYSCALL_SYSLOG: usize = 116;
 const SYSCALL_SCHED_YIELD: usize = 124;
 const SYSCALL_KILL: usize = 129;
+const SYSCALL_TKILL: usize = 130;
+const SYSCALL_TGKILL: usize = 131;
 const SYSCALL_SIGACTION: usize = 134;
 const SYSCALL_SIGPROCMASK: usize = 135;
 const SYSCALL_RT_SIGTIMEDWAIT: usize = 137;
@@ -89,6 +96,8 @@ const SYSCALL_SHUTDOWN: usize = 210;
 const SYSCALL_SBRK: usize = 213;
 const SYSCALL_BRK: usize = 214;
 const SYSCALL_MUNMAP: usize = 215;
+const SYSCALL_ADD_KEY: usize = 217;
+const SYSCALL_REQUEST_KEY: usize = 218;
 const SYSCALL_CLONE: usize = 220;
 const SYSCALL_EXECVE: usize = 221;
 const SYSCALL_MMAP: usize = 222;
@@ -100,7 +109,7 @@ const SYSCALL_MEMBARRIER: usize = 283;
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     let pid = current_task().unwrap().getpid();
     if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-        log::trace!("process {} syscall: {}", pid, syscall_id);
+        log::debug!("process {} syscall: {}", pid, syscall_id);
     }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
@@ -138,6 +147,12 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_READV => sys_readv(args[0], args[1] as *const crate::fs::IOVec, args[2]),
         SYSCALL_WRITEV => sys_writev(args[0], args[1] as *const crate::fs::IOVec, args[2]),
         SYSCALL_PREAD => sys_pread(args[0], args[1] as _, args[2], args[3]),
+        SYSCALL_READLINKAT => sys_readlinkat(
+            args[0] as _,
+            args[1] as _,
+            args[2] as _,
+            args[3] as _,
+        ),
         SYSCALL_SENDFILE => sys_sendfile(
             args[0] as isize,
             args[1] as isize,
@@ -160,6 +175,8 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
         SYSCALL_KILL => sys_kill(args[0], args[1] as i32),
+        SYSCALL_TKILL => sys_tkill(args[0], args[1] as i32),
+        SYSCALL_TGKILL => sys_tgkill(args[0], args[1], args[2] as i32),
         SYSCALL_SIGACTION => sys_sigaction(
             args[0] as i32,
             args[1] as *const SignalAction,
@@ -194,21 +211,31 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SBRK => sys_sbrk(args[0] as isize),
         SYSCALL_BRK => sys_brk(args[0]),
         SYSCALL_CLONE => sys_clone(
-            args[0] as usize,
-            args[1] as usize,
+            args[0] as _,
+            args[1] as _,
             args[2] as _,
-            args[3] as usize,
+            args[3] as _,
             args[4] as _,
         ),
         SYSCALL_MUNMAP => sys_munmap(args[0] as usize, args[1] as usize),
+        SYSCALL_ADD_KEY => sys_add_key(
+            args[0] as _,
+            args[1] as _,
+            args[2] as _,
+            args[3] as _,
+            args[4] as _,
+        ),
+        SYSCALL_REQUEST_KEY => {
+            sys_request_key(args[0] as _, args[1] as _, args[2] as _, args[3] as _)
+        }
         SYSCALL_EXECVE => sys_exec(args[0] as *const u8, args[1] as *const usize),
         SYSCALL_MMAP => sys_mmap(
-            args[0] as usize,
-            args[1] as usize,
-            args[2] as usize,
-            args[3] as usize,
-            args[4] as isize,
-            args[5] as usize,
+            args[0] as _,
+            args[1] as _,
+            args[2] as _,
+            args[3] as _,
+            args[4] as _,
+            args[5] as _,
         ),
         SYSCALL_MPROTECT => sys_mprotect(args[0], args[1], args[2]),
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),

@@ -4,7 +4,7 @@ use super::{
     section::{MapPermission, MapType, Section},
 };
 use crate::config::{
-    DLL_LOADER_BASE, HEAP_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE,
+    DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE,
     USER_STACK_BASE, USER_STACK_SIZE,
 };
 use crate::fs::{open, DiskInodeType, OpenFlags};
@@ -414,7 +414,7 @@ impl AddrSpace {
         // let mut need_data_sec = true;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
-            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+            // let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
             // let name = sect.get_name(&elf).unwrap();
             // log::debug!(
             //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
@@ -565,10 +565,12 @@ impl AddrSpace {
         });
 
         // clear bss section
-        user_space.clear_bss_pages();
+        // user_space.clear_bss_pages();
 
-        let heap_start: usize = HEAP_BASE;
-
+        let mut heap_start_virt: VirtAddr = max_end_vpn.into();
+        let mut heap_start: usize = heap_start_virt.into();
+        heap_start += PAGE_SIZE;
+        
         // map user stack with U flags
         // user stack is set just below the trap_cx
         let user_stack_high = USER_STACK_BASE;
@@ -610,6 +612,7 @@ impl AddrSpace {
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
         self.page_table.translate(vpn)
     }
+    #[allow(unused)]
     pub fn clear_bss_pages(&mut self) {
         let sect_iterator = self.sections.iter_mut();
         for sect in sect_iterator {

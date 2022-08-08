@@ -47,10 +47,11 @@ pub const TRAP_CONTEXT_BASE: usize = TRAMPOLINE - PAGE_SIZE;
 pub const USER_STACK_BASE: usize = TRAP_CONTEXT_BASE - PAGE_SIZE; // stack grow down, so stack base address is high end
 pub const USER_STACK_SIZE: usize = PAGE_SIZE * 8;
 pub const MMAP_BASE: usize = 0x10_0000_0000; // 0xFFFFFFC000000000;
-pub const HEAP_BASE: usize = 0x20_0000_0000;
+// pub const HEAP_BASE: usize = 0x20_0000_0000;
 pub const DLL_LOADER_BASE: usize = 0x30_0000_0000; // dynamic link library loader base address
 
 // Process RLimit
+#[allow(unused)]
 pub const FD_LIMIT: usize = 48;
 
 #[allow(unused)]
@@ -59,6 +60,7 @@ pub fn page_aligned_down(addr: usize) -> usize {
     addr / PAGE_SIZE * PAGE_SIZE
 }
 
+#[allow(unused)]
 #[inline(always)]
 pub fn page_aligned_up(addr: usize) -> usize {
     (addr + PAGE_SIZE - 1) / PAGE_SIZE * PAGE_SIZE

@@ -716,6 +716,13 @@ pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
     }
 }
 
+pub fn sys_readlinkat(dirfd: i32, pathname: *const u8, buf: *mut u8, bufsize: usize) -> isize {
+    let token = current_user_token();
+    let pathname_str = translated_str(token, pathname);
+    log::debug!("sys_readlinkat dirfd: {}, pathname: {}, bufsize: {}", dirfd, pathname_str, bufsize);
+    0
+}
+
 /* return the num of bytes */
 pub fn sys_sendfile(out_fd: isize, in_fd: isize, offset_ptr: *mut usize, count: usize) -> isize {
     let task = current_task().unwrap();

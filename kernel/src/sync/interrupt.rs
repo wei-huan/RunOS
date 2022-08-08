@@ -18,6 +18,7 @@ pub fn interrupt_off() {
 }
 
 // are device interrupts enabled?
+#[allow(unused)]
 #[inline(always)]
 pub fn interrupt_get() -> bool {
     sstatus::read().sie()

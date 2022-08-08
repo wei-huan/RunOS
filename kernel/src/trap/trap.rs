@@ -144,6 +144,12 @@ pub fn user_trap_handler() -> ! {
             set_next_trigger();
             suspend_current_and_run_next();
         }
+        Trap::Exception(Exception::Breakpoint) => {
+            log::trace!("Breakpoint");
+            let mut cx = current_trap_cx();
+            // jump to syscall next instruction anyway, avoid re-trigger
+            cx.sepc += 4;
+        }
         _ => {
             panic!(
                 "Unsupported trap {:?}, stval = {:#x}!",
