@@ -1,7 +1,7 @@
 // use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
-use crate::config::{MMAP_BASE, TRAP_CONTEXT};
+use crate::config::{MMAP_BASE, TRAP_CONTEXT_BASE};
 use crate::fs::{File, FileClass, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
@@ -104,7 +104,7 @@ impl TaskControlBlock {
         let (addrspace, heap_start, ustack_base, entry_point, _) =
             AddrSpace::create_user_space(elf_data);
         let trap_cx_ppn = addrspace
-            .translate(VirtAddr::from(TRAP_CONTEXT).into())
+            .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
             .unwrap()
             .ppn();
         // allocate a pid
@@ -163,7 +163,7 @@ impl TaskControlBlock {
             AddrSpace::create_user_space(elf_data);
         let token = addrspace.token();
         let trap_cx_ppn = addrspace
-            .translate(VirtAddr::from(TRAP_CONTEXT).into())
+            .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
             .unwrap()
             .ppn();
 
@@ -334,7 +334,7 @@ impl TaskControlBlock {
         // copy user space(include trap context)
         let addrspace = AddrSpace::from_existed_user(&parent_inner.addrspace);
         let trap_cx_ppn = addrspace
-            .translate(VirtAddr::from(TRAP_CONTEXT).into())
+            .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
             .unwrap()
             .ppn();
         // alloc a pid and a kernel stack in kernel space
@@ -414,7 +414,7 @@ impl TaskControlBlock {
         // prot << 1 is equal to meaning of MapPermission
         let mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
-        log::trace!(
+        log::debug!(
             "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
             start,
             length,
@@ -435,6 +435,7 @@ impl TaskControlBlock {
             log::trace!("mmap need hint hint after map: {:#X}", inner.mmap_area_hint);
         }
         // another mmaping already exist there, but need to place the mapping at exactly that address.
+        // have conflict with mmap section
         else if inner.addrspace.is_mmap_section_conflict(start, length)
             && mmap_flag.contains(MMapFlags::MAP_FIXED)
         {
@@ -454,6 +455,13 @@ impl TaskControlBlock {
                 "mmap at fixed place hint after map: {:#X}",
                 inner.mmap_area_hint
             );
+        }
+        // another mmaping already exist there, but need to place the mapping at exactly that address.
+        // have conflict with mmap section
+        else if inner.addrspace.is_section_conflict(start, length)
+            && mmap_flag.contains(MMapFlags::MAP_FIXED)
+        {
+            log::trace!("mmap have conflict with other type section, do nothing");
         }
         // no conflict, just map it
         else if mmap_flag.contains(MMapFlags::MAP_FIXED) {

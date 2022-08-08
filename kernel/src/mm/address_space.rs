@@ -4,8 +4,8 @@ use super::{
     section::{MapPermission, MapType, Section},
 };
 use crate::config::{
-    DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT, USER_STACK_HIGH,
-    USER_STACK_SIZE,
+    DLL_LOADER_BASE, HEAP_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE,
+    USER_STACK_BASE, USER_STACK_SIZE,
 };
 use crate::fs::{open, DiskInodeType, OpenFlags};
 use crate::platform::MMIO;
@@ -143,6 +143,19 @@ impl AddrSpace {
         }
         self.mmap_sections.push(section);
     }
+    pub fn is_section_conflict(&self, start: usize, len: usize) -> bool {
+        let left_vpn = VirtAddr::from(start).floor();
+        let right_vpn = VirtAddr::from(start + len).ceil();
+        if let Some(_) = self.sections.iter().find(|section| {
+            section.vpn_range.is_left_cover(left_vpn, right_vpn)
+                || section.vpn_range.is_right_cover(left_vpn, right_vpn)
+                || section.vpn_range.is_full_cover(left_vpn, right_vpn)
+                || section.vpn_range.is_be_covered(left_vpn, right_vpn)
+        }) {
+            return true;
+        }
+        return false;
+    }
     pub fn is_mmap_section_conflict(&self, start: usize, len: usize) -> bool {
         let left_vpn = VirtAddr::from(start).floor();
         let right_vpn = VirtAddr::from(start + len).ceil();
@@ -161,7 +174,8 @@ impl AddrSpace {
         let right_vpn = VirtAddr::from(start + len).ceil();
         log::trace!(
             "fix_mmap_section_conflict left: {:?}, right: {:?}",
-            left_vpn, right_vpn
+            left_vpn,
+            right_vpn
         );
         let mut need_remove: Vec<usize> = Vec::new();
         let mut new_mmap_sections: Vec<Section> = Vec::new();
@@ -401,14 +415,14 @@ impl AddrSpace {
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
             let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-            let name = sect.get_name(&elf).unwrap();
-            log::debug!(
-                "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
-                name,
-                ph.get_type().unwrap(),
-                ph.virtual_addr(),
-                ph.virtual_addr() + ph.mem_size()
-            );
+            // let name = sect.get_name(&elf).unwrap();
+            // log::debug!(
+            //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
+            //     name,
+            //     ph.get_type().unwrap(),
+            //     ph.virtual_addr(),
+            //     ph.virtual_addr() + ph.mem_size()
+            // );
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
                 // first section header is dummy, not match program header, so set i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
@@ -553,12 +567,11 @@ impl AddrSpace {
         // clear bss section
         user_space.clear_bss_pages();
 
-        let heap_start: usize = USER_STACK_HIGH;
-
+        let heap_start: usize = HEAP_BASE;
 
         // map user stack with U flags
         // user stack is set just below the trap_cx
-        let user_stack_high = USER_STACK_HIGH;
+        let user_stack_high = USER_STACK_BASE;
         let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
         // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
         // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
@@ -577,7 +590,7 @@ impl AddrSpace {
         user_space.push_section(
             Section::new(
                 ".trap_cx".to_string(),
-                TRAP_CONTEXT.into(),
+                TRAP_CONTEXT_BASE.into(),
                 TRAMPOLINE.into(),
                 MapType::Framed,
                 MapPermission::R | MapPermission::W,

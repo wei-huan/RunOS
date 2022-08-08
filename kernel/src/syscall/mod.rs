@@ -100,7 +100,7 @@ const SYSCALL_MEMBARRIER: usize = 283;
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
     let pid = current_task().unwrap().getpid();
     if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-        log::debug!("process {} syscall: {}", pid, syscall_id);
+        log::trace!("process {} syscall: {}", pid, syscall_id);
     }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
@@ -193,7 +193,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETSOCKOPT => 0,
         SYSCALL_SBRK => sys_sbrk(args[0] as isize),
         SYSCALL_BRK => sys_brk(args[0]),
-        SYSCALL_CLONE => sys_fork(
+        SYSCALL_CLONE => sys_clone(
             args[0] as usize,
             args[1] as usize,
             args[2] as _,

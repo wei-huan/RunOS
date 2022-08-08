@@ -1,4 +1,4 @@
-use crate::config::{TRAMPOLINE, TRAP_CONTEXT};
+use crate::config::{TRAMPOLINE, TRAP_CONTEXT_BASE};
 use crate::cpu::{current_trap_cx, current_user_token, hart_id};
 use crate::syscall::syscall;
 use crate::task::{
@@ -166,7 +166,7 @@ pub fn user_trap_handler() -> ! {
 #[no_mangle]
 pub fn trap_return() -> ! {
     set_user_trap_entry();
-    let trap_cx_ptr = TRAP_CONTEXT;
+    let trap_cx_ptr = TRAP_CONTEXT_BASE;
     let user_satp = current_user_token();
     extern "C" {
         fn __uservec();

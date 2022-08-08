@@ -106,7 +106,7 @@ pub fn sys_gettid() -> isize {
 //            a0,    a1,    a2,  a3,   a4,  a5,   a6
 // 子进程返回到 func 在用户态实现
 //  syscall(SYS_clone, flags, stack, ptid, tls, ctid)
-pub fn sys_fork(
+pub fn sys_clone(
     _flags: usize,
     stack_ptr: usize,
     ptid_ptr: *const u32,
@@ -115,7 +115,7 @@ pub fn sys_fork(
 ) -> isize {
     let current_task = current_task().unwrap();
     let token = current_user_token();
-    // log::debug!("sys_fork ptid: {}, ctid: {}", ptid_ptr as usize, ctid_ptr as usize);
+    log::debug!("sys_clone ptid: {}, ctid: {}", ptid_ptr as usize, ctid_ptr as usize);
     // if ptid_ptr as usize != 0 {
     //     let ptid = *translated_ref(token, ptid_ptr);
     //     log::debug!("ptid: {}", ptid);
@@ -254,9 +254,6 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
     loop {
         let task = current_task().unwrap();
         // No any child process waiting
-        // if !have_ready_task() && !task.acquire_inner_lock().have_children() && {
-
-        // }
         // find a child process
         // ---- access current PCB exclusively
         let mut inner = task.acquire_inner_lock();
@@ -304,12 +301,12 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 pub fn sys_brk(mut brk_addr: usize) -> isize {
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
-    // log::debug!(
-    //     "sys_brk: {:#X?}, start: {:#X?}, current_break: {:#X?}",
-    //     brk_addr,
-    //     inner.heap_start,
-    //     inner.heap_pointer
-    // );
+    log::trace!(
+        "sys_brk: {:#X?}, start: {:#X?}, current_break: {:#X?}",
+        brk_addr,
+        inner.heap_start,
+        inner.heap_pointer
+    );
     let heap_start = inner.heap_start;
     brk_addr = page_aligned_up(brk_addr);
     if brk_addr != 0 {
