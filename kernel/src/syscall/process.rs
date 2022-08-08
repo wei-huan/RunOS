@@ -504,7 +504,7 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    // log::debug!("sys_sigaction");
+    log::debug!("sys_sigaction");
     let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();

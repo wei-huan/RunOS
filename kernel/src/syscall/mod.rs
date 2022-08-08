@@ -98,10 +98,10 @@ const SYSCALL_PRLIMIT: usize = 261;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    // let pid = current_task().unwrap().getpid();
-    // if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
-    //     log::debug!("process{} syscall: {}", pid, syscall_id);
-    // }
+    let pid = current_task().unwrap().getpid();
+    if pid >= 2 && syscall_id != SYSCALL_READ && syscall_id != SYSCALL_WRITE {
+        log::debug!("process {} syscall: {}", pid, syscall_id);
+    }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),
