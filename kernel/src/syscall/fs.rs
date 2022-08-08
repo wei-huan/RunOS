@@ -1,8 +1,7 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
-    ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, FileDescripter, IOVec,
-    OSInode, OpenFlags, Stat, StatFS, MNT_TABLE, S_IFCHR, S_IFDIR, S_IFREG, S_IRWXG, S_IRWXO,
-    S_IRWXU,
+    ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, IOVec, OSInode, OpenFlags,
+    Stat, StatFS, MNT_TABLE, S_IFCHR, S_IFDIR, S_IFREG, S_IRWXG, S_IRWXO, S_IRWXU,
 };
 use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
@@ -36,7 +35,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
         return -1;
     }
     if let Some(file) = &inner.fd_table[fd] {
-        let file: Arc<dyn File + Send + Sync> = match &file.fclass {
+        let file: Arc<dyn File + Send + Sync> = match &file {
             FileClass::Abstr(f) => f.clone(),
             FileClass::File(f) => {
                 /*print!("\n");*/
@@ -70,7 +69,7 @@ pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 
     if let Some(file) = &inner.fd_table[fd] {
         let f: Arc<dyn File + Send + Sync>;
-        match &file.fclass {
+        match &file {
             FileClass::File(fi) => f = fi.clone(),
             FileClass::Abstr(fi) => f = fi.clone(),
         }
@@ -96,7 +95,7 @@ pub fn sys_pread(fd: usize, buf: *mut u8, count: usize, offset: usize) -> isize 
     let inner = task.acquire_inner_lock();
     let ret = if let Some(file) = &inner.fd_table[fd] {
         let f: Arc<dyn File + Send + Sync>;
-        match &file.fclass {
+        match &file {
             FileClass::File(fi) => {
                 let old_off = fi.get_offset();
                 fi.set_offset(offset);
@@ -122,7 +121,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         return -1;
     }
     if let Some(file) = &inner.fd_table[fd] {
-        let file: Arc<dyn File + Send + Sync> = match &file.fclass {
+        let file: Arc<dyn File + Send + Sync> = match &file {
             FileClass::Abstr(f) => f.clone(),
             FileClass::File(f) => f.clone(),
         };
@@ -150,7 +149,7 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
     let mut ret = 0isize;
     if let Some(file) = &inner.fd_table[fd] {
         let f: Arc<dyn File + Send + Sync>;
-        match &file.fclass {
+        match &file {
             FileClass::File(fi) => f = fi.clone(),
             FileClass::Abstr(fi) => f = fi.clone(),
         }
@@ -202,10 +201,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
             DiskInodeType::File,
         ) {
             let fd = inner.alloc_fd();
-            inner.fd_table[fd] = Some(FileDescripter::new(
-                oflags.contains(OpenFlags::CLOEXEC),
-                FileClass::File(inode),
-            ));
+            inner.fd_table[fd] = Some(FileClass::File(inode));
             fd as isize
         } else {
             -1
@@ -217,17 +213,14 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
             log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
-            match &file.fclass {
+            match &file {
                 FileClass::File(f) => {
                     // log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
                     // 需要新建文件
                     if oflags.contains(OpenFlags::CREATE) {
                         if let Some(new_file) = f.create(path.as_str(), DiskInodeType::File) {
                             let fd = inner.alloc_fd();
-                            inner.fd_table[fd] = Some(FileDescripter::new(
-                                oflags.contains(OpenFlags::CLOEXEC),
-                                FileClass::File(new_file),
-                            ));
+                            inner.fd_table[fd] = Some(FileClass::File(new_file));
                             return fd as isize;
                         } else {
                             return -1;
@@ -236,10 +229,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, _mode: u32) -> isi
                     // 正常打开文件
                     if let Some(tar_f) = f.find(path.as_str(), oflags) {
                         let fd = inner.alloc_fd();
-                        inner.fd_table[fd] = Some(FileDescripter::new(
-                            oflags.contains(OpenFlags::CLOEXEC),
-                            FileClass::File(tar_f),
-                        ));
+                        inner.fd_table[fd] = Some(FileClass::File(tar_f));
                         fd as isize
                     } else {
                         return -1;
@@ -344,7 +334,7 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
             return -1;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
-            match &file.fclass {
+            match &file {
                 FileClass::File(f) => {
                     f.get_fstat(&mut kstat);
                     userbuf.write(kstat.as_bytes());
@@ -420,9 +410,9 @@ pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
     let mut inner = task.acquire_inner_lock();
     let (pipe_read, pipe_write) = make_pipe();
     let read_fd = inner.alloc_fd();
-    inner.fd_table[read_fd] = Some(FileDescripter::new(false, FileClass::Abstr(pipe_read)));
+    inner.fd_table[read_fd] = Some(FileClass::Abstr(pipe_read));
     let write_fd = inner.alloc_fd();
-    inner.fd_table[write_fd] = Some(FileDescripter::new(false, FileClass::Abstr(pipe_write)));
+    inner.fd_table[write_fd] = Some(FileClass::Abstr(pipe_write));
     *translated_refmut(token, pipe) = read_fd as u32;
     *translated_refmut(token, unsafe { pipe.add(1) }) = write_fd as u32;
     0
@@ -451,7 +441,7 @@ pub fn sys_mkdir(dirfd: isize, path: *const u8, _mode: u32) -> isize {
             return -1;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
-            match &file.fclass {
+            match &file {
                 FileClass::File(f) => {
                     if let Some(_) = f.create(path.as_str(), DiskInodeType::Directory) {
                         return 0;
@@ -552,7 +542,7 @@ pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
             return -1;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
-            match &file.fclass {
+            match &file {
                 FileClass::File(f) => {
                     loop {
                         if total_len + dent_len > len {
@@ -603,7 +593,7 @@ fn get_file_discpt(
             return None;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
-            match &file.fclass {
+            match &file {
                 FileClass::File(f) => {
                     if oflags.contains(OpenFlags::CREATE) {
                         if let Some(tar_f) = f.create(path.as_str(), type_) {
@@ -734,11 +724,11 @@ pub fn sys_sendfile(out_fd: isize, in_fd: isize, offset_ptr: *mut usize, count: 
 
     if let Some(file_in) = &inner.fd_table[in_fd as usize] {
         // file_in exists
-        match &file_in.fclass {
+        match &file_in {
             FileClass::File(fin) => {
                 if let Some(file_out) = &inner.fd_table[out_fd as usize] {
                     //file_out exists
-                    match &file_out.fclass {
+                    match &file_out {
                         FileClass::File(fout) => {
                             if offset_ptr as usize != 0 {
                                 //won't influence file.offset
@@ -777,7 +767,7 @@ pub fn sys_lseek(fd: usize, offset: isize, whence: i32) -> isize {
     }
 
     if let Some(fdes) = &inner.fd_table[fd] {
-        let fclass = &fdes.fclass;
+        let fclass = &fdes;
         match fclass {
             FileClass::File(inode) => return inode.lseek(offset, whence),
             _ => return -EISDIR,
