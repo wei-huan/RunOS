@@ -164,7 +164,7 @@ fn final_round_one_test() {
     dynamic_tests.push("search_insque\0");
     dynamic_tests.push("search_lsearch\0");
     dynamic_tests.push("search_tsearch\0");
-    // dynamic_tests.push("sem_init\0");
+    dynamic_tests.push("sem_init\0");
     dynamic_tests.push("setjmp\0");
     dynamic_tests.push("snprintf\0");
     // dynamic_tests.push("socket\0");
