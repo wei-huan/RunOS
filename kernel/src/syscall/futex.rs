@@ -145,6 +145,7 @@ pub fn futex_wake(uaddr: usize, nr_wake: u32) -> isize {
 }
 
 pub fn futex_requeue(uaddr: usize, nr_wake: u32, uaddr2: usize, nr_limit: u32) -> isize {
+    let flag2 = FUTEX_QUEUE_MAP.read().contains_key(&uaddr2);
     if !FUTEX_QUEUE_MAP.read().contains_key(&uaddr) {
         return 0;
     }
@@ -178,7 +179,6 @@ pub fn futex_requeue(uaddr: usize, nr_wake: u32, uaddr2: usize, nr_limit: u32) -
         return nr_wake as isize;
     }
 
-    let flag2 = FUTEX_QUEUE_MAP.read().contains_key(&uaddr2);
     let fq2 = if flag2 {
         futex_write.get(&uaddr2).unwrap()
     } else {
