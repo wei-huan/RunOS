@@ -580,11 +580,11 @@ pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
         len,
         flags
     );
-    let start = VirtPageNum::from(VirtAddr::from(addr).floor());
-    let end = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
+    let start_vpn = VirtPageNum::from(VirtAddr::from(addr).floor());
+    let end_vpn = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    for vpn in start..end {
+    for vpn in start_vpn..end_vpn {
         inner.addrspace.set_pte_flags(vpn, flags);
     }
     0
