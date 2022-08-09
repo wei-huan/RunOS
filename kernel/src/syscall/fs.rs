@@ -15,6 +15,7 @@ use core::mem::size_of;
 use spin::MutexGuard;
 
 const AT_FDCWD: isize = -100;
+
 pub const FD_LIMIT: usize = 128;
 
 pub fn sys_ioctl() -> isize {
@@ -311,7 +312,6 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Stat>());
     let inner = task.acquire_inner_lock();
-    // 使用UserBuffer结构，以便于跨页读写
     let mut userbuf = UserBuffer::new(buf_vec);
     let mut kstat = Stat::empty();
     if fd == AT_FDCWD {
@@ -716,11 +716,17 @@ pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
     }
 }
 
+// fake implement
 pub fn sys_readlinkat(dirfd: i32, pathname: *const u8, buf: *mut u8, bufsize: usize) -> isize {
     let token = current_user_token();
     let pathname_str = translated_str(token, pathname);
     log::debug!("sys_readlinkat dirfd: {}, pathname: {}, bufsize: {}", dirfd, pathname_str, bufsize);
-    0
+    let linkpath_str = "/lmbench_all\0";
+    let buf_vec = translated_byte_buffer(token, buf, 128);
+    let mut userbuf = UserBuffer::new(buf_vec);
+    userbuf.write(linkpath_str.as_bytes());
+    // let data = UserBuffer::new(buffers);
+    -1
 }
 
 /* return the num of bytes */

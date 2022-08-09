@@ -14,6 +14,12 @@ pub const USEC_PER_SEC: usize = 1000_000;
 pub const NSEC_PER_SEC: usize = 1000_000_000;
 
 #[derive(Copy, Clone)]
+pub struct TimeSpec {
+    pub sec: u64,
+    pub nsec: u64,
+}
+
+#[derive(Copy, Clone)]
 pub struct TimeVal {
     pub sec: u64,
     pub usec: u64,
@@ -66,21 +72,14 @@ pub fn get_time_sec_usec() -> (u64, u64) {
     (sec, usec)
 }
 
-#[allow(unused)]
-pub fn compare_time_sec_usec(t_sec: usize, t_usec: usize, f_sec: usize, f_usec: usize) -> bool {
-    // Compare sec
-    if t_sec > f_sec {
-        return true;
-    } else if t_sec < f_sec {
-        return false;
-    }
-    //Compare usec
-    if t_usec > f_usec {
-        return true;
-    } else if t_sec < f_usec {
-        return false;
-    }
-    return true;
+pub fn get_time_sec_nsec() -> (u64, u64) {
+    let timer_freq = TIMER_FREQ.load(Ordering::Acquire) as u64;
+    let ticks = get_time() as u64;
+    let sec = ticks / timer_freq;
+    let nsec = ((ticks % timer_freq) * (NSEC_PER_SEC as u64)) / timer_freq;
+    // println!("sec: {}", sec);
+    // println!("nsec: {}", usec);
+    (sec, nsec)
 }
 
 pub fn get_time_val(time_val: *mut TimeVal) -> isize {

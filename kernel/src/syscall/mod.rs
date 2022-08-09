@@ -50,6 +50,7 @@ const SYSCALL_WRITEV: usize = 66;
 const SYSCALL_PREAD: usize = 67;
 const SYSCALL_PWRITE: usize = 68;
 const SYSCALL_SENDFILE: usize = 71;
+const SYSCALL_PSELECT6: usize = 72;
 const SYSCALL_READLINKAT: usize = 78;
 const SYSCALL_FSTATAT: usize = 79;
 const SYSCALL_FSTAT: usize = 80;
@@ -61,6 +62,8 @@ const SYSCALL_FUTEX: usize = 98;
 const SYSCALL_SET_ROBUST_LIST: usize = 99;
 const SYSCALL_GET_ROBUST_LIST: usize = 100;
 const SYSCALL_NANOSLEEP: usize = 101;
+const SYSCALL_GETITIMER: usize = 102;
+const SYSCALL_SETITIMER: usize = 103;
 const SYSCALL_CLOCK_GETTIME: usize = 113;
 const SYSCALL_SYSLOG: usize = 116;
 const SYSCALL_SCHED_YIELD: usize = 124;
@@ -159,6 +162,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[2] as *mut usize,
             args[3] as usize,
         ),
+        SYSCALL_PSELECT6 => 0,
         SYSCALL_FSTATAT => sys_fstatat(args[0] as isize, args[1] as *mut u8, args[2] as *mut u8),
         SYSCALL_FSTAT => sys_fstat(args[0] as isize, args[1] as *mut u8),
         SYSCALL_UTIMENSAT => sys_utimensat(args[0], args[1] as *const u8, args[2], args[3] as u32),
@@ -171,7 +175,9 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_NANOSLEEP => sys_sleep(unsafe { &*(args[0] as *const TimeVal) }, unsafe {
             &mut *(args[1] as *mut TimeVal)
         }),
-        SYSCALL_CLOCK_GETTIME => sys_clock_get_time(args[0] as usize, args[1] as *mut u64),
+        SYSCALL_GETITIMER => 0,
+        SYSCALL_SETITIMER => 0,
+        SYSCALL_CLOCK_GETTIME => sys_clock_gettime(args[0], args[1] as _),
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
         SYSCALL_KILL => sys_kill(args[0], args[1] as i32),
@@ -187,7 +193,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SIGRETURN => sys_sigretrun(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
-        SYSCALL_GETRUSAGE => 0,
+        SYSCALL_GETRUSAGE => sys_getrusage(args[0] as _, args[1] as _),
         SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_GETPPID => sys_getppid(),

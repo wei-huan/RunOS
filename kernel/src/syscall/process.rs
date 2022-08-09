@@ -11,7 +11,7 @@ use crate::task::{
     exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,
 };
 use crate::timer::*;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
@@ -50,21 +50,15 @@ pub fn sys_times(times: *mut Times) -> isize {
     0
 }
 
-// struct timespec {
-//     time_t   tv_sec;        /* seconds */
-//     long     tv_nsec;       /* nanoseconds */
-// };
-pub fn sys_clock_get_time(_clk_id: usize, tp: *mut u64) -> isize {
+pub fn sys_clock_gettime(_clk_id: usize, tp: *mut TimeSpec) -> isize {
     if tp as usize == 0 {
         return 0;
     }
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
     let token = current_user_token();
-    let ticks = get_time();
-    let sec = (ticks / timer_freq) as u64;
-    let nsec = ((ticks % timer_freq) * (NSEC_PER_SEC / timer_freq)) as u64;
-    *translated_refmut(token, tp) = sec;
-    *translated_refmut(token, unsafe { tp.add(1) }) = nsec;
+    let (sec, nsec) = get_time_sec_nsec();
+    let timespec = translated_refmut(token, tp);
+    timespec.sec = sec;
+    timespec.nsec = nsec;
     0
 }
 
@@ -202,15 +196,19 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
     log::debug!("sys_exec");
     let token = current_user_token();
-    let path = translated_str(token, path);
+    let mut path = translated_str(token, path);
     let mut args_vec: Vec<String> = Vec::new();
+    if path.ends_with(".sh") {
+        args_vec.push("/busybox".to_string());
+        args_vec.push("ash".to_string());
+        path = "/busybox".to_string();
+    }
     loop {
         let arg_str_ptr = *translated_ref(token, args);
         if arg_str_ptr == 0 {
             break;
         }
         args_vec.push(translated_str(token, arg_str_ptr as *const u8));
-        // log::debug!("arg{}: {}",0, args_vec[0]);
         unsafe {
             args = args.add(1);
         }
@@ -529,12 +527,8 @@ pub fn sys_sigretrun() -> isize {
     }
 }
 
-fn check_sigaction_error(signal: SignalFlags, action: usize, old_action: usize) -> bool {
-    if action == 0
-        || old_action == 0
-        || signal == SignalFlags::SIGKILL
-        || signal == SignalFlags::SIGSTOP
-    {
+fn check_sigaction_error(signal: SignalFlags) -> bool {
+    if signal == SignalFlags::SIGKILL || signal == SignalFlags::SIGSTOP {
         true
     } else {
         false
@@ -546,35 +540,40 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    log::debug!("sys_sigaction signum {}", signum);
+    log::debug!(
+        "sys_sigaction signum {}, action {:#X?}, old_action {:#X?}",
+        signum,
+        action as usize,
+        old_action as usize
+    );
+    if signum as usize > MAX_SIG {
+        return -1;
+    }
     let token = current_user_token();
-    if let Some(task) = current_task() {
-        let mut inner = task.acquire_inner_lock();
-        if signum as usize > MAX_SIG {
+    let task = current_task().unwrap();
+    let mut inner = task.acquire_inner_lock();
+    if let Some(flag) = SignalFlags::from_bits(1 << signum) {
+        if check_sigaction_error(flag) {
+            println!("here1");
             return -1;
         }
-        if let Some(flag) = SignalFlags::from_bits(1 << signum) {
-            if check_sigaction_error(flag, action as usize, old_action as usize) {
-                return -1;
-            }
-            let old_kernel_action = inner.signal_actions.table[signum as usize];
-            if old_kernel_action.mask != SignalFlags::from_bits(40).unwrap() {
-                *translated_refmut(token, old_action) = old_kernel_action;
-            } else {
-                let mut ref_old_action = *translated_refmut(token, old_action);
-                ref_old_action.handler = old_kernel_action.handler;
-            }
+        let old_kernel_action = inner.signal_actions.table[signum as usize];
+        if old_kernel_action.mask != SignalFlags::from_bits(40).unwrap() && old_action as usize != 0
+        {
+            *translated_refmut(token, old_action) = old_kernel_action;
+        }
+        if action as usize != 0 {
             let ref_action = translated_ref(token, action);
             inner.signal_actions.table[signum as usize] = *ref_action;
-            return 0;
         }
     }
-    -1
+    println!("here0");
+    return 0;
 }
 
 pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
-    log::trace!(
+    log::debug!(
         "sys_mprotect addr: {:#X} len: {:#X} flags: {:?}",
         addr,
         len,
