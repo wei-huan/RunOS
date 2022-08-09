@@ -8,7 +8,7 @@ use crate::mm::{
 use crate::scheduler::{add_task, pid2task};
 use crate::syscall::ESRCH;
 use crate::task::{
-    exit_current_and_run_next, suspend_current_and_run_next, SignalAction, SignalFlags, MAX_SIG,
+    exit_current_and_run_next, suspend_current_and_run_next, SigSet, SignalAction, NSIG,
 };
 use crate::timer::*;
 use alloc::string::{String, ToString};
@@ -194,13 +194,13 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 }
 
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
-    log::debug!("sys_exec");
     let token = current_user_token();
     let mut path = translated_str(token, path);
+    log::debug!("sys_exec, path: {}", path);
     let mut args_vec: Vec<String> = Vec::new();
     if path.ends_with(".sh") {
         args_vec.push("/busybox".to_string());
-        args_vec.push("ash".to_string());
+        args_vec.push("sh".to_string());
         path = "/busybox".to_string();
     }
     loop {
@@ -274,15 +274,19 @@ pub fn sys_waitpid(pid: isize, exit_code_ptr: *mut i32) -> isize {
     // ---- release current PCB automatically
 }
 
+const WNOHANG: isize = 0x00000001;
+const WUNTRACED: isize = 0x00000002;
+const WSTOPPED: isize = WUNTRACED;
+const WEXITED: isize = 0x00000004;
+const WCONTINUED: isize = 0x00000008;
+const WNOWAIT: isize = 0x01000000;
+
 /// If there is not any adopt child process active on cpu or waiting in any
 /// ready_queue, return 0 to let init_proc know it is waiting for itself to exit
 /// Else If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, suspend_current_and_run_next.
 pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
     log::debug!("sys_wait4");
-    if option != 0 {
-        panic! {"Extended option not support yet..."};
-    }
     loop {
         let task = current_task().unwrap();
         // No any child process waiting

@@ -78,23 +78,23 @@ pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     task_inner.signals.check_error()
 }
 
-pub fn current_add_signal(signal: SignalFlags) {
+pub fn current_add_signal(sig: i32) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
-    task_inner.signals |= signal;
+    task_inner.signals.add_sig(sig);
 }
 
-fn call_kernel_signal_handler(signal: SignalFlags) {
+fn call_kernel_signal_handler(sig: i32) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
-    match signal {
-        SignalFlags::SIGSTOP => {
+    match sig {
+        SIGSTOP => {
             task_inner.frozen = true;
-            task_inner.signals ^= SignalFlags::SIGSTOP;
+            task_inner.signals.clear_sig(sig);
         }
-        SignalFlags::SIGCONT => {
-            if task_inner.signals.contains(SignalFlags::SIGCONT) {
-                task_inner.signals ^= SignalFlags::SIGCONT;
+        SIGCONT => {
+            if task_inner.signals.contains_sig(sig) {
+                task_inner.signals.clear_sig(sig);
                 task_inner.frozen = false;
             }
         }
@@ -104,16 +104,16 @@ fn call_kernel_signal_handler(signal: SignalFlags) {
     }
 }
 
-fn call_user_signal_handler(sig: usize, signal: SignalFlags) {
+fn call_user_signal_handler(sig: i32) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
 
-    let handler = task_inner.signal_actions[&(sig as i32)].handler;
+    let handler = task_inner.signal_actions[&(sig as i32)].sa_handler;
     // change current mask
-    task_inner.signal_mask = task_inner.signal_actions[&(sig as i32)].mask;
+    task_inner.signal_mask = task_inner.signal_actions[&(sig as i32)].sa_mask;
     // handle flag
-    task_inner.handling_sig = sig as isize;
-    task_inner.signals ^= signal;
+    task_inner.handling_sig = sig;
+    task_inner.signals.clear_sig(sig);
 
     // backup trapframe
     let mut trap_ctx = task_inner.get_trap_cx();
@@ -123,47 +123,38 @@ fn call_user_signal_handler(sig: usize, signal: SignalFlags) {
     trap_ctx.sepc = handler;
 
     // put args (a0)
-    trap_ctx.x[10] = sig;
+    trap_ctx.x[10] = sig as usize;
 }
 
 fn check_pending_signals() {
-    for sig in 0..(MAX_SIG + 1) {
+    for sig in 1..(NSIG + 1) as i32 {
         let task = current_task().unwrap();
         let task_inner = task.acquire_inner_lock();
-        let signal = SignalFlags::from_bits(1 << sig).unwrap();
-        if task_inner.signals.contains(signal) && (!task_inner.signal_mask.contains(signal)) {
+        if task_inner.signals.contains_sig(sig) && (!task_inner.signal_mask.contains_sig(sig)) {
             if task_inner.handling_sig == -1 {
                 drop(task_inner);
                 drop(task);
-                if signal == SignalFlags::SIGKILL
-                    || signal == SignalFlags::SIGSTOP
-                    || signal == SignalFlags::SIGCONT
-                    || signal == SignalFlags::SIGDEF
-                {
+                if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
                     // signal is a kernel signal
-                    call_kernel_signal_handler(signal);
+                    call_kernel_signal_handler(sig);
                 } else {
                     // signal is a user signal
-                    call_user_signal_handler(sig, signal);
+                    call_user_signal_handler(sig);
                     return;
                 }
             } else {
-                if !task_inner.signal_actions[&(sig as i32)]
-                    .mask
-                    .contains(signal)
+                if !task_inner.signal_actions[&task_inner.handling_sig]
+                    .sa_mask
+                    .contains_sig(sig)
                 {
                     drop(task_inner);
                     drop(task);
-                    if signal == SignalFlags::SIGKILL
-                        || signal == SignalFlags::SIGSTOP
-                        || signal == SignalFlags::SIGCONT
-                        || signal == SignalFlags::SIGDEF
-                    {
+                    if sig == SIGKILL || sig == SIGSTOP || sig == SIGCONT {
                         // signal is a kernel signal
-                        call_kernel_signal_handler(signal);
+                        call_kernel_signal_handler(sig);
                     } else {
                         // signal is a user signal
-                        call_user_signal_handler(sig, signal);
+                        call_user_signal_handler(sig);
                         return;
                     }
                 }

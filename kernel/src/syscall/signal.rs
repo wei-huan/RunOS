@@ -2,26 +2,29 @@ use crate::{
     cpu::{current_task, current_user_token},
     mm::{translated_ref, translated_refmut},
     scheduler::pid2task,
-    syscall::ESRCH,
-    task::{SignalAction, SignalFlags, MAX_SIG},
+    syscall::{EINVAL, EPERM, ESRCH},
+    task::{SigSet, SignalAction, NSIG, SIGKILL, SIGQUIT, SIGSTOP, SIGTRAP},
 };
 
-pub fn sys_kill(pid: usize, signum: i32) -> isize {
+fn valid_signal(signum: i32) -> bool {
+    signum >= 1 && (signum <= (NSIG as i32))
+}
+
+pub fn sys_kill(pid: isize, signum: i32) -> isize {
     log::debug!("sys_kill pid: {} signum: {}", pid, signum);
-    if let Some(task) = pid2task(pid) {
-        if let Some(flag) = SignalFlags::from_bits(1 << signum) {
-            // insert the signal if legal
-            let mut task_ref = task.acquire_inner_lock();
-            if task_ref.signals.contains(flag) {
-                return -1;
-            }
-            task_ref.signals.insert(flag);
-            0
-        } else {
-            -1
+    // don't support sending to every process
+    if pid == -1 {
+        return -EINVAL;
+    }
+    if let Some(task) = pid2task(pid as usize) {
+        if !valid_signal(signum) {
+            return -EINVAL;
         }
+        let mut inner = task.acquire_inner_lock();
+        inner.signals.add_sig(signum);
+        0
     } else {
-        -1
+        return -ESRCH;
     }
 }
 
@@ -39,7 +42,7 @@ const SIG_BLOCK: isize = 0;
 const SIG_UNBLOCK: isize = 1;
 const SIG_SETMASK: isize = 2;
 
-pub fn sys_sigprocmask(how: isize, set_ptr: *const u128, oldset_ptr: *mut u128) -> isize {
+pub fn sys_sigprocmask(how: isize, set_ptr: *const SigSet, oldset_ptr: *mut SigSet) -> isize {
     log::trace!(
         "sys_sigprocmask how: {},  set_ptr: {},  oldset_ptr: {}",
         how,
@@ -49,27 +52,30 @@ pub fn sys_sigprocmask(how: isize, set_ptr: *const u128, oldset_ptr: *mut u128) 
     let token = current_user_token();
     if let Some(task) = current_task() {
         let mut inner = task.acquire_inner_lock();
-        let old_mask = inner.signal_mask.bits();
+        let old_mask = inner.signal_mask;
         if oldset_ptr as usize != 0 {
-            *translated_refmut::<u128>(token, oldset_ptr) = old_mask as u128;
+            *translated_refmut(token, oldset_ptr) = old_mask;
         }
         if set_ptr as usize != 0 {
-            let new_mask = *translated_ref::<u128>(token, set_ptr) as u32;
             match how {
                 SIG_BLOCK => {
-                    inner.signal_mask = SignalFlags::from_bits(new_mask | old_mask).unwrap()
+                    let block_signals = *translated_ref(token, set_ptr);
+                    inner.signal_mask.block_with_other(block_signals);
                 }
                 SIG_UNBLOCK => {
-                    inner.signal_mask = SignalFlags::from_bits(old_mask & (!new_mask)).unwrap()
+                    let unblock_signals = *translated_ref(token, set_ptr);
+                    inner.signal_mask.unblock_with_other(unblock_signals);
                 }
-                SIG_SETMASK => inner.signal_mask = SignalFlags::from_bits(new_mask).unwrap(),
-                _ => return -1,
+                SIG_SETMASK => {
+                    inner.signal_mask = *translated_ref(token, set_ptr);
+                }
+                _ => return -EPERM,
             };
         }
-        0
     } else {
-        -ESRCH
+        return -ESRCH;
     }
+    0
 }
 
 pub fn sys_sigretrun() -> isize {
@@ -86,8 +92,8 @@ pub fn sys_sigretrun() -> isize {
     }
 }
 
-fn check_sigaction_error(signal: SignalFlags) -> bool {
-    if signal == SignalFlags::SIGKILL || signal == SignalFlags::SIGSTOP {
+fn check_sigaction_error(signal: i32) -> bool {
+    if signal == SIGKILL || signal == SIGSTOP {
         true
     } else {
         false
@@ -105,27 +111,32 @@ pub fn sys_sigaction(
         action as usize,
         old_action as usize
     );
-    if signum as usize > MAX_SIG {
-        return -1;
+    if !valid_signal(signum) || check_sigaction_error(signum) {
+        log::warn!("here invalid sigaction num {}", signum);
+        return -EINVAL;
     }
     let token = current_user_token();
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    if let Some(flag) = SignalFlags::from_bits(1 << signum) {
-        if check_sigaction_error(flag) {
-            println!("here1");
-            return -1;
-        }
-        let old_kernel_action = inner.signal_actions[&signum];
-        if old_kernel_action.mask != SignalFlags::from_bits(40).unwrap() && old_action as usize != 0
-        {
-            *translated_refmut(token, old_action) = old_kernel_action;
-        }
-        if action as usize != 0 {
-            let ref_action = translated_ref(token, action);
-            inner.signal_actions[&signum] = *ref_action;
+    if old_action as usize != 0 {
+        if let Some(old) = inner.signal_actions.get(&signum) {
+            *translated_refmut(token, old_action) = (*old).clone();
+        } else {
+            let sigact_old = translated_refmut(token, old_action);
+            sigact_old.sa_handler = 0;
+            sigact_old.sa_mask = SigSet::default();
         }
     }
-    println!("here0");
+    if action as usize != 0 {
+        let new_action = *translated_ref(token, action);
+        inner.signal_actions.insert(signum, new_action);
+        log::debug!(
+            "new_action handler {:#X?}, mask {:#X?}, sa_flags {:#X?}, sa_restorer {:#X?}",
+            new_action.sa_handler,
+            new_action.sa_mask,
+            new_action.sa_flags,
+            new_action.sa_restorer
+        );
+    }
     return 0;
 }

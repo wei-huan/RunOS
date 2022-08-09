@@ -10,7 +10,7 @@ use crate::mm::{
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalAction, SignalFlags, AT_EXECFN, AT_NULL, AT_RANDOM,
+    pid_alloc, AuxHeader, PidHandle, SigSet, SignalAction, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::collections::BTreeMap;
@@ -53,10 +53,10 @@ pub struct TaskControlBlockInner {
     // mmap area
     pub mmap_area_hint: usize,
     // signals
-    pub signals: SignalFlags,
-    pub signal_mask: SignalFlags,
+    pub signals: SigSet,
+    pub signal_mask: SigSet,
     // the signal which is being handling
-    pub handling_sig: isize,
+    pub handling_sig: i32,
     // Signal actions
     pub signal_actions: BTreeMap<i32, SignalAction>,
     // if the task is killed
@@ -134,8 +134,8 @@ impl TaskControlBlock {
                 ],
                 current_path: String::from("/"),
                 mmap_area_hint: MMAP_BASE,
-                signals: SignalFlags::empty(),
-                signal_mask: SignalFlags::empty(),
+                signals: SigSet::default(),
+                signal_mask: SigSet::default(),
                 handling_sig: -1,
                 signal_actions: BTreeMap::new(),
                 killed: false,
@@ -366,7 +366,7 @@ impl TaskControlBlock {
                 fd_table: new_fd_table,
                 current_path: parent_inner.current_path.clone(),
                 mmap_area_hint: parent_inner.mmap_area_hint,
-                signals: SignalFlags::empty(),
+                signals: SigSet::default(),
                 // inherit the signal_mask and signal_action
                 signal_mask: parent_inner.signal_mask,
                 handling_sig: -1,

@@ -53,6 +53,7 @@ const SYSCALL_PREAD: usize = 67;
 const SYSCALL_PWRITE: usize = 68;
 const SYSCALL_SENDFILE: usize = 71;
 const SYSCALL_PSELECT6: usize = 72;
+const SYSCALL_PPOLL: usize = 73;
 const SYSCALL_READLINKAT: usize = 78;
 const SYSCALL_FSTATAT: usize = 79;
 const SYSCALL_FSTAT: usize = 80;
@@ -112,6 +113,7 @@ const SYSCALL_MMAP: usize = 222;
 const SYSCALL_MPROTECT: usize = 226;
 const SYSCALL_WAIT4: usize = 260;
 const SYSCALL_PRLIMIT: usize = 261;
+const SYSCALL_RENAMEAT2: usize = 276;
 const SYSCALL_MEMBARRIER: usize = 283;
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
@@ -123,7 +125,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),
         SYSCALL_DUP3 => sys_dup3(args[0], args[1]),
-        SYSCALL_FCNTL => sys_fcntl(),
+        SYSCALL_FCNTL => sys_fcntl(args[0], args[1] as _, args[2]),
         SYSCALL_IOCTL => sys_ioctl(),
         SYSCALL_MKDIRAT => sys_mkdir(args[0] as isize, args[1] as *const u8, args[2] as u32),
         SYSCALL_UNLINKAT => sys_unlinkat(args[0] as i32, args[1] as *const u8, args[2] as u32),
@@ -164,7 +166,8 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             args[2] as *mut usize,
             args[3] as usize,
         ),
-        SYSCALL_PSELECT6 => 0,
+        // SYSCALL_PSELECT6 => 0,
+        SYSCALL_PPOLL => sys_ppoll(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
         SYSCALL_FSTATAT => sys_fstatat(args[0] as isize, args[1] as *mut u8, args[2] as *mut u8),
         SYSCALL_FSTAT => sys_fstat(args[0] as isize, args[1] as *mut u8),
         SYSCALL_UTIMENSAT => sys_utimensat(args[0], args[1] as *const u8, args[2], args[3] as u32),
@@ -182,9 +185,9 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_CLOCK_GETTIME => sys_clock_gettime(args[0], args[1] as _),
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
-        SYSCALL_KILL => sys_kill(args[0], args[1] as i32),
-        SYSCALL_TKILL => sys_tkill(args[0], args[1] as i32),
-        SYSCALL_TGKILL => sys_tgkill(args[0], args[1], args[2] as i32),
+        SYSCALL_KILL => sys_kill(args[0] as _, args[1] as _),
+        SYSCALL_TKILL => sys_tkill(args[0], args[1] as _),
+        SYSCALL_TGKILL => sys_tgkill(args[0], args[1], args[2] as _),
         SYSCALL_SIGACTION => sys_sigaction(
             args[0] as i32,
             args[1] as *const SignalAction,
@@ -249,6 +252,13 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_MPROTECT => sys_mprotect(args[0], args[1], args[2]),
         SYSCALL_WAIT4 => sys_wait4(args[0] as isize, args[1] as *mut i32, args[2] as isize), //sys_waitpid(args[0] as isize, args[1] as *mut i32),
         SYSCALL_PRLIMIT => sys_prlimit(args[0] as _, args[1] as _, args[2] as _, args[3] as _),
+        SYSCALL_RENAMEAT2 => sys_renameat2(
+            args[0] as _,
+            args[1] as _,
+            args[2] as _,
+            args[3] as _,
+            args[4] as _,
+        ),
         SYSCALL_MEMBARRIER => 0,
         _ => panic!("Unsupported syscall_id: {}", syscall_id),
     }
