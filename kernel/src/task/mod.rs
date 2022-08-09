@@ -108,9 +108,9 @@ fn call_user_signal_handler(sig: usize, signal: SignalFlags) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
 
-    let handler = task_inner.signal_actions.table[sig].handler;
+    let handler = task_inner.signal_actions[&(sig as i32)].handler;
     // change current mask
-    task_inner.signal_mask = task_inner.signal_actions.table[sig].mask;
+    task_inner.signal_mask = task_inner.signal_actions[&(sig as i32)].mask;
     // handle flag
     task_inner.handling_sig = sig as isize;
     task_inner.signals ^= signal;
@@ -148,7 +148,7 @@ fn check_pending_signals() {
                     return;
                 }
             } else {
-                if !task_inner.signal_actions.table[task_inner.handling_sig as usize]
+                if !task_inner.signal_actions[&(sig as i32)]
                     .mask
                     .contains(signal)
                 {

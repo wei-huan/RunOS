@@ -10,9 +10,10 @@ use crate::mm::{
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
-    pid_alloc, AuxHeader, PidHandle, SignalActions, SignalFlags, AT_EXECFN, AT_NULL, AT_RANDOM,
+    pid_alloc, AuxHeader, PidHandle, SignalAction, SignalFlags, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
 use crate::trap::{user_trap_handler, TrapContext};
+use alloc::collections::BTreeMap;
 use alloc::string::String;
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
@@ -57,7 +58,7 @@ pub struct TaskControlBlockInner {
     // the signal which is being handling
     pub handling_sig: isize,
     // Signal actions
-    pub signal_actions: SignalActions,
+    pub signal_actions: BTreeMap<i32, SignalAction>,
     // if the task is killed
     pub killed: bool,
     // if the task is frozen by a signal
@@ -89,9 +90,6 @@ impl TaskControlBlockInner {
     pub fn get_work_path(&self) -> String {
         self.current_path.clone()
     }
-    // pub fn have_children(&self) -> bool {
-    //     self.children.len() > 0
-    // }
 }
 
 impl TaskControlBlock {
@@ -139,7 +137,7 @@ impl TaskControlBlock {
                 signals: SignalFlags::empty(),
                 signal_mask: SignalFlags::empty(),
                 handling_sig: -1,
-                signal_actions: SignalActions::default(),
+                signal_actions: BTreeMap::new(),
                 killed: false,
                 frozen: false,
                 trap_ctx_backup: None,
