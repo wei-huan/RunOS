@@ -38,6 +38,7 @@ impl UTSName {
 }
 
 pub fn sys_uname(buf: *mut u8) -> isize {
+    log::debug!("sys_uname");
     let token = current_user_token();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<UTSName>());
     let uname = UTSName::new();

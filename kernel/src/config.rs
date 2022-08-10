@@ -39,7 +39,7 @@ pub const TRAMPOLINE: usize = usize::MAX - PAGE_SIZE + 1;
 
 // Kernel Address Space 's Address
 pub const KERNEL_STACK_BASE: usize = TRAMPOLINE - 2 * PAGE_SIZE; // stack grow down, so stack base address is high end
-pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 1;
+pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 2;
 pub const BOOT_STACK_SIZE: usize = PAGE_SIZE * 4; // 16 KB
 
 // User Address Space 's Address

@@ -35,7 +35,7 @@ pub struct TaskControlBlock {
     inner: Mutex<TaskControlBlockInner>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ClearChildTid {
     pub ctid: u32,
     pub addr: usize,
@@ -381,8 +381,8 @@ impl TaskControlBlock {
                 signal_actions: parent_inner.signal_actions.clone(),
                 killed: false,
                 frozen: false,
-                trap_ctx_backup: None,
-                clear_child_tid: None,
+                trap_ctx_backup: parent_inner.trap_ctx_backup.clone(),
+                clear_child_tid: parent_inner.clear_child_tid.clone(),
             }),
         });
         // add child
@@ -422,7 +422,7 @@ impl TaskControlBlock {
         let mmap_perm = MapPermission::from_bits((prot << 1) as u8).unwrap() | MapPermission::U;
         let mmap_flag = MMapFlags::from_bits(flags).unwrap();
         log::debug!(
-            "start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
+            "sys_mmap start {:#X}, length: {:#X}, fd: {:#X}, offset: {:#X}, flags: {:?}, mmap_flag: {:?}",
             start,
             length,
             fd,

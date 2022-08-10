@@ -197,11 +197,9 @@ pub fn sys_clone(
     // for child process, fork returns 0
     trap_cx.x[10] = 0;
     // add new task to scheduler
-    // println!("here_2");
     add_task(new_task);
     // let child process run first
-    suspend_current_and_run_next();
-    // println!("here_5");
+    // suspend_current_and_run_next();
     new_pid as isize
 }
 
@@ -347,7 +345,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         if let Some((idx, _)) = pair {
             let child = inner.children.remove(idx);
             // confirm that child will be deallocated after being removed from children list
-            assert_eq!(Arc::strong_count(&child), 1);
+            assert_eq!(Arc::strong_count(&child), 1, "strong count: {}", Arc::strong_count(&child));
             let found_pid = child.getpid();
             // ++++ temporarily access child PCB exclusively
             let exit_code = child.acquire_inner_lock().exit_code;
@@ -390,11 +388,10 @@ pub fn sys_brk(mut brk_addr: usize) -> isize {
                 .addrspace
                 .alloc_heap_section(heap_start, brk_addr - heap_start);
         }
-        // 已经有堆，扩展
+        // adjust heap section
         else {
-            let (_, top) = inner.addrspace.get_section_range(".heap");
-            let top_vpn: VirtPageNum = VirtAddr::from(top).into();
-            let new_top_vpn: VirtPageNum = VirtAddr::from(brk_addr).into();
+            let (_, top_vpn) = inner.addrspace.get_section_range(".heap");
+            let new_top_vpn: VirtPageNum = VirtAddr::from(brk_addr).floor();
             if top_vpn != new_top_vpn {
                 inner.addrspace.modify_section_end(".heap", new_top_vpn);
             }
@@ -434,11 +431,10 @@ pub fn sys_sbrk(increment: isize) -> isize {
             inner.addrspace.dealloc_heap_section();
             return 0;
         } else {
-            let (_, top) = inner.addrspace.get_section_range(".heap");
-            let top_vpn: VirtPageNum = VirtAddr::from(top).into();
+            let (_, end_vpn) = inner.addrspace.get_section_range(".heap");
             let new_top = (inner.heap_pointer as isize + increment) as usize;
             let new_top_vpn: VirtPageNum = VirtAddr::from(new_top).floor().into();
-            if top_vpn != new_top_vpn {
+            if end_vpn != new_top_vpn {
                 // 如果超出界限，需要分配新的页
                 // 如果缩小到的新虚拟页号变小，需要回收页
                 inner.addrspace.modify_section_end(".heap", new_top_vpn);
@@ -495,10 +491,11 @@ pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
         len,
         flags
     );
-    let start_vpn = VirtPageNum::from(VirtAddr::from(addr).floor());
-    let end_vpn = VirtPageNum::from(VirtAddr::from(addr + len).ceil());
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
+    let start_vpn = VirtAddr::from(addr).floor();
+    let end_vpn = VirtAddr::from(addr + len).ceil();
+    log::debug!("start_vpn: {}", start_vpn.0);
     for vpn in start_vpn..end_vpn {
         inner.addrspace.set_pte_flags(vpn, flags);
     }

@@ -73,7 +73,6 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
         let file: Arc<dyn File + Send + Sync> = match &file {
             FileClass::Abstr(f) => f.clone(),
             FileClass::File(f) => {
-                /*print!("\n");*/
                 f.clone()
             }
         };
@@ -82,9 +81,6 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
         }
         drop(inner);
         let size = file.write(UserBuffer::new(translated_byte_buffer(token, buf, len)));
-        if fd == 2 {
-            // str::replace(translated_str(token, buf).as_str(), "\n", "\\n");
-        }
         size as isize
     } else {
         -1
@@ -170,7 +166,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         // log::debug!("sys_read ptr: {:#X?}, len: {:#X?}", buf, len);
         file.read(UserBuffer::new(translated_byte_buffer(token, buf, len))) as isize
     } else {
-        -1
+        -EBADF
     }
 }
 
@@ -202,7 +198,6 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
             ret += f.read(UserBuffer::new(buf)) as isize;
         }
     }
-
     ret
 }
 
@@ -345,49 +340,81 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     new_fd as isize
 }
 
+// pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
+//     log::debug!("sys_fstat fd: {}, buf: {:#X?}", fd, buf as usize);
+//     let token = current_user_token();
+//     let task = current_task().unwrap();
+//     let buf_vec = translated_byte_buffer(token, buf, size_of::<Stat>());
+//     let inner = task.acquire_inner_lock();
+//     let mut userbuf = UserBuffer::new(buf_vec);
+//     let mut kstat = Stat::empty();
+//     if fd == AT_FDCWD {
+//         let work_path = inner.current_path.clone();
+//         if let Some(file) = open(
+//             "/",
+//             work_path.as_str(),
+//             OpenFlags::RDONLY,
+//             DiskInodeType::Directory,
+//         ) {
+//             file.get_fstat(&mut kstat);
+//             userbuf.write(kstat.as_bytes());
+//             return 0;
+//         } else {
+//             return -1;
+//         }
+//     } else {
+//         let fd_usz = fd as usize;
+//         if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+//             return -EPERM;
+//         }
+//         if let Some(file) = &inner.fd_table[fd_usz] {
+//             match file {
+//                 FileClass::File(f) => {
+//                     f.get_fstat(&mut kstat);
+//                     userbuf.write(kstat.as_bytes());
+//                     return 0;
+//                 }
+//                 // _ => {
+//                 //     userbuf.write(Stat::new_abstract().as_bytes());
+//                 //     return 0; //warning
+//                 // }
+//                 _ => {
+//                     return -EPERM;
+//                 }
+//             }
+//         } else {
+//             return -EPERM;
+//         }
+//     }
+// }
+
 pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
-    log::trace!("sys_fstat fd: {}", fd);
+    log::debug!("sys_fstat fd: {}, buf: {:#X?}", fd, buf as usize);
     let token = current_user_token();
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Stat>());
     let inner = task.acquire_inner_lock();
+    let cwd = inner.current_path.clone();
     let mut userbuf = UserBuffer::new(buf_vec);
-    let mut kstat = Stat::empty();
-    if fd == AT_FDCWD {
-        let work_path = inner.current_path.clone();
-        if let Some(file) = open(
-            "/",
-            work_path.as_str(),
-            OpenFlags::RDONLY,
-            DiskInodeType::Directory,
-        ) {
-            file.get_fstat(&mut kstat);
-            userbuf.write(kstat.as_bytes());
-            return 0;
-        } else {
-            return -1;
-        }
+
+    let ret = if fd == AT_FDCWD {
+        fstat_inner(
+            open("/", &cwd, OpenFlags::RDONLY, DiskInodeType::Directory).unwrap(),
+            &mut userbuf,
+        )
+    } else if fd < 0 || fd >= inner.fd_table.len() as isize {
+        -EPERM
     } else {
-        let fd_usz = fd as usize;
-        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
-            return -1;
-        }
-        if let Some(file) = &inner.fd_table[fd_usz] {
-            match &file {
-                FileClass::File(f) => {
-                    f.get_fstat(&mut kstat);
-                    userbuf.write(kstat.as_bytes());
-                    return 0;
-                }
-                _ => {
-                    userbuf.write(Stat::new_abstract().as_bytes());
-                    return 0; //warning
-                }
+        if let Some(file) = inner.fd_table[fd as usize].clone() {
+            match file {
+                FileClass::File(f) => fstat_inner(f, &mut userbuf),
+                _ => -EPERM,
             }
         } else {
-            return -1;
+            -EPERM
         }
-    }
+    };
+    ret
 }
 
 fn fstat_inner(f: Arc<OSInode>, userbuf: &mut UserBuffer) -> isize {
@@ -923,8 +950,7 @@ pub fn sys_readlinkat(dirfd: i32, pathname: *const u8, buf: *mut u8, bufsize: us
     let buf_vec = translated_byte_buffer(token, buf, 128);
     let mut userbuf = UserBuffer::new(buf_vec);
     userbuf.write(linkpath_str.as_bytes());
-    // let data = UserBuffer::new(buffers);
-    -1
+    0
 }
 
 /* return the num of bytes */
