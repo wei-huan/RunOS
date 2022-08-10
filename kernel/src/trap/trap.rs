@@ -1,5 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT_BASE};
-use crate::cpu::{current_trap_cx, current_user_token, hart_id};
+use crate::cpu::{current_task, current_trap_cx, current_user_token, hart_id};
 use crate::syscall::syscall;
 use crate::task::{
     check_signals_error_of_current, current_add_signal, exit_current_and_run_next, handle_signals,
@@ -9,11 +9,8 @@ use crate::timer::set_next_trigger;
 use core::arch::{asm, global_asm};
 use riscv::register::{
     mtvec::TrapMode,
-    // satp,
     scause::{self, Exception, Interrupt, Trap},
-    sepc,
-    stval,
-    stvec,
+    sepc, stval, stvec,
 };
 
 global_asm!(include_str!("trap.S"));
@@ -119,15 +116,14 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::InstructionPageFault)
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
-            log::debug!(
-                "[kernel] {:?} in application, bad addr = {:#X}, bad instruction = {:#X}, kernel killed it.",
+            let current_task = current_task().unwrap();
+            log::warn!(
+                "[kernel] {:?} in process {}, bad addr = {:#X}, bad instruction = {:#X}, kernel killed it.",
                 scause.cause(),
+                current_task.getpid(),
                 stval,
                 current_trap_cx().sepc,
             );
-            // let heap_base = current_task().unwrap().acquire_inner_lock().heap_start;
-            // let heap_top = current_task().unwrap().acquire_inner_lock().heap_pointer;
-            // println!("heap_base = {:#x?}, heap_top = {:#x?}", heap_base, heap_top);
             // page fault exit code
             exit_current_and_run_next(-2);
             current_add_signal(SIGSEGV);
@@ -145,7 +141,7 @@ pub fn user_trap_handler() -> ! {
             suspend_current_and_run_next();
         }
         Trap::Exception(Exception::Breakpoint) => {
-            log::trace!("Breakpoint");
+            log::debug!("Breakpoint");
             let mut cx = current_trap_cx();
             // jump to syscall next instruction anyway, avoid re-trigger
             cx.sepc += 4;
@@ -179,7 +175,6 @@ pub fn trap_return() -> ! {
         fn __restore();
     }
     let restore_va = __restore as usize - __uservec as usize + TRAMPOLINE;
-    // log::debug!("trap return");
     unsafe {
         asm!(
             "fence.i",

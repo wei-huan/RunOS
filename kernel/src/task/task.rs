@@ -35,6 +35,12 @@ pub struct TaskControlBlock {
     inner: Mutex<TaskControlBlockInner>,
 }
 
+#[derive(Debug)]
+pub struct ClearChildTid {
+    pub ctid: u32,
+    pub addr: usize,
+}
+
 pub type FDTable = Vec<Option<FileClass>>;
 pub struct TaskControlBlockInner {
     pub entry_point: usize, // 用户程序入口点 exec会改变
@@ -64,6 +70,7 @@ pub struct TaskControlBlockInner {
     // if the task is frozen by a signal
     pub frozen: bool,
     pub trap_ctx_backup: Option<TrapContext>,
+    pub clear_child_tid: Option<ClearChildTid>,
 }
 
 impl TaskControlBlockInner {
@@ -141,6 +148,7 @@ impl TaskControlBlock {
                 killed: false,
                 frozen: false,
                 trap_ctx_backup: None,
+                clear_child_tid: None,
             }),
         };
         // prepare TrapContext in user space
@@ -374,6 +382,7 @@ impl TaskControlBlock {
                 killed: false,
                 frozen: false,
                 trap_ctx_backup: None,
+                clear_child_tid: None,
             }),
         });
         // add child

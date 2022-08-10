@@ -626,7 +626,7 @@ impl AddrSpace {
         let mut addr_space = Self::new_empty();
         // map trampoline
         addr_space.map_trampoline();
-        // copy data sections/trap_context/user_stack
+        // copy data sections/trap_context/user_stack/heap
         for area in user_space.sections.iter() {
             let new_area = Section::from_another(area);
             addr_space.push_section(new_area, None);
@@ -699,7 +699,6 @@ impl AddrSpace {
         // NULL
         return (0, 0);
     }
-    // 如果存在要找的段就调整，不存在就啥都不做
     pub fn modify_section_end(&mut self, name: &str, new_end_vpn: VirtPageNum) {
         let sect_iterator = self.sections.iter_mut();
         for sect in sect_iterator {

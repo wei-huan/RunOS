@@ -14,7 +14,7 @@ pub use context::TaskContext;
 pub use idle_task::{idle_task, TIME_TO_SCHEDULE};
 pub use pid::{pid_alloc, PidHandle};
 pub use signal::*;
-pub use task::{TaskControlBlock, TaskControlBlockInner, TaskStatus};
+pub use task::{ClearChildTid, TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
 use crate::cpu::{current_task, take_current_task};
 use crate::scheduler::{remove_from_pid2task, save_current_and_back_to_schedule, INITPROC};

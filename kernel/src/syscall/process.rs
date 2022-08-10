@@ -8,7 +8,8 @@ use crate::mm::{
 use crate::scheduler::{add_task, pid2task};
 use crate::syscall::ESRCH;
 use crate::task::{
-    exit_current_and_run_next, suspend_current_and_run_next, SigSet, SignalAction, NSIG,
+    exit_current_and_run_next, suspend_current_and_run_next, ClearChildTid, SigSet, SignalAction,
+    NSIG,
 };
 use crate::timer::*;
 use alloc::string::{String, ToString};
@@ -16,6 +17,8 @@ use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
 use core::sync::atomic::Ordering;
+
+use super::EFAULT;
 
 pub fn sys_exit(exit_code: i32) -> ! {
     log::debug!("sys_exit");
@@ -50,9 +53,14 @@ pub fn sys_times(times: *mut Times) -> isize {
     0
 }
 
-pub fn sys_clock_gettime(_clk_id: usize, tp: *mut TimeSpec) -> isize {
+pub fn sys_clock_gettime(clock_id: i32, tp: *mut TimeSpec) -> isize {
+    log::trace!(
+        "sys_clock_gettime clock_id: {}, tp: {:#X}",
+        clock_id,
+        tp as usize
+    );
     if tp as usize == 0 {
-        return 0;
+        return -EFAULT;
     }
     let token = current_user_token();
     let (sec, nsec) = get_time_sec_nsec();
@@ -63,10 +71,25 @@ pub fn sys_clock_gettime(_clk_id: usize, tp: *mut TimeSpec) -> isize {
 }
 
 pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
-    // log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
+    log::debug!("sys_set_tid_address, ptr: {:#X?}", ptr);
     let token = current_user_token();
-    *translated_refmut::<u32>(token, ptr) = current_task().unwrap().pid.0 as u32;
-    current_task().unwrap().pid.0 as isize
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let ctid = if let Some(p) = &inner.clear_child_tid {
+        p.ctid
+    } else {
+        0
+    };
+    *translated_refmut(token, ptr) = ctid;
+    task.getpid() as isize
+}
+
+pub fn sys_setpgid() -> isize {
+    0
+}
+
+pub fn sys_getpgid() -> isize {
+    0
 }
 
 pub fn sys_getpid() -> isize {
@@ -158,6 +181,16 @@ pub fn sys_clone(
         trap_cx.set_sp(stack_ptr);
     }
     let new_pid = new_task.pid.0;
+    if clone_flags.contains(CloneFlags::CLONE_PARENT_SETTID) && ptid_ptr as usize != 0 {
+        *translated_refmut(token, ptid_ptr) = new_pid as u32;
+    }
+    if clone_flags.contains(CloneFlags::CLONE_CHILD_CLEARTID) && ctid_ptr as usize != 0 {
+        let mut new_task_inner = new_task.acquire_inner_lock();
+        new_task_inner.clear_child_tid = Some(ClearChildTid {
+            ctid: *translated_ref(token, ctid_ptr),
+            addr: ctid_ptr as usize,
+        });
+    }
     // modify trap context of new_task, because it returns immediately after switching
     let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
     // we do not have to move to next instruction since we have done it before
@@ -286,7 +319,12 @@ const WNOWAIT: isize = 0x01000000;
 /// Else If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, suspend_current_and_run_next.
 pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
-    log::debug!("sys_wait4");
+    log::debug!(
+        "sys_wait4, pid: {}, wstatus: {:#X?}, option: {}",
+        pid,
+        wstatus,
+        option
+    );
     loop {
         let task = current_task().unwrap();
         // No any child process waiting
@@ -346,7 +384,7 @@ pub fn sys_brk(mut brk_addr: usize) -> isize {
     let heap_start = inner.heap_start;
     brk_addr = page_aligned_up(brk_addr);
     if brk_addr != 0 {
-        // 还未分配堆，直接创建 heap section
+        // create heap section
         if inner.heap_pointer == heap_start {
             inner
                 .addrspace
@@ -356,10 +394,8 @@ pub fn sys_brk(mut brk_addr: usize) -> isize {
         else {
             let (_, top) = inner.addrspace.get_section_range(".heap");
             let top_vpn: VirtPageNum = VirtAddr::from(top).into();
-            let new_top_vpn: VirtPageNum = VirtAddr::from(brk_addr).floor().into();
+            let new_top_vpn: VirtPageNum = VirtAddr::from(brk_addr).into();
             if top_vpn != new_top_vpn {
-                // 如果超出界限，需要分配新的页
-                // 如果缩小到的新虚拟页号变小，需要回收页
                 inner.addrspace.modify_section_end(".heap", new_top_vpn);
             }
         }
@@ -373,7 +409,7 @@ pub fn sys_brk(mut brk_addr: usize) -> isize {
 // return heap size
 // todo test, No test yet
 pub fn sys_sbrk(increment: isize) -> isize {
-    log::debug!("sys_sbrk");
+    log::debug!("sys_sbrk increment: {}", increment);
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
     let heap_start = inner.heap_start;
@@ -429,7 +465,7 @@ pub fn sys_mmap(
 }
 
 pub fn sys_munmap(start: usize, length: usize) -> isize {
-    log::trace!("sys_unmmap");
+    log::debug!("sys_munmap, start: {:#X?}, length: {:#X?}", start, length);
     let task = current_task().unwrap();
     task.munmap(start, length)
 }

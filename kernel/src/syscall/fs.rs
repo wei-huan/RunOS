@@ -7,11 +7,12 @@ use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
 };
 use crate::syscall::errorno::{EBADF, EISDIR, ENOENT, ESPIPE};
-use crate::task::{SigSet, TaskControlBlockInner};
-use crate::timer::TimeSpec;
+use crate::task::{suspend_current_and_run_next, SigSet, TaskControlBlockInner};
+use crate::timer::{get_time_ns, TimeSpec, TimeVal, NSEC_PER_SEC};
 use alloc::string::String;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::fmt::write;
 use core::mem::size_of;
 use core::task;
 use spin::MutexGuard;
@@ -404,6 +405,129 @@ fn fstat_inner(f: Arc<OSInode>, userbuf: &mut UserBuffer) -> isize {
     0
 }
 
+type FdMask = u64;
+
+const FD_SETSIZE: usize = 256;
+const NFDBITS: usize = 8 * size_of::<FdMask>();
+
+#[derive(Debug, Clone, Copy)]
+pub struct FDSet {
+    fds_bits: [FdMask; FD_SETSIZE / NFDBITS],
+}
+
+impl FDSet {
+    pub fn set_bit(&mut self, n: usize) {
+        self.fds_bits[n / NFDBITS] |= 0x01 << (n % NFDBITS - 1);
+    }
+    pub fn clear_bit(&mut self, n: usize) {
+        self.fds_bits[n / NFDBITS] &= !(0x01 << (n % NFDBITS - 1));
+    }
+    pub fn contains_bit(&self, n: usize) -> bool {
+        (self.fds_bits[n / NFDBITS] & (0x01 << (n % NFDBITS - 1))) > 0
+    }
+    pub fn clear_all(&mut self) {
+        for i in 0..FD_SETSIZE / NFDBITS {
+            self.fds_bits[i] = 0;
+        }
+    }
+}
+
+pub fn sys_pselect6(
+    nfds: i32,
+    readfds: *mut FDSet,
+    writefds: *mut FDSet,
+    exceptfds: *mut FDSet,
+    timeout: *const TimeSpec,
+    sigmask: *const SigSet,
+) -> isize {
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let timeout = translated_ref(token, timeout);
+    log::debug!(
+        "sys_pselect6 nfds: {}, readfds: {:#X?}, writefds: {:#X?}, exceptfds: {:#X?}, timeout: {:#X?}, sigmask: {:#X?}",
+        nfds,
+        readfds as usize,
+        writefds as usize,
+        exceptfds as usize,
+        timeout,
+        sigmask as usize
+    );
+    let mut ret: isize = 0;
+    if timeout.nsec != 0 || timeout.sec != 0 {
+        let timeout_ns: u64 =
+            get_time_ns() as u64 + timeout.nsec + (timeout.sec * NSEC_PER_SEC as u64);
+        loop {
+            let inner = task.acquire_inner_lock();
+            if readfds as usize != 0 {
+                let readfds = translated_refmut(token, readfds);
+                for i in 0..nfds as usize {
+                    if readfds.contains_bit(i) {
+                        if let Some(f) = inner.fd_table.get(i) {
+                            if f.is_some() {
+                                ret += 1;
+                            }
+                        }
+                    }
+                }
+            }
+            if writefds as usize != 0 {
+                let writefds = translated_refmut(token, writefds);
+                for i in 0..nfds as usize {
+                    if writefds.contains_bit(i) {
+                        if let Some(f) = inner.fd_table.get(i) {
+                            if f.is_some() {
+                                ret += 1;
+                            }
+                        }
+                    }
+                }
+            }
+            let current_time_ns = get_time_ns() as u64;
+            if ret == 0 && (current_time_ns < timeout_ns) {
+                drop(inner);
+                suspend_current_and_run_next();
+            } else {
+                if exceptfds as usize != 0 {
+                    let exceptfds = translated_refmut(token, exceptfds);
+                    exceptfds.clear_all();
+                }
+                break;
+            }
+        }
+    } else {
+        let inner = task.acquire_inner_lock();
+        if readfds as usize != 0 {
+            let readfds = translated_refmut(token, readfds);
+            for i in 0..nfds as usize {
+                if readfds.contains_bit(i) {
+                    if let Some(f) = inner.fd_table.get(i) {
+                        if f.is_some() {
+                            ret += 1;
+                        }
+                    }
+                }
+            }
+        }
+        if writefds as usize != 0 {
+            let writefds = translated_refmut(token, writefds);
+            for i in 0..nfds as usize {
+                if writefds.contains_bit(i) {
+                    if let Some(f) = inner.fd_table.get(i) {
+                        if f.is_some() {
+                            ret += 1;
+                        }
+                    }
+                }
+            }
+        }
+        if exceptfds as usize != 0 {
+            let exceptfds = translated_refmut(token, exceptfds);
+            exceptfds.clear_all();
+        }
+    }
+    ret
+}
+
 #[repr(C)]
 pub struct PollFD {
     fd: i32,
@@ -477,13 +601,11 @@ pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
     ret
 }
 
-pub fn sys_pipe(pipe: *mut u32, flags: usize) -> isize {
-    log::trace!("sys_pipe");
-    if flags != 0 {
-        println!("[sys_pipe]: flags not support");
-    }
+pub fn sys_pipe(pipe: *mut u32, flags: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
+    let flags = OpenFlags::from_bits(flags).unwrap();
+    log::debug!("sys_pipe pipe: {:#X?}, flags: {:?}", pipe as usize, flags);
     let mut inner = task.acquire_inner_lock();
     let (pipe_read, pipe_write) = make_pipe();
     let read_fd = inner.alloc_fd();

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use core::mem::size_of;
 
 pub const SIGDEF: i32 = 0;
