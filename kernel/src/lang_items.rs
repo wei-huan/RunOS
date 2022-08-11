@@ -33,8 +33,8 @@ pub unsafe fn backtrace() {
     let stop = current_stack_top();
     // println!("stop: {:#X}", stop);
     asm!("mv {}, s0", out(reg) fp);
-    let mut sp: usize;
-    asm!("mv {}, sp", out(reg) sp);
+    // let mut sp: usize;
+    // asm!("mv {}, sp", out(reg) sp);
     // println!("sp: {:#X}", sp);
     println!("---START BACKTRACE---");
     for i in 0..BACKTRACE_MAX_DEPTH {

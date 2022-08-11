@@ -1,6 +1,5 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT_BASE};
 use crate::cpu::{current_task, current_trap_cx, current_user_token, hart_id};
-use crate::lang_items::user_backtrace;
 use crate::syscall::syscall;
 use crate::task::{
     check_signals_error_of_current, current_add_signal, exit_current_and_run_next, handle_signals,

@@ -291,6 +291,7 @@ pub fn sys_close(fd: usize) -> isize {
 }
 
 pub fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
+    log::debug!("sys_getcwd buf: {:#X?}, len: {}", buf, len);
     let token = current_user_token();
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, len);
@@ -306,6 +307,7 @@ pub fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
 }
 
 pub fn sys_dup(fd: usize) -> isize {
+    log::debug!("sys_dup fd: {}", fd);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     if fd >= inner.fd_table.len() {
@@ -320,6 +322,7 @@ pub fn sys_dup(fd: usize) -> isize {
 }
 
 pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
+    log::debug!("sys_dup3 old_fd: {}, new_fd: {}", old_fd, new_fd);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     if old_fd >= inner.fd_table.len() || new_fd > FD_LIMIT {
@@ -441,13 +444,13 @@ pub struct FDSet {
 
 impl FDSet {
     pub fn set_bit(&mut self, n: usize) {
-        self.fds_bits[n / NFDBITS] |= 0x01 << (n % NFDBITS - 1);
+        self.fds_bits[n / NFDBITS] |= 0x01 << (n % NFDBITS);
     }
     pub fn clear_bit(&mut self, n: usize) {
-        self.fds_bits[n / NFDBITS] &= !(0x01 << (n % NFDBITS - 1));
+        self.fds_bits[n / NFDBITS] &= !(0x01 << (n % NFDBITS));
     }
     pub fn contains_bit(&self, n: usize) -> bool {
-        (self.fds_bits[n / NFDBITS] & (0x01 << (n % NFDBITS - 1))) > 0
+        (self.fds_bits[n / NFDBITS] & (0x01 << (n % NFDBITS))) > 0
     }
     pub fn clear_all(&mut self) {
         for i in 0..FD_SETSIZE / NFDBITS {
@@ -485,24 +488,36 @@ pub fn sys_pselect6(
             if readfds as usize != 0 {
                 let readfds = translated_refmut(token, readfds);
                 for i in 0..nfds as usize {
-                    if readfds.contains_bit(i) {
-                        if let Some(f) = inner.fd_table.get(i) {
-                            if f.is_some() {
+                    if let Some(f) = &inner.fd_table[i] {
+                        match &f {
+                            FileClass::File(file) => {
                                 ret += 1;
+                                readfds.set_bit(i);
+                            }
+                            FileClass::Abstr(abs) => {
+                                readfds.clear_bit(i);
                             }
                         }
+                    } else {
+                        readfds.clear_bit(i);
                     }
                 }
             }
             if writefds as usize != 0 {
                 let writefds = translated_refmut(token, writefds);
                 for i in 0..nfds as usize {
-                    if writefds.contains_bit(i) {
-                        if let Some(f) = inner.fd_table.get(i) {
-                            if f.is_some() {
+                    if let Some(f) = &inner.fd_table[i] {
+                        match &f {
+                            FileClass::File(file) => {
                                 ret += 1;
+                                writefds.set_bit(i);
+                            }
+                            FileClass::Abstr(abs) => {
+                                writefds.clear_bit(i);
                             }
                         }
+                    } else {
+                        writefds.clear_bit(i);
                     }
                 }
             }
@@ -523,24 +538,36 @@ pub fn sys_pselect6(
         if readfds as usize != 0 {
             let readfds = translated_refmut(token, readfds);
             for i in 0..nfds as usize {
-                if readfds.contains_bit(i) {
-                    if let Some(f) = inner.fd_table.get(i) {
-                        if f.is_some() {
+                if let Some(f) = &inner.fd_table[i] {
+                    match &f {
+                        FileClass::File(file) => {
                             ret += 1;
+                            readfds.set_bit(i);
+                        }
+                        FileClass::Abstr(abs) => {
+                            readfds.clear_bit(i);
                         }
                     }
+                } else {
+                    readfds.clear_bit(i);
                 }
             }
         }
         if writefds as usize != 0 {
             let writefds = translated_refmut(token, writefds);
             for i in 0..nfds as usize {
-                if writefds.contains_bit(i) {
-                    if let Some(f) = inner.fd_table.get(i) {
-                        if f.is_some() {
+                if let Some(f) = &inner.fd_table[i] {
+                    match &f {
+                        FileClass::File(file) => {
                             ret += 1;
+                            writefds.set_bit(i);
+                        }
+                        FileClass::Abstr(abs) => {
+                            writefds.clear_bit(i);
                         }
                     }
+                } else {
+                    writefds.clear_bit(i);
                 }
             }
         }
@@ -572,12 +599,19 @@ pub const POLLRDBAND: u16 = 0x080;
 pub fn sys_ppoll(
     fds: *mut PollFD,
     nfds: u32,
-    tmo_p: *mut TimeSpec,
+    timeout: *mut TimeSpec,
     sigmask: *const SigSet,
 ) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    log::debug!(
+        "sys_ppoll fds: {:#X?}, nfds: {}, timeout: {:#X?}, sigmask: {:#X?}",
+        fds as usize,
+        nfds,
+        timeout as usize,
+        sigmask as usize
+    );
     let mut ret = 0isize;
 
     for i in 0..nfds {
@@ -593,12 +627,10 @@ pub fn sys_ppoll(
 }
 
 pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
-    // log::debug!("sys_fstatat");
-    // log::debug!("sys_fstatat cwd: {}", cwd);
-    // log::debug!("sys_fstatat path: {}", path);
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
+    log::debug!("sys_fstatat path: {}, buf: {:#X?}", path, buf);
 
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Stat>());
     let mut userbuf = UserBuffer::new(buf_vec);
