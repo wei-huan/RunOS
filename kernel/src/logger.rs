@@ -3,7 +3,7 @@ use crate::opensbi::{impl_id, impl_version, spec_version};
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
-    cpu::hart_id,
+    cpu::{hart_id, current_task},
     dt::{CPU_NUMS, MEM_SIZE, MEM_START, TIMER_FREQ},
     timer::get_time,
     utils::{micros, time_parts},
@@ -56,9 +56,6 @@ impl log::Log for MyLogger {
         if !self.enabled(record.metadata()) {
             return;
         }
-        while USING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) == Ok(false) {
-            core::hint::spin_loop();
-        }
         let mut mod_path = record
             .module_path_static()
             .or_else(|| record.module_path())
@@ -80,6 +77,9 @@ impl log::Log for MyLogger {
             Level::Error => RED,
         };
         let clear = CLEAR;
+        while USING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) == Ok(false) {
+            core::hint::spin_loop();
+        }
         println!(
             "[{:>5}.{:<03}][ {}{:>5}{} ][HART {}][{}] {}",
             secs,

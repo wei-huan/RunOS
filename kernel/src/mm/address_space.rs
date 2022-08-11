@@ -125,11 +125,11 @@ impl AddrSpace {
         }
     }
     fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
-        // log::debug!(
-        //     "section range start: {:#?}, end: {:#?}",
-        //     section.vpn_range.get_start(),
-        //     section.vpn_range.get_end()
-        // );
+        log::debug!(
+            "section range start: {:#?}, end: {:#?}",
+            section.vpn_range.get_start(),
+            section.vpn_range.get_end()
+        );
         section.map(&mut self.page_table);
         if let Some(data) = data {
             section.copy_data(&mut self.page_table, data, 0);

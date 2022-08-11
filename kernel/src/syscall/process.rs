@@ -345,7 +345,12 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         if let Some((idx, _)) = pair {
             let child = inner.children.remove(idx);
             // confirm that child will be deallocated after being removed from children list
-            assert_eq!(Arc::strong_count(&child), 1, "strong count: {}", Arc::strong_count(&child));
+            assert_eq!(
+                Arc::strong_count(&child),
+                1,
+                "strong count: {}",
+                Arc::strong_count(&child)
+            );
             let found_pid = child.getpid();
             // ++++ temporarily access child PCB exclusively
             let exit_code = child.acquire_inner_lock().exit_code;
@@ -483,19 +488,19 @@ pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut R
     0
 }
 
-pub fn sys_mprotect(addr: usize, len: usize, prot: usize) -> isize {
+pub fn sys_mprotect(address: usize, length: usize, prot: usize) -> isize {
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
     log::debug!(
-        "sys_mprotect addr: {:#X} len: {:#X} flags: {:?}",
-        addr,
-        len,
+        "sys_mprotect address: {:#X} length: {:#X} flags: {:?}",
+        address,
+        length,
         flags
     );
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    let start_vpn = VirtAddr::from(addr).floor();
-    let end_vpn = VirtAddr::from(addr + len).ceil();
-    log::debug!("start_vpn: {}", start_vpn.0);
+    let start_vpn = VirtAddr::from(address).floor();
+    let end_vpn = VirtAddr::from(address + length).ceil();
+    log::debug!("start_vpn: {:?} end_vpn: {:?}", start_vpn, end_vpn);
     for vpn in start_vpn..end_vpn {
         inner.addrspace.set_pte_flags(vpn, flags);
     }

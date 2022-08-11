@@ -124,16 +124,14 @@ pub fn user_trap_handler() -> ! {
                 stval,
                 current_trap_cx().sepc,
             );
-            // page fault exit code
-            exit_current_and_run_next(-2);
             current_add_signal(SIGSEGV);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            log::debug!("[kernel] IllegalInstruction in application, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
+            let current_task = current_task().unwrap();
+            log::warn!("[kernel] IllegalInstruction in process {}, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
             stval,
+            current_task.getpid(),
             current_trap_cx().sepc);
-            // illegal instruction exit code
-            exit_current_and_run_next(-3);
             current_add_signal(SIGILL);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {
@@ -154,14 +152,15 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
-    // handle signals (handle the sent signal)
-    handle_signals();
 
     // check error signals (if error then exit)
     if let Some((errno, msg)) = check_signals_error_of_current() {
         log::error!("[kernel] {}", msg);
         exit_current_and_run_next(errno);
     }
+
+    // handle signals (handle the sent signal)
+    handle_signals();
     trap_return();
 }
 

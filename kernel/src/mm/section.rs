@@ -146,20 +146,20 @@ impl Section {
         let end_vpn = self.vpn_range.get_end();
         // shrink
         if end_vpn > new_end_vpn {
-            println!(
-                "shrink end_vpn: {:#?}, new_end_vpn: {:#?}",
-                end_vpn, new_end_vpn
-            );
+            // println!(
+            //     "shrink end_vpn: {:#?}, new_end_vpn: {:#?}",
+            //     end_vpn, new_end_vpn
+            // );
             for vpn in new_end_vpn..end_vpn {
                 self.unmap_one_page(page_table, vpn);
             }
         }
         // expand
         else if end_vpn < new_end_vpn {
-            println!(
-                "expand end_vpn: {:#?}, new_end_vpn: {:#?}",
-                end_vpn, new_end_vpn
-            );
+            // println!(
+            //     "expand end_vpn: {:#?}, new_end_vpn: {:#?}",
+            //     end_vpn, new_end_vpn
+            // );
             for vpn in end_vpn..new_end_vpn {
                 self.map_one_page(page_table, vpn);
             }
