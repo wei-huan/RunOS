@@ -1,4 +1,6 @@
+use crate::config::USER_STACK_BASE;
 use crate::cpu::current_stack_top;
+use crate::mm::translated_ref;
 #[cfg(feature = "opensbi")]
 use crate::opensbi::shutdown;
 #[cfg(feature = "rustsbi")]
@@ -24,7 +26,8 @@ fn panic(info: &PanicInfo) -> ! {
     shutdown()
 }
 
-#[allow(unused)]
+const BACKTRACE_MAX_DEPTH: usize = 15;
+
 pub unsafe fn backtrace() {
     let mut fp: usize;
     let stop = current_stack_top();
@@ -34,7 +37,7 @@ pub unsafe fn backtrace() {
     asm!("mv {}, sp", out(reg) sp);
     // println!("sp: {:#X}", sp);
     println!("---START BACKTRACE---");
-    for i in 0..15 {
+    for i in 0..BACKTRACE_MAX_DEPTH {
         if fp == stop {
             break;
         }
@@ -42,4 +45,26 @@ pub unsafe fn backtrace() {
         fp = *((fp - 16) as *const usize);
     }
     println!("---END   BACKTRACE---");
+}
+
+pub unsafe fn user_backtrace(token: usize, s0: usize) {
+    let mut fp = s0;
+    println!("---START USER BACKTRACE---");
+    for i in 0..BACKTRACE_MAX_DEPTH {
+        println!("now fp = {:#x}", fp);
+        if fp == USER_STACK_BASE {
+            break;
+        }
+        if fp == 0 {
+            println!("corrupted stack frame");
+            break;
+        }
+        println!(
+            "#{}:ra={:#x}",
+            i,
+            *(translated_ref(token, (fp - 8) as *const usize))
+        );
+        fp = *(translated_ref(token, (fp - 16) as *const usize));
+    }
+    println!("---END USER BACKTRACE---");
 }

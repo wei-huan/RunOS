@@ -314,6 +314,8 @@ lazy_static! {
 
 pub fn init_rootfs() {
     let _tmp = open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    let _dev = open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
 }
 
 pub fn list_apps() {

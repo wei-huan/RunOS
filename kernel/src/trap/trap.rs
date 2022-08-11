@@ -1,5 +1,6 @@
 use crate::config::{TRAMPOLINE, TRAP_CONTEXT_BASE};
 use crate::cpu::{current_task, current_trap_cx, current_user_token, hart_id};
+use crate::lang_items::user_backtrace;
 use crate::syscall::syscall;
 use crate::task::{
     check_signals_error_of_current, current_add_signal, exit_current_and_run_next, handle_signals,
@@ -116,22 +117,32 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::InstructionPageFault)
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
-            let current_task = current_task().unwrap();
+            let pid = current_task().unwrap().getpid();
+            let trap_ctx = current_trap_cx();
+            let sepc = trap_ctx.sepc;
             log::warn!(
                 "[kernel] {:?} in process {}, bad addr = {:#X}, bad instruction = {:#X}, kernel killed it.",
                 scause.cause(),
-                current_task.getpid(),
+                pid,
                 stval,
-                current_trap_cx().sepc,
+                sepc,
             );
+            // let token = current_user_token();
+            // let fp = trap_ctx.x[8];
+            // unsafe { user_backtrace(token, fp) };
             current_add_signal(SIGSEGV);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
-            let current_task = current_task().unwrap();
+            let pid = current_task().unwrap().getpid();
+            let trap_ctx = current_trap_cx();
+            let sepc = trap_ctx.sepc;
             log::warn!("[kernel] IllegalInstruction in process {}, bad addr = {:#x}, bad instruction = {:#x}, kernel killed it.",
+            pid,
             stval,
-            current_task.getpid(),
-            current_trap_cx().sepc);
+            sepc);
+            // let token = current_user_token();
+            // let fp = trap_ctx.x[8];
+            // unsafe { user_backtrace(token, fp) };
             current_add_signal(SIGILL);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {

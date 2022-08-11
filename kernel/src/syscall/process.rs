@@ -175,7 +175,6 @@ pub fn sys_clone(
         ctid_ptr as usize
     );
     let new_task = current_task.fork();
-    // println!("here_1");
     if stack_ptr != 0 {
         let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
         trap_cx.set_sp(stack_ptr);
@@ -199,7 +198,7 @@ pub fn sys_clone(
     // add new task to scheduler
     add_task(new_task);
     // let child process run first
-    // suspend_current_and_run_next();
+    suspend_current_and_run_next();
     new_pid as isize
 }
 
@@ -500,7 +499,6 @@ pub fn sys_mprotect(address: usize, length: usize, prot: usize) -> isize {
     let mut inner = task.acquire_inner_lock();
     let start_vpn = VirtAddr::from(address).floor();
     let end_vpn = VirtAddr::from(address + length).ceil();
-    log::debug!("start_vpn: {:?} end_vpn: {:?}", start_vpn, end_vpn);
     for vpn in start_vpn..end_vpn {
         inner.addrspace.set_pte_flags(vpn, flags);
     }

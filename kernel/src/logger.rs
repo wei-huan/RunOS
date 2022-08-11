@@ -3,12 +3,12 @@ use crate::opensbi::{impl_id, impl_version, spec_version};
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
-    cpu::{hart_id, current_task},
+    cpu::hart_id,
     dt::{CPU_NUMS, MEM_SIZE, MEM_START, TIMER_FREQ},
     timer::get_time,
     utils::{micros, time_parts},
 };
-use core::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use core::sync::atomic::{AtomicUsize, Ordering};
 use log::*;
 use owo_colors::OwoColorize;
 use riscv::register::satp;
@@ -27,7 +27,6 @@ pub const YELLOW: ColorEscape = ColorEscape("\x1B[33m");
 pub const WHITE: ColorEscape = ColorEscape("\x1B[37m");
 pub const CLEAR: ColorEscape = ColorEscape("\x1B[0m");
 
-static USING: AtomicBool = AtomicBool::new(false);
 static HART_FILTER: AtomicUsize = AtomicUsize::new(usize::MAX);
 
 struct MyLogger;
@@ -77,9 +76,6 @@ impl log::Log for MyLogger {
             Level::Error => RED,
         };
         let clear = CLEAR;
-        while USING.compare_exchange(false, true, Ordering::SeqCst, Ordering::SeqCst) == Ok(false) {
-            core::hint::spin_loop();
-        }
         println!(
             "[{:>5}.{:<03}][ {}{:>5}{} ][HART {}][{}] {}",
             secs,
@@ -91,9 +87,6 @@ impl log::Log for MyLogger {
             mod_path,
             record.args(),
         );
-        while USING.compare_exchange(true, false, Ordering::SeqCst, Ordering::SeqCst) == Ok(true) {
-            core::hint::spin_loop();
-        }
     }
     fn flush(&self) {}
 }

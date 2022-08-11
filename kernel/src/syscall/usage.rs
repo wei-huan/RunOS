@@ -32,7 +32,7 @@ const RUSAGE_BOTH: i32 = -2;
 const RUSAGE_THREAD: i32 = 1;
 
 pub fn sys_getrusage(who: i32, ru: *mut RUsage) -> isize {
-    // log::debug!("sys_rusage: {}", who);
+    log::trace!("sys_rusage: who: {}, ru: {:#X?}", who, ru as usize);
     // if who != RUSAGE_SELF {
     //     return -EINVAL;
     // }

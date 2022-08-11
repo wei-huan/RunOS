@@ -136,8 +136,12 @@ impl PageTable {
                 cur_flags.set(PTEFlags::X, false);
             }
             *pte = PageTableEntry::new(pte.ppn(), pte.rsw(), cur_flags);
+        } else {
+            log::warn!(
+                "set_pte_flags function not found pte for vpn {:?} in page table",
+                vpn
+            );
         }
-        log::warn!("set_pte_flags function not found pte for vpn {:?} in page table", vpn);
     }
     /// Temporarily used to get arguments from user space.
     pub fn from_token(satp: usize) -> Self {

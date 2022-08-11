@@ -37,23 +37,21 @@ pub fn get_time() -> usize {
     time::read()
 }
 
-// 得到时钟频率的方式不是很好
-#[allow(unused)]
 pub fn get_time_ms() -> usize {
     let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
     time::read() / (timer_freq / MSEC_PER_SEC)
 }
 
-#[allow(unused)]
 pub fn get_time_us() -> usize {
     let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
-    time::read() / (timer_freq / USEC_PER_SEC)
+    // time::read() / (timer_freq / USEC_PER_SEC)
+    time::read() * 10 / (timer_freq / 100000)
 }
 
-#[allow(unused)]
 pub fn get_time_ns() -> usize {
     let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
-    (time::read() / (timer_freq / USEC_PER_SEC)) * MSEC_PER_SEC
+    // (time::read() / (timer_freq / USEC_PER_SEC)) * MSEC_PER_SEC
+    time::read() * 10000 / (timer_freq / 100000)
 }
 
 #[allow(unused)]

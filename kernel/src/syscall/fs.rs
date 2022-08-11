@@ -72,9 +72,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
     if let Some(file) = &inner.fd_table[fd] {
         let file: Arc<dyn File + Send + Sync> = match &file {
             FileClass::Abstr(f) => f.clone(),
-            FileClass::File(f) => {
-                f.clone()
-            }
+            FileClass::File(f) => f.clone(),
         };
         if !file.writable() {
             return -1;
@@ -402,17 +400,16 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
             open("/", &cwd, OpenFlags::RDONLY, DiskInodeType::Directory).unwrap(),
             &mut userbuf,
         )
-    } else if fd < 0 || fd >= inner.fd_table.len() as isize {
-        -EPERM
-    } else {
-        if let Some(file) = inner.fd_table[fd as usize].clone() {
-            match file {
-                FileClass::File(f) => fstat_inner(f, &mut userbuf),
-                _ => -EPERM,
+    } else if let Some(file) = inner.fd_table[fd as usize].clone() {
+        match file {
+            FileClass::File(f) => fstat_inner(f, &mut userbuf),
+            _ => {
+                userbuf.write(Stat::new_abstract().as_bytes());
+                0
             }
-        } else {
-            -EPERM
         }
+    } else {
+        -EPERM
     };
     ret
 }
@@ -552,6 +549,7 @@ pub fn sys_pselect6(
             exceptfds.clear_all();
         }
     }
+    log::debug!("pselect6 return {}", ret);
     ret
 }
 
@@ -946,6 +944,9 @@ pub fn sys_readlinkat(dirfd: i32, pathname: *const u8, buf: *mut u8, bufsize: us
         pathname_str,
         bufsize
     );
+    if pathname_str != "/proc/self/exe" {
+        panic!("sys_readlinkat: pathname not support");
+    }
     let linkpath_str = "/lmbench_all\0";
     let buf_vec = translated_byte_buffer(token, buf, 128);
     let mut userbuf = UserBuffer::new(buf_vec);

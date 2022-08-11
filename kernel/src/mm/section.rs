@@ -164,6 +164,7 @@ impl Section {
                 self.map_one_page(page_table, vpn);
             }
         }
+        self.vpn_range.set_end(new_end_vpn);
     }
     pub fn modify_section_start(&mut self, page_table: &mut PageTable, new_start_vpn: VirtPageNum) {
         let start_vpn = self.vpn_range.get_start();
@@ -179,6 +180,7 @@ impl Section {
                 self.unmap_one_page(page_table, vpn);
             }
         }
+        self.vpn_range.set_start(new_start_vpn);
     }
     // new_start_vpn should be still map after modify
     pub fn divide_into_two(
