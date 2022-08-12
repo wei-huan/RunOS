@@ -495,7 +495,12 @@ pub fn sys_pselect6(
                                 readfds.set_bit(i);
                             }
                             FileClass::Abstr(abs) => {
-                                readfds.clear_bit(i);
+                                if abs.available() {
+                                    ret += 1;
+                                    readfds.set_bit(i);
+                                } else {
+                                    readfds.clear_bit(i);
+                                }
                             }
                         }
                     } else {
@@ -513,7 +518,12 @@ pub fn sys_pselect6(
                                 writefds.set_bit(i);
                             }
                             FileClass::Abstr(abs) => {
-                                writefds.clear_bit(i);
+                                if abs.available() {
+                                    ret += 1;
+                                    writefds.set_bit(i);
+                                } else {
+                                    writefds.clear_bit(i);
+                                }
                             }
                         }
                     } else {
@@ -545,7 +555,12 @@ pub fn sys_pselect6(
                             readfds.set_bit(i);
                         }
                         FileClass::Abstr(abs) => {
-                            readfds.clear_bit(i);
+                            if abs.available() {
+                                ret += 1;
+                                readfds.set_bit(i);
+                            } else {
+                                readfds.clear_bit(i);
+                            }
                         }
                     }
                 } else {
@@ -563,7 +578,12 @@ pub fn sys_pselect6(
                             writefds.set_bit(i);
                         }
                         FileClass::Abstr(abs) => {
-                            writefds.clear_bit(i);
+                            if abs.available() {
+                                ret += 1;
+                                writefds.set_bit(i);
+                            } else {
+                                writefds.clear_bit(i);
+                            }
                         }
                     }
                 } else {

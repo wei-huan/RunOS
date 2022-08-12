@@ -8,6 +8,7 @@ mod process;
 mod signal;
 mod sysinfo;
 mod syslog;
+mod time;
 mod usage;
 mod utsname;
 
@@ -23,6 +24,7 @@ use process::*;
 use signal::*;
 use sysinfo::*;
 use syslog::*;
+use time::*;
 use usage::*;
 use utsname::*;
 
@@ -208,16 +210,21 @@ pub fn syscall_name(id: usize) -> &'static str {
 }
 
 pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
-    let pid = current_task().unwrap().getpid();
-    if pid >= 2
-        && syscall_id != SYSCALL_CLOCK_GETTIME
-        && syscall_id != SYSCALL_GETRUSAGE
-        // not allow stdin stdout stderr
-        && (syscall_id != SYSCALL_READ || (syscall_id == SYSCALL_READ && args[0] >= 3))
-        && (syscall_id != SYSCALL_WRITE || (syscall_id == SYSCALL_WRITE && args[0] >= 3))
-    {
-        log::debug!("process[{}] syscall[{}]: {}", pid, syscall_id, syscall_name(syscall_id));
-    }
+    // let pid = current_task().unwrap().getpid();
+    // if pid >= 2
+    //     && syscall_id != SYSCALL_CLOCK_GETTIME
+    //     && syscall_id != SYSCALL_GETRUSAGE
+    //     // not allow stdin stdout stderr
+    //     && (syscall_id != SYSCALL_READ || (syscall_id == SYSCALL_READ && args[0] >= 3))
+    //     && (syscall_id != SYSCALL_WRITE || (syscall_id == SYSCALL_WRITE && args[0] >= 3))
+    // {
+    //     log::debug!(
+    //         "process[{}] syscall[{}]: {}",
+    //         pid,
+    //         syscall_id,
+    //         syscall_name(syscall_id)
+    //     );
+    // }
     match syscall_id {
         SYSCALL_GETCWD => sys_getcwd(args[0] as *mut u8, args[1] as usize),
         SYSCALL_DUP => sys_dup(args[0]),
@@ -285,7 +292,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
             &mut *(args[1] as *mut TimeVal)
         }),
         // SYSCALL_GETITIMER => 0,
-        // SYSCALL_SETITIMER => 0,
+        SYSCALL_SETITIMER => sys_setitimer(args[0] as _, args[1] as _, args[2] as _),
         SYSCALL_CLOCK_GETTIME => sys_clock_gettime(args[0] as _, args[1] as _),
         SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
@@ -304,7 +311,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_SETPGID => sys_setpgid(),
         SYSCALL_GETPGID => sys_getpgid(),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
-        SYSCALL_GETRUSAGE => sys_getrusage(args[0] as _, args[1] as _),
+        SYSCALL_GETRUSAGE => 0, //sys_getrusage(args[0] as _, args[1] as _),
         SYSCALL_GET_TIMEOFDAY => sys_get_time(args[0] as *mut TimeVal),
         SYSCALL_GETPID => sys_getpid(),
         SYSCALL_GETPPID => sys_getppid(),

@@ -13,19 +13,25 @@ const MSEC_PER_SEC: usize = 1000;
 pub const USEC_PER_SEC: usize = 1000_000;
 pub const NSEC_PER_SEC: usize = 1000_000_000;
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct TimeSpec {
     pub sec: u64,
     pub nsec: u64,
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, Default)]
 pub struct TimeVal {
     pub sec: u64,
     pub usec: u64,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ITimerVal {
+    pub it_interval: TimeVal,
+    pub it_value: TimeVal,
+}
+
+#[derive(Copy, Clone, Debug)]
 pub struct Times {
     pub tms_utime: i64,
     pub tms_stime: i64,

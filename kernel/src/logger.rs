@@ -33,14 +33,14 @@ struct MyLogger;
 
 impl log::Log for MyLogger {
     fn enabled(&self, metadata: &log::Metadata) -> bool {
-        let hart_id = hart_id();
-        let max_hart = HART_FILTER.load(Ordering::Relaxed);
-        if max_hart < hart_id {
-            return false;
-        }
         let max_level = max_level();
         let level = metadata.level();
         if max_level < level {
+            return false;
+        }
+        let hart_id = hart_id();
+        let max_hart = HART_FILTER.load(Ordering::Relaxed);
+        if max_hart < hart_id {
             return false;
         }
         let mut _mod_path = metadata.target();

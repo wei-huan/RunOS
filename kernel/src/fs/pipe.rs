@@ -1,4 +1,4 @@
-use super::File;
+use crate::fs::File;
 use crate::mm::UserBuffer;
 use crate::task::suspend_current_and_run_next;
 use alloc::sync::{Arc, Weak};
@@ -171,5 +171,10 @@ impl File for Pipe {
                 }
             }
         }
+    }
+    fn available(&self) -> bool {
+        let bufferlock = self.buffer.lock();
+        (self.readable() && bufferlock.available_read() > 0)
+            || (self.writable() && bufferlock.available_write() > 0)
     }
 }

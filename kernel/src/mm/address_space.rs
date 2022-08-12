@@ -331,13 +331,12 @@ impl AddrSpace {
             let magic = elf_header.pt1.magic;
             assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
             let ph_count = elf_header.pt2.ph_count();
-
             for i in 0..ph_count {
                 let ph = elf.program_header(i).unwrap();
                 let start_va: VirtAddr = (DLL_LOADER_BASE + ph.virtual_addr() as usize).into();
                 let end_va: VirtAddr =
                     (DLL_LOADER_BASE + ph.virtual_addr() as usize + ph.mem_size() as usize).into();
-                let offset = start_va.0 - start_va.floor().0 * PAGE_SIZE;
+                let offset = start_va.page_offset();
                 if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
                     let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                     let name: String =
@@ -354,29 +353,19 @@ impl AddrSpace {
                         map_perm |= MapPermission::X;
                     }
                     let section = Section::new(name, start_va, end_va, MapType::Framed, map_perm);
-                    if offset == 0 {
-                        self.push_section(
-                            section,
-                            Some(
-                                &elf.input
-                                    [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-                            ),
-                        );
-                    } else {
-                        self.push_section_with_offset(
-                            section,
-                            offset,
-                            Some(
-                                &elf.input
-                                    [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-                            ),
-                        );
-                    }
+                    self.push_section_with_offset(
+                        section,
+                        offset,
+                        Some(
+                            &elf.input
+                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+                        ),
+                    );
                 }
             }
             return elf_header.pt2.entry_point() as usize;
         } else {
-            log::error!("[execve load_dl] dynamic load dl false");
+            log::error!("can't find dll loader libc.so");
             return 0;
         }
     }
@@ -454,25 +443,11 @@ impl AddrSpace {
                     map_perm,
                 );
                 max_end_vpn = section.vpn_range.get_end();
-                if offset == 0 {
-                    user_space.push_section(
-                        section,
-                        Some(
-                            &elf.input
-                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-                        ),
-                    );
-                } else {
-                    user_space.push_section_with_offset(
-                        section,
-                        offset,
-                        Some(
-                            &elf.input
-                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-                        ),
-                    );
-                }
-
+                user_space.push_section_with_offset(
+                    section,
+                    offset,
+                    Some(&elf.input[ph.offset() as usize..(ph.offset() + ph.file_size()) as usize]),
+                );
                 if head_va == 0 {
                     head_va = start_va.0;
                 }

@@ -6,7 +6,7 @@ use crate::mm::{
     translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
 };
 use crate::scheduler::{add_task, pid2task};
-use crate::syscall::ESRCH;
+use crate::syscall::{ENOENT, ESRCH};
 use crate::task::{
     exit_current_and_run_next, suspend_current_and_run_next, ClearChildTid, SigSet, SignalAction,
     NSIG,
@@ -53,20 +53,22 @@ pub fn sys_times(times: *mut Times) -> isize {
     0
 }
 
-pub fn sys_clock_gettime(clock_id: i32, tp: *mut TimeSpec) -> isize {
-    log::trace!(
-        "sys_clock_gettime clock_id: {}, tp: {:#X}",
-        clock_id,
-        tp as usize
-    );
+pub fn sys_clock_gettime(clock_id: i32, tp: *mut u64) -> isize {
+    // log::debug!(
+    //     "sys_clock_gettime clock_id: {}, tp: {:#X}",
+    //     clock_id,
+    //     tp as usize
+    // );
     if tp as usize == 0 {
         return -EFAULT;
     }
     let token = current_user_token();
     let (sec, nsec) = get_time_sec_nsec();
-    let timespec = translated_refmut(token, tp);
-    timespec.sec = sec;
-    timespec.nsec = nsec;
+    // let timespec = translated_refmut(token, tp);
+    // timespec.sec = sec;
+    // timespec.nsec = nsec;
+    *translated_refmut(token, tp) = sec;
+    *translated_refmut(token, unsafe { tp.add(1) }) = nsec;
     0
 }
 
@@ -93,6 +95,7 @@ pub fn sys_getpgid() -> isize {
 }
 
 pub fn sys_getpid() -> isize {
+    log::debug!("sys_getpid");
     current_task().unwrap().getpid() as isize
 }
 
@@ -255,13 +258,14 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         drop(inner);
         let all_data = app_inode.read_all();
         let task = current_task().unwrap();
-        let argc = args_vec.len();
+        // let argc = args_vec.len();
         // log::debug!("before task.exec");
         task.exec(all_data.as_slice(), args_vec);
         // log::debug!("after task.exec, now return");
-        argc as isize
+        // argc as isize
+        0
     } else {
-        -1
+        -ENOENT
     }
 }
 

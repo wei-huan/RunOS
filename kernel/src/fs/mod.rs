@@ -14,16 +14,16 @@ pub enum FileClass {
 }
 
 pub trait File: Send + Sync {
-    fn readable(&self) -> bool;
+    fn readable(&self) -> bool; // general authority
     fn writable(&self) -> bool;
     fn read(&self, buf: UserBuffer) -> usize;
     fn write(&self, buf: UserBuffer) -> usize;
+    fn available(&self) -> bool; // checking at a specific time for if there is something to reach or if being blocked
 }
 
 pub use finfo::*;
 pub use inode::{
-    ch_dir, clear_cache, init_rootfs, list_apps, open, DiskInodeType, OSInode,
-    OpenFlags,
+    ch_dir, clear_cache, init_rootfs, list_apps, open, DiskInodeType, OSInode, OpenFlags,
 };
 pub use mount::MNT_TABLE;
 pub use pipe::{make_pipe, Pipe};

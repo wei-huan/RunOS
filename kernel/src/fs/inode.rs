@@ -315,6 +315,8 @@ lazy_static! {
 pub fn init_rootfs() {
     let _tmp = open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     let _dev = open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    let _var = open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    let _var_tmp = open("/", "/var/tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
     // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
 }
 
@@ -470,5 +472,8 @@ impl File for OSInode {
             total_write_size += write_size;
         }
         total_write_size
+    }
+    fn available(&self) -> bool {
+        true
     }
 }

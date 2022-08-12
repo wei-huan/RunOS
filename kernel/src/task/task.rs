@@ -12,6 +12,7 @@ use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
     pid_alloc, AuxHeader, PidHandle, SigSet, SignalAction, AT_EXECFN, AT_NULL, AT_RANDOM,
 };
+use crate::timer::ITimerVal;
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::collections::BTreeMap;
 use alloc::string::String;
@@ -71,6 +72,7 @@ pub struct TaskControlBlockInner {
     pub frozen: bool,
     pub trap_ctx_backup: Option<TrapContext>,
     pub clear_child_tid: Option<ClearChildTid>,
+    pub timer: [ITimerVal; 3],
 }
 
 impl TaskControlBlockInner {
@@ -149,6 +151,7 @@ impl TaskControlBlock {
                 frozen: false,
                 trap_ctx_backup: None,
                 clear_child_tid: None,
+                timer: [ITimerVal::default(); 3],
             }),
         };
         // prepare TrapContext in user space
@@ -383,6 +386,7 @@ impl TaskControlBlock {
                 frozen: false,
                 trap_ctx_backup: parent_inner.trap_ctx_backup.clone(),
                 clear_child_tid: parent_inner.clear_child_tid.clone(),
+                timer: [ITimerVal::default(); 3],
             }),
         });
         // add child
