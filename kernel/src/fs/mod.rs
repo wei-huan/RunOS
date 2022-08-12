@@ -3,9 +3,11 @@ mod inode;
 mod mount;
 mod pipe;
 mod stdio;
+mod dev;
 
 use crate::mm::UserBuffer;
 use alloc::sync::Arc;
+use dev::*;
 
 #[derive(Clone)]
 pub enum FileClass {

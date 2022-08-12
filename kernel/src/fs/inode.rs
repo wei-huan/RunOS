@@ -30,12 +30,6 @@ an implicit hole at the end of any file). */
 #[allow(unused)]
 pub const SEEK_HOLE: i32 = 4;
 
-#[derive(PartialEq, Copy, Clone, Debug)]
-pub enum DiskInodeType {
-    File,
-    Directory,
-}
-
 // 此inode实际被当作文件
 pub struct OSInode {
     readable: bool,
@@ -186,7 +180,7 @@ impl OSInode {
         return size as usize;
     }
 
-    pub fn create(&self, path: &str, type_: DiskInodeType) -> Option<Arc<OSInode>> {
+    pub fn create(&self, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
         let inner = self.inner.lock();
         let cur_inode = inner.inode.clone();
         if !cur_inode.is_dir() {
@@ -204,21 +198,19 @@ impl OSInode {
             // create file
             let name = pathv.pop().unwrap();
             if let Some(temp_inode) = cur_inode.find_vfile_bypath(path) {
-                let attribute = {
-                    match type_ {
-                        DiskInodeType::Directory => FileAttributes::DIRECTORY,
-                        DiskInodeType::File => FileAttributes::FILE,
-                    }
+                let attribute = if flags.contains(OpenFlags::DIRECTROY) {
+                    FileAttributes::DIRECTORY
+                } else {
+                    FileAttributes::FILE
                 };
                 temp_inode
                     .create(name, attribute)
                     .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
             } else {
-                let attribute = {
-                    match type_ {
-                        DiskInodeType::Directory => FileAttributes::DIRECTORY,
-                        DiskInodeType::File => FileAttributes::FILE,
-                    }
+                let attribute = if flags.contains(OpenFlags::DIRECTROY) {
+                    FileAttributes::DIRECTORY
+                } else {
+                    FileAttributes::FILE
                 };
                 cur_inode
                     .create(name, attribute)
@@ -313,10 +305,10 @@ lazy_static! {
 }
 
 pub fn init_rootfs() {
-    let _tmp = open("/", "tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    let _dev = open("/", "dev", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    let _var = open("/", "var", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    let _var_tmp = open("/", "/var/tmp", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    let _tmp = open("/", "tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    let _dev = open("/", "dev", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    let _var_tmp = open("/", "/var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
 }
 
@@ -357,12 +349,7 @@ impl OpenFlags {
     }
 }
 
-pub fn open(
-    work_path: &str,
-    path: &str,
-    flags: OpenFlags,
-    type_: DiskInodeType,
-) -> Option<Arc<OSInode>> {
+pub fn open(work_path: &str, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
     // log::debug!("work_path {}", work_path);
     // log::debug!("path {}", path);
     // DEBUG: 相对路径
@@ -391,11 +378,10 @@ pub fn open(
             }
             // log::debug!("prev_path: {:?}, name: {:?}", prev_path, name);
             if let Some(temp_inode) = cur_inode.find_vfile_bypath(prev_path) {
-                let attribute = {
-                    match type_ {
-                        DiskInodeType::Directory => FileAttributes::DIRECTORY,
-                        DiskInodeType::File => FileAttributes::FILE,
-                    }
+                let attribute = if flags.contains(OpenFlags::DIRECTROY) {
+                    FileAttributes::DIRECTORY
+                } else {
+                    FileAttributes::FILE
                 };
                 temp_inode
                     .create(name, attribute)
