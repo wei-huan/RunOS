@@ -180,7 +180,6 @@ impl PageTable {
         *pte = PageTableEntry::empty();
     }
     pub fn translate(&self, vpn: VirtPageNum) -> Option<PageTableEntry> {
-        // println!("translate");
         self.find_pte(vpn).map(|pte| *pte)
     }
     pub fn translate_va(&self, va: VirtAddr) -> Option<PhysAddr> {

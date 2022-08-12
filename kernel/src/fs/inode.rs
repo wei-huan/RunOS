@@ -188,7 +188,7 @@ impl OSInode {
             return None;
         }
         let mut pathv: Vec<&str> = path.split('/').collect();
-        log::debug!("pathv: {:#?}", pathv);
+        // log::debug!("pathv: {:#?}", pathv);
         let (readable, writable) = (true, true);
         if let Some(inode) = cur_inode.find_vfile_bypath(path) {
             // already exists, clear
@@ -219,11 +219,13 @@ impl OSInode {
         }
     }
 
+    // only clear data
     // pub fn clear(&self) {
     //     let inner = self.inner.lock();
     //     inner.inode.clear();
     // }
 
+    // delete data and entry
     pub fn delete(&self) -> usize {
         let inner = self.inner.lock();
         inner.inode.delete()
@@ -240,11 +242,6 @@ impl OSInode {
         let vfile = &inner.inode;
         vfile.first_data_cluster()
     }
-
-    // pub fn set_delete_bit(&self) {
-    //     let inner = self.inner.lock();
-    //     inner.inode.set_delete_bit();
-    // }
 
     pub fn get_offset(&self) -> usize {
         let inner = self.inner.lock();
@@ -349,7 +346,16 @@ impl OpenFlags {
     }
 }
 
+// assume that path not null
 pub fn open(work_path: &str, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
+    let (readable, writable) = flags.read_write();
+    if path == "/" {
+        return Some(Arc::new(OSInode::new(
+            readable,
+            writable,
+            ROOT_INODE.clone(),
+        )));
+    }
     let cur_inode = {
         if work_path == "/" {
             ROOT_INODE.clone()
@@ -357,14 +363,12 @@ pub fn open(work_path: &str, path: &str, flags: OpenFlags) -> Option<Arc<OSInode
             ROOT_INODE.find_vfile_bypath(work_path).unwrap()
         }
     };
-    // shell 应当保证此处输入的 path 不为空
-    let (readable, writable) = flags.read_write();
     if flags.contains(OpenFlags::CREATE) {
         if let Some(inode) = cur_inode.find_vfile_bypath(path) {
             inode.delete();
         }
+        // create file
         {
-            // create file
             // log::debug!("path: {:?}", path);
             let name_path: Vec<&str> = path.rsplitn(2, '/').collect();
             // log::debug!("name_path: {:?}", name_path);

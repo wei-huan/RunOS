@@ -7,6 +7,7 @@ use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
 };
 use crate::syscall::errorno::{EBADF, EISDIR, ENOENT, ESPIPE};
+use crate::syscall::ENOTDIR;
 use crate::task::{suspend_current_and_run_next, SigSet, TaskControlBlockInner};
 use crate::timer::{get_time_ns, TimeSpec, TimeVal, NSEC_PER_SEC};
 use alloc::string::String;
@@ -227,60 +228,68 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
     let token = current_user_token();
     let path = translated_str(token, path);
     let mut inner = task.acquire_inner_lock();
-    let oflags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
+    let flags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
     log::debug!(
         "sys_open_at dirfd: {} path: {:#?}, flags: {:#?}, mode: {}",
         dirfd,
         path,
-        oflags,
+        flags,
         mode
     );
-    let current_path = if dirfd == AT_FDCWD && !path.starts_with("/") {
-        inner.current_path.clone()
-    } else {
-        String::from("/")
-    };
-
-    if dirfd == AT_FDCWD {
-        if let Some(inode) = open(current_path.as_str(), path.as_str(), oflags) {
-            let fd = inner.alloc_fd();
-            inner.fd_table[fd] = Some(FileClass::File(inode));
-            fd as isize
-        } else {
-            -1
-        }
-    } else {
-        let fd_usz = dirfd as usize;
-        if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
+    // check dirfd
+    if dirfd >= 0 {
+        let dirfd_usize = dirfd as usize;
+        if dirfd_usize >= inner.fd_table.len()
+            || dirfd_usize >= FD_LIMIT
+            || inner.fd_table[dirfd_usize].is_none()
+        {
             return -EINVAL;
         }
-        if let Some(file) = &inner.fd_table[fd_usz] {
-            match &file {
-                FileClass::File(f) => {
-                    // log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
-                    // 需要新建文件
-                    if oflags.contains(OpenFlags::CREATE) {
-                        if let Some(new_file) = f.create(path.as_str(), oflags) {
-                            let fd = inner.alloc_fd();
-                            inner.fd_table[fd] = Some(FileClass::File(new_file));
-                            return fd as isize;
-                        } else {
-                            return -1;
-                        }
-                    }
-                    // 正常打开文件
-                    if let Some(tar_f) = f.find(path.as_str(), oflags) {
-                        let fd = inner.alloc_fd();
-                        inner.fd_table[fd] = Some(FileClass::File(tar_f));
-                        fd as isize
-                    } else {
-                        return -1;
-                    }
-                }
-                _ => return -1, // 如果是抽象类文件，不能open
-            }
+    } else if dirfd != AT_FDCWD {
+        return -EINVAL;
+    } else {
+        // dirfd == AT_FDCWD ok
+    }
+
+    /* get dirfd inode */
+    let dir_inode: Arc<OSInode> = if dirfd == AT_FDCWD {
+        let current_path = if dirfd == AT_FDCWD && !path.starts_with("/") {
+            inner.current_path.clone()
         } else {
-            return -1;
+            String::from("/")
+        };
+        open("/", current_path.as_str(), flags).unwrap()
+    } else {
+        let file = inner.fd_table[dirfd as usize].as_ref().unwrap();
+        match &file {
+            FileClass::File(f) => {
+                if !f.is_dir() {
+                    return -ENOTDIR;
+                } else {
+                    f.clone()
+                }
+            }
+            _ => return -ENOTDIR,
+        }
+    };
+
+    /* get inode in directory */
+    // need to create
+    if flags.contains(OpenFlags::CREATE) {
+        if let Some(new_file) = dir_inode.create(path.as_str(), flags) {
+            let fd = inner.alloc_fd();
+            inner.fd_table[fd] = Some(FileClass::File(new_file));
+            return fd as isize;
+        } else {
+            return -ENOENT;
+        }
+    } else {
+        if let Some(tar_f) = dir_inode.find(path.as_str(), flags) {
+            let fd = inner.alloc_fd();
+            inner.fd_table[fd] = Some(FileClass::File(tar_f));
+            return fd as isize;
+        } else {
+            return -ENOENT;
         }
     }
 }
@@ -403,19 +412,17 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
     let token = current_user_token();
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Stat>());
-    let inner = task.acquire_inner_lock();
-    let cwd = inner.current_path.clone();
     let mut userbuf = UserBuffer::new(buf_vec);
+    let inner = task.acquire_inner_lock();
 
     let ret = if fd == AT_FDCWD {
-        fstat_inner(
-            open("/", &cwd, OpenFlags::RDONLY | OpenFlags::DIRECTROY).unwrap(),
-            &mut userbuf,
-        )
+        let cwd = inner.current_path.clone();
+        let inode = open("/", cwd.as_str(), OpenFlags::RDONLY | OpenFlags::DIRECTROY).unwrap();
+        fstat_inner(inode, &mut userbuf)
     } else if let Some(file) = inner.fd_table[fd as usize].clone() {
         match file {
             FileClass::File(f) => fstat_inner(f, &mut userbuf),
-            _ => {
+            FileClass::Abstr(_) => {
                 userbuf.write(Stat::new_abstract().as_bytes());
                 0
             }
@@ -984,7 +991,7 @@ pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
     }
 }
 
-pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isize {
+pub fn sys_utimensat(fd: isize, path: *const u8, time: usize, flags: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
@@ -997,7 +1004,7 @@ pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
         flags
     );
     let inner = task.acquire_inner_lock();
-    if let Some(file) = get_file_discpt(fd as isize, &path, &inner, flags) {
+    if let Some(file) = get_file_discpt(fd, &path, &inner, flags) {
         match file {
             FileClass::File(_f) => return 0,
             _ => return -1,

@@ -12,4 +12,5 @@
 
 3. 新 bug 是没有实现 sys_settitimer 系统调用, 参考 linux 的(SYSCALL_DEFINE3(setitimer, int, which, struct __kernel_old_itimerval __user *, value, struct __kernel_old_itimerval __user *, ovalue))实现
 
+4. 缺乏 dev/null 和 dev/zero的实现 无法完成 lmbench_all lat_syscall -P 1 read 和 lmbench_all lat_syscall -P 1 write, 中途实现 dev 时发现 sys_open_at 也有严重的问题, 调整
 

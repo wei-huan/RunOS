@@ -38,7 +38,7 @@ impl File for DevNull {
         true
     }
     // fill length size zero
-    fn read(&self, mut user_buf: UserBuffer) -> usize {
+    fn read(&self, user_buf: UserBuffer) -> usize {
         0
     }
     // write to a hole
