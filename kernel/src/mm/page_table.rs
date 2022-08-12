@@ -386,6 +386,12 @@ impl UserBuffer {
         }
         0
     }
+    pub fn clear(&mut self) -> usize {
+        self.buffers.iter_mut().for_each(|buf| {
+            buf.fill(0);
+        });
+        self.len()
+    }
 }
 
 impl IntoIterator for UserBuffer {

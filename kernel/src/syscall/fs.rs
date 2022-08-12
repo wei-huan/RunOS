@@ -1,7 +1,7 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
-    ch_dir, make_pipe, open, Dirent, DiskInodeType, File, FileClass, IOVec, OSInode, OpenFlags,
-    Stat, StatFS, MNT_TABLE, S_IFCHR, S_IFDIR, S_IFREG, S_IRWXG, S_IRWXO, S_IRWXU,
+    ch_dir, make_pipe, open, Dirent, File, FileClass, IOVec, OSInode, OpenFlags, Stat, StatFS,
+    MNT_TABLE, S_IFCHR, S_IFDIR, S_IFREG, S_IRWXG, S_IRWXO, S_IRWXU,
 };
 use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
@@ -86,6 +86,7 @@ pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
 }
 
 pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
+    log::debug!("sys_writev: fd: {}, iov: {:#X?}, iocnt: {}", fd, iov, iocnt);
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -119,6 +120,13 @@ pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 }
 
 pub fn sys_pread(fd: usize, buf: *mut u8, count: usize, offset: usize) -> isize {
+    log::debug!(
+        "sys_read fd: {}, buf: {:#X?}, count: {}, offset: {:#X?}",
+        fd,
+        buf,
+        count,
+        offset
+    );
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -169,6 +177,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
 }
 
 pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
+    log::debug!("sys_readv: fd: {}, iov: {:#X?}, iocnt: {}", fd, iov, iocnt);
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -226,13 +235,14 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
         oflags,
         mode
     );
+    let current_path = if dirfd == AT_FDCWD && !path.starts_with("/") {
+        inner.current_path.clone()
+    } else {
+        String::from("/")
+    };
+
     if dirfd == AT_FDCWD {
-        if let Some(inode) = open(
-            inner.get_work_path().as_str(),
-            path.as_str(),
-            oflags,
-            DiskInodeType::File,
-        ) {
+        if let Some(inode) = open(current_path.as_str(), path.as_str(), oflags) {
             let fd = inner.alloc_fd();
             inner.fd_table[fd] = Some(FileClass::File(inode));
             fd as isize
@@ -242,16 +252,15 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
     } else {
         let fd_usz = dirfd as usize;
         if fd_usz >= inner.fd_table.len() && fd_usz > FD_LIMIT {
-            return -1;
+            return -EINVAL;
         }
         if let Some(file) = &inner.fd_table[fd_usz] {
-            log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
             match &file {
                 FileClass::File(f) => {
                     // log::debug!("dirfd: {:#?}, path: {:#?}", dirfd, path);
                     // 需要新建文件
                     if oflags.contains(OpenFlags::CREATE) {
-                        if let Some(new_file) = f.create(path.as_str(), DiskInodeType::File) {
+                        if let Some(new_file) = f.create(path.as_str(), oflags) {
                             let fd = inner.alloc_fd();
                             inner.fd_table[fd] = Some(FileClass::File(new_file));
                             return fd as isize;
@@ -400,7 +409,7 @@ pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
 
     let ret = if fd == AT_FDCWD {
         fstat_inner(
-            open("/", &cwd, OpenFlags::RDONLY, DiskInodeType::Directory).unwrap(),
+            open("/", &cwd, OpenFlags::RDONLY | OpenFlags::DIRECTROY).unwrap(),
             &mut userbuf,
         )
     } else if let Some(file) = inner.fd_table[fd as usize].clone() {
@@ -670,7 +679,7 @@ pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
     }
     // 比完赛后删除
 
-    let ret = if let Some(osfile) = open(&cwd, &path, OpenFlags::RDONLY, DiskInodeType::Directory) {
+    let ret = if let Some(osfile) = open(&cwd, &path, OpenFlags::RDONLY | OpenFlags::DIRECTROY) {
         fstat_inner(osfile, &mut userbuf)
     } else {
         -ENOENT
@@ -694,17 +703,22 @@ pub fn sys_pipe(pipe: *mut u32, flags: u32) -> isize {
     0
 }
 
-pub fn sys_mkdir(dirfd: isize, path: *const u8, _mode: u32) -> isize {
+pub fn sys_mkdir(dirfd: isize, path: *const u8, mode: u32) -> isize {
     let token = current_user_token();
+    let path = translated_str(token, path);
+    log::debug!(
+        "sys_mkdir: dirfd: {}, path: {}, mode: {}",
+        dirfd,
+        path,
+        mode
+    );
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
-    let path = translated_str(token, path);
     if dirfd == AT_FDCWD {
         if let Some(_) = open(
             inner.get_work_path().as_str(),
             path.as_str(),
-            OpenFlags::CREATE,
-            DiskInodeType::Directory,
+            OpenFlags::CREATE | OpenFlags::DIRECTROY,
         ) {
             return 0;
         } else {
@@ -719,7 +733,7 @@ pub fn sys_mkdir(dirfd: isize, path: *const u8, _mode: u32) -> isize {
         if let Some(file) = &inner.fd_table[fd_usz] {
             match &file {
                 FileClass::File(f) => {
-                    if let Some(_) = f.create(path.as_str(), DiskInodeType::Directory) {
+                    if let Some(_) = f.create(path.as_str(), OpenFlags::DIRECTROY) {
                         return 0;
                     } else {
                         return -1;
@@ -735,14 +749,14 @@ pub fn sys_mkdir(dirfd: isize, path: *const u8, _mode: u32) -> isize {
 
 pub fn sys_chdir(path: *const u8) -> isize {
     let token = current_user_token();
+    let path = translated_str(token, path);
+    log::debug!("sys_chdir path: {}", path);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    let path = translated_str(token, path);
     let mut work_path = inner.current_path.clone();
     let new_ino_id = ch_dir(work_path.as_str(), path.as_str()) as isize;
     //println!("new inode id = {}", new_ino_id);
     if new_ino_id >= 0 {
-        //inner.current_inode = new_ino_id as u32;
         if path.chars().nth(0).unwrap() == '/' {
             inner.current_path = path.clone();
         } else {
@@ -778,7 +792,12 @@ pub fn sys_chdir(path: *const u8) -> isize {
 }
 
 pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
-    //println!("=====================================");
+    log::debug!(
+        "sys_getdents64: fd: {}, buf: {:#X?}, len: {}",
+        fd,
+        buf as usize,
+        len
+    );
     let token = current_user_token();
     let task = current_task().unwrap();
     let buf_vec = translated_byte_buffer(token, buf, len);
@@ -794,8 +813,7 @@ pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
         if let Some(file) = open(
             "/",
             work_path.as_str(),
-            OpenFlags::RDONLY,
-            DiskInodeType::Directory,
+            OpenFlags::RDONLY | OpenFlags::DIRECTROY,
         ) {
             loop {
                 if total_len + dent_len > len {
@@ -849,15 +867,8 @@ fn get_file_discpt(
     inner: &MutexGuard<TaskControlBlockInner>,
     oflags: OpenFlags,
 ) -> Option<FileClass> {
-    let type_ = {
-        if oflags.contains(OpenFlags::DIRECTROY) {
-            DiskInodeType::Directory
-        } else {
-            DiskInodeType::File
-        }
-    };
     if fd == AT_FDCWD {
-        if let Some(inode) = open(inner.get_work_path().as_str(), path.as_str(), oflags, type_) {
+        if let Some(inode) = open(inner.get_work_path().as_str(), path.as_str(), oflags) {
             //println!("find old");
             return Some(FileClass::File(inode));
         } else {
@@ -872,7 +883,7 @@ fn get_file_discpt(
             match &file {
                 FileClass::File(f) => {
                     if oflags.contains(OpenFlags::CREATE) {
-                        if let Some(tar_f) = f.create(path.as_str(), type_) {
+                        if let Some(tar_f) = f.create(path.as_str(), oflags) {
                             return Some(FileClass::File(tar_f));
                         } else {
                             return None;
@@ -894,18 +905,18 @@ fn get_file_discpt(
 }
 
 pub fn sys_unlinkat(fd: i32, path: *const u8, flags: u32) -> isize {
-    let task = current_task().unwrap();
     let token = current_user_token();
-    // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
     let path = translated_str(token, path);
+    let flags = OpenFlags::from_bits(flags).unwrap();
+    log::debug!(
+        "sys_unlinkat fd: {}, path: {}, flags: {:?}",
+        fd,
+        path,
+        flags,
+    );
+    let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
-
-    if let Some(file) = get_file_discpt(
-        fd as isize,
-        &path,
-        &inner,
-        OpenFlags::from_bits(flags).unwrap(),
-    ) {
+    if let Some(file) = get_file_discpt(fd as isize, &path, &inner, flags) {
         match file {
             FileClass::File(f) => {
                 f.delete();
@@ -918,45 +929,52 @@ pub fn sys_unlinkat(fd: i32, path: *const u8, flags: u32) -> isize {
     }
 }
 
+// fake implement
 pub fn sys_mount(
-    p_special: *const u8,
-    p_dir: *const u8,
-    p_fstype: *const u8,
-    flags: usize,
-    _data: *const u8,
+    special: *const u8,
+    dir: *const u8,
+    fstype: *const u8,
+    flags: u32,
+    data: *const u8,
 ) -> isize {
-    // TODO
     let token = current_user_token();
-    let special = translated_str(token, p_special);
-    let dir = translated_str(token, p_dir);
-    let fstype = translated_str(token, p_fstype);
+    let special = translated_str(token, special);
+    let dir = translated_str(token, dir);
+    let fstype = translated_str(token, fstype);
+    log::debug!(
+        "sys_mount special: {}, dir: {}, flags: {}, fstype: {}, data: {:#X?}",
+        special,
+        dir,
+        fstype,
+        flags,
+        data
+    );
     MNT_TABLE.lock().mount(special, dir, fstype, flags as u32)
 }
 
-pub fn sys_umount(p_special: *const u8, flags: usize) -> isize {
-    // TODO
+// fake implement
+pub fn sys_umount(p_special: *const u8, flags: u32) -> isize {
     let token = current_user_token();
     let special = translated_str(token, p_special);
+    log::debug!("sys_umount special: {}, flags: {}", special, flags);
     MNT_TABLE.lock().umount(special, flags as u32)
 }
 
-pub fn sys_faccessat(fd: usize, path: *const u8, _time: usize, flags: u32) -> isize {
-    log::debug!("sys_faccessat");
+pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
     // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
     let path = translated_str(token, path);
-    log::debug!("path: {:#?}", path);
-    //print!("\n");
-    //println!("unlink: path = {}", path);
+    let flags = OpenFlags::from_bits(flags).unwrap();
+    log::debug!(
+        "sys_faccessat fd: {}, path: {:#?}: time: {:#?}, flags: {:?}",
+        fd,
+        path,
+        time,
+        flags
+    );
     let inner = task.acquire_inner_lock();
-    //println!("openat: fd = {}", dirfd);
-    if let Some(file) = get_file_discpt(
-        fd as isize,
-        &path,
-        &inner,
-        OpenFlags::from_bits(flags).unwrap(),
-    ) {
+    if let Some(file) = get_file_discpt(fd as isize, &path, &inner, flags) {
         match file {
             FileClass::File(_) => return 0,
             _ => return -1,
@@ -970,13 +988,16 @@ pub fn sys_utimensat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
+    let flags = OpenFlags::from_bits(flags).unwrap();
+    log::debug!(
+        "sys_utimensat: fd: {}, path: {}, time: {:#X?}, flags: {:?}",
+        fd,
+        path,
+        time,
+        flags
+    );
     let inner = task.acquire_inner_lock();
-    if let Some(file) = get_file_discpt(
-        fd as isize,
-        &path,
-        &inner,
-        OpenFlags::from_bits(flags).unwrap(),
-    ) {
+    if let Some(file) = get_file_discpt(fd as isize, &path, &inner, flags) {
         match file {
             FileClass::File(_f) => return 0,
             _ => return -1,
@@ -1011,7 +1032,13 @@ pub fn sys_sendfile(out_fd: isize, in_fd: isize, offset_ptr: *mut usize, count: 
     let task = current_task().unwrap();
     let token = current_user_token();
     let inner = task.acquire_inner_lock();
-
+    log::debug!(
+        "sys_sendfile out_fd: {}, in_fd: {} offset_ptr: {:#X?}, count: {}",
+        out_fd,
+        in_fd,
+        offset_ptr as usize,
+        count
+    );
     if let Some(file_in) = &inner.fd_table[in_fd as usize] {
         // file_in exists
         match &file_in {
@@ -1048,7 +1075,12 @@ pub fn sys_sendfile(out_fd: isize, in_fd: isize, offset_ptr: *mut usize, count: 
 }
 
 pub fn sys_lseek(fd: usize, offset: isize, whence: i32) -> isize {
-    // log::debug!("sys_lseek");
+    log::debug!(
+        "sys_lseek fd: {}, offset: {}, whence: {}",
+        fd,
+        offset,
+        whence
+    );
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
 
@@ -1067,10 +1099,11 @@ pub fn sys_lseek(fd: usize, offset: isize, whence: i32) -> isize {
     }
 }
 
-pub fn sys_statfs(_path: *const u8, buf: *mut u8) -> isize {
+pub fn sys_statfs(path: *const u8, buf: *mut u8) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
-
+    let path = translated_str(token, path);
+    log::debug!("sys_statfs path: {}, buf: {:#X?}", path, buf as usize);
     let buf_vec = translated_byte_buffer(token, buf, size_of::<StatFS>());
     let mut userbuf = UserBuffer::new(buf_vec);
 
@@ -1079,6 +1112,7 @@ pub fn sys_statfs(_path: *const u8, buf: *mut u8) -> isize {
     0
 }
 
+// no implement, just for debug
 pub fn sys_renameat2(
     olddirfd: i32,
     oldpath: *const u8,

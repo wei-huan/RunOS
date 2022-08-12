@@ -1,7 +1,7 @@
 use crate::config::page_aligned_up;
 use crate::cpu::{current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
-use crate::fs::{open, DiskInodeType, OpenFlags};
+use crate::fs::{open, OpenFlags};
 use crate::mm::{
     translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
 };
@@ -253,7 +253,6 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
         inner.current_path.as_str(),
         path.as_str(),
         OpenFlags::RDONLY,
-        DiskInodeType::File,
     ) {
         drop(inner);
         let all_data = app_inode.read_all();

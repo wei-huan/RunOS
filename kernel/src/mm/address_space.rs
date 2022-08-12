@@ -7,7 +7,7 @@ use crate::config::{
     DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE, USER_STACK_BASE,
     USER_STACK_SIZE,
 };
-use crate::fs::{open, DiskInodeType, OpenFlags};
+use crate::fs::{open, OpenFlags};
 use crate::platform::MMIO;
 use crate::task::{
     AuxHeader, AT_BASE, AT_CLKTCK, AT_EGID, AT_ENTRY, AT_EUID, AT_FLAGS, AT_GID, AT_HWCAP,
@@ -323,7 +323,7 @@ impl AddrSpace {
     }
     /// load dynamic link library loader
     pub fn load_dll_loader(&mut self) -> usize {
-        if let Some(app_vfile) = open("/", "libc.so", OpenFlags::RDONLY, DiskInodeType::File) {
+        if let Some(app_vfile) = open("/", "libc.so", OpenFlags::RDONLY) {
             let all_data = app_vfile.read_all();
             let elf_data = all_data.as_slice();
             let elf = xmas_elf::ElfFile::new(elf_data).unwrap();

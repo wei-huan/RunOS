@@ -2,7 +2,7 @@ mod round_robin;
 
 use crate::config::PAGE_SIZE;
 use crate::cpu::take_my_cpu;
-use crate::fs::{open, DiskInodeType, OpenFlags};
+use crate::fs::{open, OpenFlags};
 use crate::mm::add_free;
 use crate::task::{TaskContext, TaskControlBlock};
 use alloc::collections::BTreeMap;
@@ -62,7 +62,7 @@ extern "C" {
 
 lazy_static! {
     pub static ref INITPROC: Arc<TaskControlBlock> = Arc::new({
-        let inode = open("/", "initproc", OpenFlags::RDONLY, DiskInodeType::File).unwrap();
+        let inode = open("/", "initproc", OpenFlags::RDONLY).unwrap();
         // println!("open initproc finish");
         let v = inode.read_all();
         // println!("read_all initproc finish");
