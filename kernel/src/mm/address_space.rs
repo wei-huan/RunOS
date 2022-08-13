@@ -321,54 +321,54 @@ impl AddrSpace {
         // println!("mapping kernel finish");
         kernel_space
     }
-    /// load dynamic link library loader
-    pub fn load_dll_loader(&mut self) -> usize {
-        if let Some(app_vfile) = open("/", "libc.so", OpenFlags::RDONLY) {
-            let all_data = app_vfile.read_all();
-            let elf_data = all_data.as_slice();
-            let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
-            let elf_header = elf.header;
-            let magic = elf_header.pt1.magic;
-            assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
-            let ph_count = elf_header.pt2.ph_count();
-            for i in 0..ph_count {
-                let ph = elf.program_header(i).unwrap();
-                let start_va: VirtAddr = (DLL_LOADER_BASE + ph.virtual_addr() as usize).into();
-                let end_va: VirtAddr =
-                    (DLL_LOADER_BASE + ph.virtual_addr() as usize + ph.mem_size() as usize).into();
-                let offset = start_va.page_offset();
-                if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
-                    let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-                    let name: String =
-                        "dll_".to_string() + &sect.get_name(&elf).unwrap().to_string();
-                    let mut map_perm = MapPermission::U;
-                    let ph_flags = ph.flags();
-                    if ph_flags.is_read() {
-                        map_perm |= MapPermission::R;
-                    }
-                    if ph_flags.is_write() {
-                        map_perm |= MapPermission::W;
-                    }
-                    if ph_flags.is_execute() {
-                        map_perm |= MapPermission::X;
-                    }
-                    let section = Section::new(name, start_va, end_va, MapType::Framed, map_perm);
-                    self.push_section_with_offset(
-                        section,
-                        offset,
-                        Some(
-                            &elf.input
-                                [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
-                        ),
-                    );
-                }
-            }
-            return elf_header.pt2.entry_point() as usize;
-        } else {
-            log::error!("can't find dll loader libc.so");
-            return 0;
-        }
-    }
+    // /// load dynamic link library loader
+    // pub fn load_dll_loader(&mut self) -> usize {
+    //     if let Some(app_vfile) = open("/", "libc.so", OpenFlags::RDONLY) {
+    //         let all_data = app_vfile.read_all();
+    //         let elf_data = all_data.as_slice();
+    //         let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
+    //         let elf_header = elf.header;
+    //         let magic = elf_header.pt1.magic;
+    //         assert_eq!(magic, [0x7f, 0x45, 0x4c, 0x46], "invalid elf!");
+    //         let ph_count = elf_header.pt2.ph_count();
+    //         for i in 0..ph_count {
+    //             let ph = elf.program_header(i).unwrap();
+    //             let start_va: VirtAddr = (DLL_LOADER_BASE + ph.virtual_addr() as usize).into();
+    //             let end_va: VirtAddr =
+    //                 (DLL_LOADER_BASE + ph.virtual_addr() as usize + ph.mem_size() as usize).into();
+    //             let offset = start_va.page_offset();
+    //             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
+    //                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+    //                 let name: String =
+    //                     "dll_".to_string() + &sect.get_name(&elf).unwrap().to_string();
+    //                 let mut map_perm = MapPermission::U;
+    //                 let ph_flags = ph.flags();
+    //                 if ph_flags.is_read() {
+    //                     map_perm |= MapPermission::R;
+    //                 }
+    //                 if ph_flags.is_write() {
+    //                     map_perm |= MapPermission::W;
+    //                 }
+    //                 if ph_flags.is_execute() {
+    //                     map_perm |= MapPermission::X;
+    //                 }
+    //                 let section = Section::new(name, start_va, end_va, MapType::Framed, map_perm);
+    //                 self.push_section_with_offset(
+    //                     section,
+    //                     offset,
+    //                     Some(
+    //                         &elf.input
+    //                             [ph.offset() as usize..(ph.offset() + ph.file_size()) as usize],
+    //                     ),
+    //                 );
+    //             }
+    //         }
+    //         return elf_header.pt2.entry_point() as usize;
+    //     } else {
+    //         log::error!("can't find dll loader libc.so");
+    //         return 0;
+    //     }
+    // }
     /// Include sections in elf and trampoline and TrapContext and user stack,
     /// also returns user_sp and entry point.
     pub fn create_user_space(elf_data: &[u8]) -> (Self, usize, usize, usize, Vec<AuxHeader>) {
@@ -453,15 +453,15 @@ impl AddrSpace {
                 }
             }
             // load dll
-            else if ph.get_type().unwrap() == xmas_elf::program::Type::Interp {
-                at_base = user_space.load_dll_loader();
-                // log::debug!("Have Interp, need dll {:#X?}", at_base);
-                if at_base != 0 {
-                    at_base += DLL_LOADER_BASE;
-                } else {
-                    log::error!("dynamic linker error !");
-                }
-            }
+            // else if ph.get_type().unwrap() == xmas_elf::program::Type::Interp {
+            //     at_base = user_space.load_dll_loader();
+            //     // log::debug!("Have Interp, need dll {:#X?}", at_base);
+            //     if at_base != 0 {
+            //         at_base += DLL_LOADER_BASE;
+            //     } else {
+            //         log::error!("dynamic linker error !");
+            //     }
+            // }
             // else do nothing
         }
 

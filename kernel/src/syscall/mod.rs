@@ -3,13 +3,13 @@
 
 mod errorno;
 mod fs;
-mod key;
+// mod key;
 mod process;
 mod signal;
-mod sysinfo;
-mod syslog;
+// mod sysinfo;
+// mod syslog;
 mod time;
-mod usage;
+// mod usage;
 mod utsname;
 
 use crate::cpu::current_task;
@@ -19,13 +19,13 @@ use crate::timer::{TimeVal, Times};
 pub use errorno::*;
 
 use fs::*;
-use key::*;
+// use key::*;
 use process::*;
 use signal::*;
-use sysinfo::*;
-use syslog::*;
+// use sysinfo::*;
+// use syslog::*;
 use time::*;
-use usage::*;
+// use usage::*;
 use utsname::*;
 
 const SYSCALL_GETCWD: usize = 17;
@@ -231,14 +231,14 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_IOCTL => sys_ioctl(),
         SYSCALL_MKDIRAT => sys_mkdir(args[0] as isize, args[1] as *const u8, args[2] as u32),
         SYSCALL_UNLINKAT => sys_unlinkat(args[0] as i32, args[1] as *const u8, args[2] as u32),
-        SYSCALL_UMOUNT2 => sys_umount(args[0] as *const u8, args[1] as _),
-        SYSCALL_MOUNT => sys_mount(
-            args[0] as _,
-            args[1] as _,
-            args[2] as _,
-            args[3] as _,
-            args[4] as _,
-        ),
+        // SYSCALL_UMOUNT2 => sys_umount(args[0] as *const u8, args[1] as _),
+        // SYSCALL_MOUNT => sys_mount(
+        //     args[0] as _,
+        //     args[1] as _,
+        //     args[2] as _,
+        //     args[3] as _,
+        //     args[4] as _,
+        // ),
         SYSCALL_STATFS => sys_statfs(args[0] as _, args[1] as _),
         SYSCALL_FACCESSAT => sys_faccessat(args[0], args[1] as *const u8, args[2], 0),
         SYSCALL_CHDIR => sys_chdir(args[0] as *const u8),
@@ -294,11 +294,11 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         // SYSCALL_GETITIMER => 0,
         SYSCALL_SETITIMER => sys_setitimer(args[0] as _, args[1] as _, args[2] as _),
         SYSCALL_CLOCK_GETTIME => sys_clock_gettime(args[0] as _, args[1] as _),
-        // SYSCALL_SYSLOG => sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
+        SYSCALL_SYSLOG => 0, // sys_syslog(args[0] as isize, args[1] as *const u8, args[2] as isize),
         SYSCALL_SCHED_YIELD => sys_yield(),
         SYSCALL_KILL => sys_kill(args[0] as _, args[1] as _),
         SYSCALL_TKILL => sys_tkill(args[0], args[1] as _),
-        SYSCALL_TGKILL => sys_tgkill(args[0], args[1], args[2] as _),
+        // SYSCALL_TGKILL => sys_tgkill(args[0], args[1], args[2] as _),
         SYSCALL_SIGACTION => sys_sigaction(
             args[0] as i32,
             args[1] as *const SignalAction,
@@ -308,7 +308,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         // SYSCALL_RT_SIGTIMEDWAIT => 0,
         SYSCALL_SIGRETURN => sys_sigretrun(),
         SYSCALL_TIMES => sys_times(unsafe { &mut *(args[0] as *mut Times) }),
-        SYSCALL_SETPGID => sys_setpgid(),
+        // SYSCALL_SETPGID => sys_setpgid(),
         SYSCALL_GETPGID => sys_getpgid(),
         SYSCALL_UNAME => sys_uname(args[0] as *mut u8),
         SYSCALL_GETRUSAGE => 0, //sys_getrusage(args[0] as _, args[1] as _),
@@ -321,7 +321,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_GETGID => sys_getgid(),
         SYSCALL_GETEGID => sys_getegid(),
         SYSCALL_GETTID => sys_gettid(),
-        // SYSCALL_SYSINFO => sys_sysinfo(args[0] as *mut u8),
+        SYSCALL_SYSINFO => 0, // sys_sysinfo(args[0] as *mut u8),
         // SYSCALL_SOCKET => 0,
         // SYSCALL_SOCKETPAIR => 0,
         // SYSCALL_BIND => 0,

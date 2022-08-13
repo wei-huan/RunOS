@@ -25,7 +25,7 @@ pub trait File: Send + Sync {
 
 pub use dev::open_device_file;
 pub use finfo::*;
-pub use inode::{ch_dir, clear_cache, init_rootfs, list_apps, open, OSInode, OpenFlags};
+pub use inode::{ch_dir, clear_cache, init_rootfs, list_rootfs, open, OSInode, OpenFlags};
 pub use mount::MNT_TABLE;
 pub use pipe::{make_pipe, Pipe};
 pub use stdio::{Stdin, Stdout};

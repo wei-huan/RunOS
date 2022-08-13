@@ -58,7 +58,7 @@ fn clear_bss() {
 #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 #[no_mangle]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    if !SMP_START.load(Ordering::Acquire) {
+    // if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         // println!("here 0");
         trap::init();
@@ -70,7 +70,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         fs::init_rootfs();
         scheduler::add_initproc();
         // logger::show_basic_info();
-        // fs::list_apps();
+        fs::list_rootfs();
         timer::init();
         // SMP_START will turn to true in this function
         // cpu::boot_all_harts(hartid);
@@ -79,17 +79,17 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         //     alloc::format!("Main Hart {} successfully init", hart_id()).green()
         // );
         scheduler::schedule();
-    } else {
-        trap::init();
-        mm::init();
-        fpu::init();
-        timer::init();
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Hart {} successfully init", hart_id()).green()
-        // );
-        scheduler::schedule();
-    }
+    // } else {
+    //     trap::init();
+    //     mm::init();
+    //     fpu::init();
+    //     timer::init();
+    //     // log::info!(
+    //     //     "{}",
+    //     //     alloc::format!("Hart {} successfully init", hart_id()).green()
+    //     // );
+    //     scheduler::schedule();
+    // }
 }
 
 // k210 rustsbi
@@ -107,7 +107,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         scheduler::add_initproc();
         fs::init_rootfs();
         // logger::show_basic_info();
-        // fs::list_apps();
+        // fs::list_rootfs();
         timer::init();
         // SMP_START will turn to true in this function
         // cpu::boot_all_harts(hartid);

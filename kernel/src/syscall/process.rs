@@ -87,10 +87,12 @@ pub fn sys_set_tid_address(ptr: *mut u32) -> isize {
 }
 
 pub fn sys_setpgid() -> isize {
+    log::debug!("sys_setpgid");
     0
 }
 
 pub fn sys_getpgid() -> isize {
+    log::debug!("sys_getpgid");
     0
 }
 
@@ -105,24 +107,28 @@ pub fn sys_getppid() -> isize {
 }
 
 pub fn sys_getuid() -> isize {
+    log::debug!("sys_getuid");
     0 // root user
 }
 
 pub fn sys_geteuid() -> isize {
+    log::debug!("sys_geteuid");
     0 // root user
 }
 
 pub fn sys_getgid() -> isize {
+    log::debug!("sys_getgid");
     0 // root group
 }
 
 pub fn sys_getegid() -> isize {
+    log::debug!("sys_getegid");
     0 // root group
 }
 
-// For user, tid is pid in kernel
 pub fn sys_gettid() -> isize {
-    current_task().unwrap().pid.0 as isize
+    log::debug!("sys_gettid");
+    current_task().unwrap().getpid() as isize
 }
 
 bitflags! {
@@ -247,6 +253,7 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
             args = args.add(1);
         }
     }
+    // println!("args_vec: {:#?}", args_vec);
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
     if let Some(app_inode) = open(

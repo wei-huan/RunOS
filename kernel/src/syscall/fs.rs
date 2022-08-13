@@ -301,9 +301,10 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
             return -ENOENT;
         }
     } else {
-        if let Some(tar_f) = dir_inode.find(path.as_str(), flags) {
+        if let Some(file) = dir_inode.find(path.as_str(), flags) {
             let fd = inner.alloc_fd();
-            inner.fd_table[fd] = Some(FileClass::File(tar_f));
+            inner.fd_table[fd] = Some(FileClass::File(file));
+            log::debug!("sys_open_at success fd: {}", fd);
             return fd as isize;
         } else {
             return -ENOENT;

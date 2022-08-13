@@ -1,13 +1,16 @@
-#![no_std]
-#![no_main]
+// #![no_std]
+// #![no_main]
 
-extern crate alloc;
+// extern crate alloc;
 
-#[macro_use]
-extern crate user;
+// #[macro_use]
+// extern crate user;
 
-use alloc::vec::Vec;
-use user::{exec, fork, waitpid};
+// use alloc::{
+//     string::{String, ToString},
+//     vec::Vec,
+// };
+// use user::{exec, fork, waitpid};
 
 // fn final_round_one_test() {
 //     let app_name = "runtest.exe\0";
@@ -271,97 +274,233 @@ use user::{exec, fork, waitpid};
 //     }
 // }
 
-fn final_round_two_test() {
-    // busybox
-    // let mut busybox_args = Vec::new();
-    // busybox_args.push("busybox_testcode.sh\0".as_ptr());
-    // busybox_args.push(core::ptr::null::<u8>());
-    // let pid = fork();
-    // if pid == 0 {
-    //     exec("busybox_testcode.sh\0", busybox_args.as_slice());
-    // } else {
-    //     let mut exit_code = 0;
-    //     waitpid(pid as usize, &mut exit_code);
-    // }
+// fn busybox_test() {
+//     // no busybox bash
+//     let mut busybox_tests_with_args = Vec::new();
+//     busybox_tests_with_args.push("echo \"#### independent command test\"");
+//     busybox_tests_with_args.push("ash -c exit");
+//     busybox_tests_with_args.push("sh -c exit");
+//     busybox_tests_with_args.push("basename /aaa/bbb");
+//     busybox_tests_with_args.push("cal");
+//     busybox_tests_with_args.push("clear");
+//     busybox_tests_with_args.push("date");
+//     busybox_tests_with_args.push("df");
+//     busybox_tests_with_args.push("dirname /aaa/bbb");
+//     busybox_tests_with_args.push("dmesg");
+//     busybox_tests_with_args.push("du");
+//     busybox_tests_with_args.push("expr 1 + 1");
+//     busybox_tests_with_args.push("false");
+//     busybox_tests_with_args.push("true");
+//     busybox_tests_with_args.push("which ls");
+//     busybox_tests_with_args.push("uname");
+//     busybox_tests_with_args.push("uptime");
+//     busybox_tests_with_args.push("printf \"abc\n\"");
+//     busybox_tests_with_args.push("ps");
+//     busybox_tests_with_args.push("pwd");
+//     busybox_tests_with_args.push("free");
+//     busybox_tests_with_args.push("hwclock");
+//     busybox_tests_with_args.push("kill 10");
+//     busybox_tests_with_args.push("ls");
+//     busybox_tests_with_args.push("sleep 1");
+//     busybox_tests_with_args.push("echo \"#### file opration test\"");
+//     busybox_tests_with_args.push("touch test.txt");
+//     busybox_tests_with_args.push("echo \"hello world\" > test.txt");
+//     busybox_tests_with_args.push("cat test.txt");
+//     busybox_tests_with_args.push("cut -c 3 test.txt");
+//     busybox_tests_with_args.push("od test.txt");
+//     busybox_tests_with_args.push("head test.txt");
+//     busybox_tests_with_args.push("tail test.txt");
+//     busybox_tests_with_args.push("hexdump -C test.txt");
+//     busybox_tests_with_args.push("md5sum test.txt");
+//     busybox_tests_with_args.push("echo \"ccccccc\" >> test.txt");
+//     busybox_tests_with_args.push("echo \"bbbbbbb\" >> test.txt");
+//     busybox_tests_with_args.push("echo \"aaaaaaa\" >> test.txt");
+//     busybox_tests_with_args.push("echo \"2222222\" >> test.txt");
+//     busybox_tests_with_args.push("echo \"1111111\" >> test.txt");
+//     busybox_tests_with_args.push("echo \"bbbbbbb\" >> test.txt");
+//     busybox_tests_with_args.push("sort test.txt | ./busybox uniq");
+//     busybox_tests_with_args.push("stat test.txt");
+//     busybox_tests_with_args.push("strings test.txt");
+//     busybox_tests_with_args.push("wc test.txt");
+//     busybox_tests_with_args.push("[ -f test.txt ]");
+//     busybox_tests_with_args.push("more test.txt");
+//     busybox_tests_with_args.push("rm test.txt");
+//     busybox_tests_with_args.push("mkdir test_dir");
+//     busybox_tests_with_args.push("mv test_dir test");
+//     busybox_tests_with_args.push("rmdir test");
+//     busybox_tests_with_args.push("grep hello busybox_cmd.txt");
+//     busybox_tests_with_args.push("cp busybox_cmd.txt busybox_cmd.bak");
+//     busybox_tests_with_args.push("rm busybox_cmd.bak");
+//     busybox_tests_with_args.push("find -name \"busybox_cmd.txt\"");
 
-    // lua
-    let mut lua_tests = Vec::new();
-    lua_tests.push("date.lua\0");
-    lua_tests.push("file_io.lua\0");
-    lua_tests.push("max_min.lua\0");
-    lua_tests.push("random.lua\0");
-    lua_tests.push("remove.lua\0");
-    lua_tests.push("round_num.lua\0");
-    lua_tests.push("sin30.lua\0");
-    lua_tests.push("sort.lua\0");
-    lua_tests.push("strings.lua\0");
+//     for busybox_test_with_args in busybox_tests_with_args {
+//         let args: Vec<_> = busybox_test_with_args.split(' ').collect();
+//         // println!("args: {:#?}", args);
+//         let args_copy: Vec<_> = args
+//             .iter()
+//             .filter(|&arg| !arg.is_empty())
+//             .map(|&arg| {
+//                 let mut string = String::new();
+//                 string.push_str(arg);
+//                 string.push('\0');
+//                 string
+//             })
+//             .collect();
+//         // println!("args_copy: {:#?}", args_copy);
+//         let mut busybox_args: Vec<*const u8> = Vec::new();
+//         busybox_args.push("./busybox\0".as_ptr());
+//         for arg in args_copy.iter() {
+//             busybox_args.push(arg.as_ptr());
+//         }
+//         busybox_args.push(core::ptr::null::<u8>());
+//         let pid = fork();
+//         if pid == 0 {
+//             // println!("busybox_args: {:#?}", busybox_args);
+//             exec("./busybox\0", busybox_args.as_slice());
+//         } else {
+//             let mut exit_code = 0;
+//             waitpid(pid as usize, &mut exit_code);
+//             if exit_code == 0 {
+//                 println!("testcase busybox {} success", busybox_test_with_args);
+//             } else {
+//                 println!("testcase busybox {} fail", busybox_test_with_args);
+//             }
+//         }
+//     }
 
-    let mut lua_args: Vec<*const u8> = Vec::new();
-    lua_args.push("./test.sh\0".as_ptr());
-    for lua_test in lua_tests {
-        lua_args.push(lua_test.as_ptr());
-        lua_args.push(core::ptr::null::<u8>());
-        let pid = fork();
-        if pid == 0 {
-            exec("./test.sh\0", lua_args.as_slice());
-        } else {
-            let mut exit_code = 0;
-            waitpid(pid as usize, &mut exit_code);
-        }
-        lua_args.pop();
-        lua_args.pop();
-    }
+//     // with busybox bash
+//     // let mut busybox_args = Vec::new();
+//     // busybox_args.push("busybox_testcode.sh\0".as_ptr());
+//     // busybox_args.push(core::ptr::null::<u8>());
+//     // let pid = fork();
+//     // if pid == 0 {
+//     //     exec("busybox_testcode.sh\0", busybox_args.as_slice());
+//     // } else {
+//     //     let mut exit_code = 0;
+//     //     waitpid(pid as usize, &mut exit_code);
+//     // }
+// }
 
-    // lmbench .sh
-    let mut lmbench_args: Vec<*const u8> = Vec::new();
-    lmbench_args.push("lmbench_testcode.sh\0".as_ptr());
-    lmbench_args.push(core::ptr::null::<u8>());
-    let pid = fork();
-    if pid == 0 {
-        exec("lmbench_testcode.sh\0", lmbench_args.as_slice());
-    } else {
-        let mut exit_code = 0;
-        waitpid(pid as usize, &mut exit_code);
-    }
+// fn lua_test() {
+//     // no busybox bash
+//     let mut lua_tests = Vec::new();
+//     lua_tests.push("date.lua\0");
+//     lua_tests.push("file_io.lua\0");
+//     lua_tests.push("max_min.lua\0");
+//     lua_tests.push("random.lua\0");
+//     lua_tests.push("remove.lua\0");
+//     lua_tests.push("round_num.lua\0");
+//     lua_tests.push("sin30.lua\0");
+//     lua_tests.push("sort.lua\0");
+//     lua_tests.push("strings.lua\0");
 
-    // lmbench
-    // let mut lmbench_tests = Vec::new();
-    // lmbench_tests.push("null\0");
-    // lmbench_tests.push("read\0");
-    // lmbench_tests.push("write\0");
-    // lmbench_tests.push("random.lua\0");
-    // lmbench_tests.push("remove.lua\0");
-    // lmbench_tests.push("round_num.lua\0");
-    // lmbench_tests.push("sin30.lua\0");
-    // lmbench_tests.push("sort.lua\0");
-    // lmbench_tests.push("strings.lua\0");
+//     let mut lua_args: Vec<*const u8> = Vec::new();
+//     lua_args.push("./lua\0".as_ptr());
+//     for lua_test in lua_tests {
+//         lua_args.push(lua_test.as_ptr());
+//         lua_args.push(core::ptr::null::<u8>());
+//         let pid = fork();
+//         if pid == 0 {
+//             exec("./lua\0", lua_args.as_slice());
+//         } else {
+//             let mut exit_code = 0;
+//             waitpid(pid as usize, &mut exit_code);
+//             if exit_code == 0 {
+//                 println!("testcase lua {} success", lua_test);
+//             } else {
+//                 println!("testcase lua {} fail", lua_test);
+//             }
+//         }
+//         lua_args.pop();
+//         lua_args.pop();
+//     }
 
-    // let mut lmbench_args: Vec<*const u8> = Vec::new();
-    // lmbench_args.push("lmbench_all\0".as_ptr());
-    // lmbench_args.push("lat_syscall\0".as_ptr());
-    // lmbench_args.push("-P\0".as_ptr());
-    // lmbench_args.push("1\0".as_ptr());
-    // for lmbench_test in lmbench_tests {
-    //     lua_args.push(lmbench_test.as_ptr());
-    //     lua_args.push(core::ptr::null::<u8>());
-    //     let pid = fork();
-    //     if pid == 0 {
-    //         exec("lmbench_all\0", lmbench_args.as_slice());
-    //     } else {
-    //         let mut exit_code = 0;
-    //         waitpid(pid as usize, &mut exit_code);
-    //     }
-    //     lmbench_args.pop();
-    //     lmbench_args.pop();
-    // }
-}
+//     // with busybox bash
+//     // let mut lua_tests = Vec::new();
+//     // lua_tests.push("date.lua\0");
+//     // lua_tests.push("file_io.lua\0");
+//     // lua_tests.push("max_min.lua\0");
+//     // lua_tests.push("random.lua\0");
+//     // lua_tests.push("remove.lua\0");
+//     // lua_tests.push("round_num.lua\0");
+//     // lua_tests.push("sin30.lua\0");
+//     // lua_tests.push("sort.lua\0");
+//     // lua_tests.push("strings.lua\0");
 
-#[no_mangle]
-pub fn main() -> i32 {
-    println!("Rust user shell");
-    final_round_two_test();
-    0
-}
+//     // let mut lua_args: Vec<*const u8> = Vec::new();
+//     // lua_args.push("./test.sh\0".as_ptr());
+//     // for lua_test in lua_tests {
+//     //     lua_args.push(lua_test.as_ptr());
+//     //     lua_args.push(core::ptr::null::<u8>());
+//     //     let pid = fork();
+//     //     if pid == 0 {
+//     //         exec("./test.sh\0", lua_args.as_slice());
+//     //     } else {
+//     //         let mut exit_code = 0;
+//     //         waitpid(pid as usize, &mut exit_code);
+//     //     }
+//     //     lua_args.pop();
+//     //     lua_args.pop();
+//     // }
+// }
+
+// fn lmbench_test() {
+//     // no busybox bash
+//     let mut lmbench_tests_with_args = Vec::new();
+//     lmbench_tests_with_args.push("lat_syscall -P 1 null\0");
+//     lmbench_tests_with_args.push("read\0");
+//     lmbench_tests_with_args.push("write\0");
+//     lmbench_tests_with_args.push("random.lua\0");
+//     lmbench_tests_with_args.push("remove.lua\0");
+//     lmbench_tests_with_args.push("round_num.lua\0");
+//     lmbench_tests_with_args.push("sin30.lua\0");
+//     lmbench_tests_with_args.push("sort.lua\0");
+//     lmbench_tests_with_args.push("strings.lua\0");
+
+//     let mut lmbench_args: Vec<*const u8> = Vec::new();
+//     lmbench_args.push("lmbench_all\0".as_ptr());
+//     lmbench_args.push("lat_syscall\0".as_ptr());
+//     lmbench_args.push("-P\0".as_ptr());
+//     lmbench_args.push("1\0".as_ptr());
+//     for lmbench_test in lmbench_tests_with_args {
+//         lmbench_args.push(lmbench_test.as_ptr());
+//         lmbench_args.push(core::ptr::null::<u8>());
+//         let pid = fork();
+//         if pid == 0 {
+//             exec("lmbench_all\0", lmbench_args.as_slice());
+//         } else {
+//             let mut exit_code = 0;
+//             waitpid(pid as usize, &mut exit_code);
+//         }
+//         lmbench_args.pop();
+//         lmbench_args.pop();
+//     }
+
+//     // with busybox bash
+//     let mut lmbench_args: Vec<*const u8> = Vec::new();
+//     lmbench_args.push("lmbench_testcode.sh\0".as_ptr());
+//     lmbench_args.push(core::ptr::null::<u8>());
+//     let pid = fork();
+//     if pid == 0 {
+//         exec("lmbench_testcode.sh\0", lmbench_args.as_slice());
+//     } else {
+//         let mut exit_code = 0;
+//         waitpid(pid as usize, &mut exit_code);
+//     }
+// }
+
+// fn final_round_two_test() {
+//     busybox_test();
+//     lua_test();
+//     // lmbench_test();
+// }
+
+// #[no_mangle]
+// pub fn main() -> i32 {
+//     println!("Rust user shell");
+//     final_round_two_test();
+//     0
+// }
 
 // #![no_std]
 // #![no_main]
@@ -577,3 +716,257 @@ pub fn main() -> i32 {
 //         }
 //     }
 // }
+
+#![no_std]
+#![no_main]
+#![allow(clippy::println_empty_string)]
+
+extern crate alloc;
+
+#[macro_use]
+extern crate user;
+
+use alloc::string::String;
+use alloc::vec::Vec;
+use user::{close, dup, exec, fork, open, pipe, waitpid, OpenFlags};
+
+#[derive(Debug)]
+struct ProcessArguments {
+    input: String,
+    output: String,
+    args_copy: Vec<String>,
+    args_addr: Vec<*const u8>,
+}
+
+impl ProcessArguments {
+    pub fn new(command: &str) -> Self {
+        let args: Vec<_> = command.split(' ').collect();
+        let mut args_copy: Vec<String> = args
+            .iter()
+            .filter(|&arg| !arg.is_empty())
+            .map(|&arg| {
+                let mut string = String::new();
+                string.push_str(arg);
+                string.push('\0');
+                string
+            })
+            .collect();
+
+        // redirect input
+        let mut input = String::new();
+        if let Some((idx, _)) = args_copy
+            .iter()
+            .enumerate()
+            .find(|(_, arg)| arg.as_str() == "<\0")
+        {
+            input = args_copy[idx + 1].clone();
+            args_copy.drain(idx..=idx + 1);
+        }
+
+        // redirect output
+        let mut output = String::new();
+        if let Some((idx, _)) = args_copy
+            .iter()
+            .enumerate()
+            .find(|(_, arg)| arg.as_str() == ">\0")
+        {
+            output = args_copy[idx + 1].clone();
+            args_copy.drain(idx..=idx + 1);
+        }
+
+        let mut args_addr: Vec<*const u8> = args_copy.iter().map(|arg| arg.as_ptr()).collect();
+        args_addr.push(core::ptr::null::<u8>());
+
+        Self {
+            input,
+            output,
+            args_copy,
+            args_addr,
+        }
+    }
+}
+
+static BUSYBOX_LUA_TESTS: [&str; 64] = [
+    "busybox echo \"#### independent command test\"",
+    "busybox ash -c exit",
+    "busybox sh -c exit",
+    "busybox basename /aaa/bbb",
+    "busybox cal",
+    "busybox clear",
+    "busybox date",
+    "busybox df",
+    "busybox dirname /aaa/bbb",
+    "busybox dmesg",
+    "busybox du",
+    "busybox expr 1 + 1",
+    "busybox false",
+    "busybox true",
+    "busybox which ls",
+    "busybox uname",
+    "busybox uptime",
+    "busybox printf \"abc\n\"",
+    "busybox ps",
+    "busybox pwd",
+    "busybox free",
+    "busybox hwclock",
+    "busybox kill 10",
+    "busybox ls",
+    "busybox sleep 1",
+    "busybox echo \"#### file opration test\"",
+    "busybox touch test.txt",
+    "busybox echo \"hello world\" > test.txt",
+    "busybox cat test.txt",
+    "busybox cut -c 3 test.txt",
+    "busybox od test.txt",
+    "busybox head test.txt",
+    "busybox tail test.txt",
+    "busybox hexdump -C test.txt",
+    "busybox md5sum test.txt",
+    "busybox echo \"ccccccc\" >> test.txt",
+    "busybox echo \"bbbbbbb\" >> test.txt",
+    "busybox echo \"aaaaaaa\" >> test.txt",
+    "busybox echo \"2222222\" >> test.txt",
+    "busybox echo \"1111111\" >> test.txt",
+    "busybox echo \"bbbbbbb\" >> test.txt",
+    "busybox sort test.txt | ./busybox uniq",
+    "busybox stat test.txt",
+    "busybox strings test.txt",
+    "busybox wc test.txt",
+    "busybox [ -f test.txt ]",
+    "busybox more test.txt",
+    "busybox rm test.txt",
+    "busybox mkdir test_dir",
+    "busybox mv test_dir test",
+    "busybox rmdir test",
+    "busybox grep hello busybox_cmd.txt",
+    "busybox cp busybox_cmd.txt busybox_cmd.bak",
+    "busybox rm busybox_cmd.bak",
+    "busybox find -name \"busybox_cmd.txt\"",
+    "lua date.lua",
+    "lua file_io.lua",
+    "lua max_min.lua",
+    "lua random.lua",
+    "lua remove.lua",
+    "lua round_num.lua",
+    "lua sin30.lua",
+    "lua sort.lua",
+    "lua strings.lua",
+];
+
+#[no_mangle]
+pub fn main() -> i32 {
+    println!("Rust user shell");
+    for line in BUSYBOX_LUA_TESTS {
+        let splited: Vec<_> = line.split('|').collect();
+        let process_arguments_list: Vec<_> = splited
+            .iter()
+            .map(|&cmd| ProcessArguments::new(cmd))
+            .collect();
+        let mut valid = true;
+        for (i, process_args) in process_arguments_list.iter().enumerate() {
+            if i == 0 {
+                if !process_args.output.is_empty() {
+                    valid = false;
+                }
+            } else if i == process_arguments_list.len() - 1 {
+                if !process_args.input.is_empty() {
+                    valid = false;
+                }
+            } else if !process_args.output.is_empty() || !process_args.input.is_empty() {
+                valid = false;
+            }
+        }
+        if process_arguments_list.len() == 1 {
+            valid = true;
+        }
+        if !valid {
+            println!("Invalid command: Inputs/Outputs cannot be correctly binded!");
+        } else {
+            // create pipes
+            let mut pipes_fd: Vec<[usize; 2]> = Vec::new();
+            if !process_arguments_list.is_empty() {
+                for _ in 0..process_arguments_list.len() - 1 {
+                    let mut pipe_fd = [0usize; 2];
+                    pipe(&mut pipe_fd);
+                    pipes_fd.push(pipe_fd);
+                }
+            }
+            let mut children: Vec<_> = Vec::new();
+            for (i, process_argument) in process_arguments_list.iter().enumerate() {
+                let pid = fork();
+                if pid == 0 {
+                    let input = &process_argument.input;
+                    let output = &process_argument.output;
+                    let args_copy = &process_argument.args_copy;
+                    let args_addr = &process_argument.args_addr;
+                    // redirect input
+                    if !input.is_empty() {
+                        let input_fd = open(input.as_str(), OpenFlags::RDONLY);
+                        if input_fd == -1 {
+                            println!("Error when opening file {}", input);
+                            return -4;
+                        }
+                        let input_fd = input_fd as usize;
+                        close(0);
+                        assert_eq!(dup(input_fd), 0);
+                        close(input_fd);
+                    }
+                    // redirect output
+                    if !output.is_empty() {
+                        let output_fd =
+                            open(output.as_str(), OpenFlags::CREATE | OpenFlags::WRONLY);
+                        if output_fd == -1 {
+                            println!("Error when opening file {}", output);
+                            return -4;
+                        }
+                        let output_fd = output_fd as usize;
+                        close(1);
+                        assert_eq!(dup(output_fd), 1);
+                        close(output_fd);
+                    }
+                    // receive input from the previous process
+                    if i > 0 {
+                        close(0);
+                        let read_end = pipes_fd.get(i - 1).unwrap()[0];
+                        assert_eq!(dup(read_end), 0);
+                    }
+                    // send output to the next process
+                    if i < process_arguments_list.len() - 1 {
+                        close(1);
+                        let write_end = pipes_fd.get(i).unwrap()[1];
+                        assert_eq!(dup(write_end), 1);
+                    }
+                    // close all pipe ends inherited from the parent process
+                    for pipe_fd in pipes_fd.iter() {
+                        close(pipe_fd[0]);
+                        close(pipe_fd[1]);
+                    }
+                    // execute new application
+                    if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
+                        println!("Error when executing!");
+                        return -4;
+                    }
+                    unreachable!();
+                } else {
+                    children.push(pid);
+                }
+            }
+            for pipe_fd in pipes_fd.iter() {
+                close(pipe_fd[0]);
+                close(pipe_fd[1]);
+            }
+            let mut exit_code: i32 = 0;
+            for pid in children.into_iter() {
+                let exit_pid = waitpid(pid as usize, &mut exit_code);
+                assert_eq!(pid, exit_pid);
+                // println!("pid: {}", pid);
+                if pid == 2 && exit_code == 0 {
+                    println!("testcase {} success", line);
+                } else {
+                    println!("testcase {} fail", line);
+                }
+            }
+        }
+    }
+    0
+}

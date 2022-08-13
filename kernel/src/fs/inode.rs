@@ -297,23 +297,31 @@ lazy_static! {
 
 pub fn init_rootfs() {
     let _proc = open("/", "proc", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    let _mounts = open("/", "proc/mounts", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    let _meminfo = open(
+        "/",
+        "proc/meminfo",
+        OpenFlags::CREATE | OpenFlags::DIRECTROY,
+    )
+    .unwrap();
+    let _ls = open("/", "ls", OpenFlags::CREATE).unwrap();
     let _tmp = open("/", "tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _dev = open("/", "dev", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     // let _var_tmp = open("/", "/var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
-    // let _mounts = open("/proc", "mounts", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
-    // let _meminfo = open("/proc", "meminfo", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
 }
 
-pub fn list_apps() {
-    println!("/**** APPS ****");
+pub fn list_rootfs() {
+    println!("************** RootFS START **************");
     for app in ROOT_INODE.ls().unwrap() {
         if !app.1.contains(FileAttributes::DIRECTORY) {
             println!("{}", app.0.bright_green());
+        } else {
+            println!("{}", app.0.bright_blue());
         }
     }
-    println!("**************/")
+    println!("************** RootFS END **************");
 }
 
 bitflags! {
@@ -322,10 +330,9 @@ bitflags! {
         const WRONLY = 1 << 0;
         const RDWR = 1 << 1;
         const CREATE = 1 << 6;
-        const TRUNC = 1 << 10;
-        const DIRECTROY = 0x0200000;
-        const LARGEFILE  = 0100000;
-        const CLOEXEC = 02000000;
+        const TRUNC = 1 << 9;
+        const APPEND = 1 << 10;
+        const DIRECTROY = 1 << 16;
     }
 }
 
@@ -365,28 +372,31 @@ pub fn open(work_path: &str, path: &str, flags: OpenFlags) -> Option<Arc<OSInode
             inode.delete();
         }
         // create file
-        {
-            // log::debug!("path: {:?}", path);
-            let name_path: Vec<&str> = path.rsplitn(2, '/').collect();
-            // log::debug!("name_path: {:?}", name_path);
-            let name = name_path[0];
-            let mut prev_path = "";
-            if name_path.len() == 2 {
-                prev_path = name_path[1]
-            }
-            // log::debug!("prev_path: {:?}, name: {:?}", prev_path, name);
-            if let Some(temp_inode) = cur_inode.find_vfile_bypath(prev_path) {
-                let attribute = if flags.contains(OpenFlags::DIRECTROY) {
-                    FileAttributes::DIRECTORY
-                } else {
-                    FileAttributes::FILE
-                };
-                temp_inode
-                    .create(name, attribute)
-                    .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
+        // log::debug!("path: {:?}", path);
+        let name_path: Vec<&str> = path.rsplitn(2, '/').collect();
+        // log::debug!("name_path: {:?}", name_path);
+        let name = name_path[0];
+        let mut prev_path = "";
+        if name_path.len() == 2 {
+            prev_path = name_path[1]
+        }
+        // log::debug!("prev_path: {:?}, name: {:?}", prev_path, name);
+        if let Some(temp_inode) = cur_inode.find_vfile_bypath(prev_path) {
+            let attribute = if flags.contains(OpenFlags::DIRECTROY) {
+                FileAttributes::DIRECTORY
             } else {
-                None
+                FileAttributes::FILE
+            };
+            let vfile = temp_inode
+                .create(name, attribute)
+                .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
+                .unwrap();
+            if flags.contains(OpenFlags::APPEND) {
+                vfile.set_offset(vfile.get_size());
             }
+            return Some(vfile);
+        } else {
+            return None;
         }
     } else {
         cur_inode.find_vfile_bypath(path).map(|inode| {
