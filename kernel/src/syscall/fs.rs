@@ -1,7 +1,7 @@
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{
-    ch_dir, make_pipe, open, Dirent, File, FileClass, IOVec, OSInode, OpenFlags, Stat, StatFS,
-    MNT_TABLE, S_IFCHR, S_IFDIR, S_IFREG, S_IRWXG, S_IRWXO, S_IRWXU,
+    ch_dir, make_pipe, open, open_device_file, Dirent, File, FileClass, IOVec, OSInode, OpenFlags,
+    Stat, StatFS, MNT_TABLE, S_IFCHR, S_IFDIR, S_IFREG, S_IRWXG, S_IRWXO, S_IRWXU,
 };
 use crate::mm::{
     translated_byte_buffer, translated_ref, translated_refmut, translated_str, UserBuffer,
@@ -60,29 +60,30 @@ pub fn sys_fcntl(fd: usize, cmd: u32, arg: usize) -> isize {
     ret
 }
 
-pub fn sys_write(fd: usize, buf: *const u8, len: usize) -> isize {
-    if (fd >= 3) {
+pub fn sys_write(fd: isize, buf: *const u8, len: usize) -> isize {
+    if (fd >= 3 || fd == AT_FDCWD) {
         log::debug!("sys_write fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
     }
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
-    if fd >= inner.fd_table.len() {
+    if fd as usize >= inner.fd_table.len() {
         return -1;
     }
-    if let Some(file) = &inner.fd_table[fd] {
+    if let Some(file) = &inner.fd_table[fd as usize] {
         let file: Arc<dyn File + Send + Sync> = match &file {
-            FileClass::Abstr(f) => f.clone(),
             FileClass::File(f) => f.clone(),
+            FileClass::Abstr(f) => f.clone(),
         };
         if !file.writable() {
-            return -1;
+            return -EPERM;
         }
         drop(inner);
+        drop(task);
         let size = file.write(UserBuffer::new(translated_byte_buffer(token, buf, len)));
         size as isize
     } else {
-        -1
+        return -EBADF;
     }
 }
 
@@ -224,9 +225,9 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 // }
 
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isize {
-    let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
+    let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     let flags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
     log::debug!(
@@ -236,6 +237,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
         flags,
         mode
     );
+
     // check dirfd
     if dirfd >= 0 {
         let dirfd_usize = dirfd as usize;
@@ -251,6 +253,16 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
         // dirfd == AT_FDCWD ok
     }
 
+    // device file
+    if path == "/dev/zero" || path == "/dev/null" || path == "/dev/misc/rtc" {
+        if let Some(dev) = open_device_file(path.as_str(), flags) {
+            let fd = inner.alloc_fd();
+            inner.fd_table[fd] = Some(FileClass::Abstr(dev));
+            return fd as isize;
+        }
+    }
+
+    // common file
     /* get dirfd inode */
     let dir_inode: Arc<OSInode> = if dirfd == AT_FDCWD {
         let current_path = if dirfd == AT_FDCWD && !path.starts_with("/") {
@@ -264,21 +276,26 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
         match &file {
             FileClass::File(f) => {
                 if !f.is_dir() {
+                    log::debug!("dirfd inode is not directory, fail");
                     return -ENOTDIR;
                 } else {
                     f.clone()
                 }
             }
-            _ => return -ENOTDIR,
+            FileClass::Abstr(_) => {
+                log::debug!("dirfd inode is abstr file, fail");
+                return -ENOTDIR;
+            }
         }
     };
 
-    /* get inode in directory */
     // need to create
+    /* get inode in directory */
     if flags.contains(OpenFlags::CREATE) {
         if let Some(new_file) = dir_inode.create(path.as_str(), flags) {
             let fd = inner.alloc_fd();
             inner.fd_table[fd] = Some(FileClass::File(new_file));
+            log::debug!("sys_open_at with creatation success fd: {}", fd);
             return fd as isize;
         } else {
             return -ENOENT;
@@ -294,17 +311,17 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
     }
 }
 
-pub fn sys_close(fd: usize) -> isize {
+pub fn sys_close(fd: isize) -> isize {
     log::debug!("sys_close fd: {}", fd);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    if fd >= inner.fd_table.len() {
+    if fd as usize >= inner.fd_table.len() {
         return -1;
     }
-    if inner.fd_table[fd].is_none() {
+    if inner.fd_table[fd as usize].is_none() {
         return -1;
     }
-    inner.fd_table[fd].take();
+    inner.fd_table[fd as usize].take();
     0
 }
 
@@ -511,7 +528,7 @@ pub fn sys_pselect6(
                                 readfds.set_bit(i);
                             }
                             FileClass::Abstr(abs) => {
-                                if abs.available() {
+                                if abs.read_available() {
                                     ret += 1;
                                     readfds.set_bit(i);
                                 } else {
@@ -534,7 +551,7 @@ pub fn sys_pselect6(
                                 writefds.set_bit(i);
                             }
                             FileClass::Abstr(abs) => {
-                                if abs.available() {
+                                if abs.write_available() {
                                     ret += 1;
                                     writefds.set_bit(i);
                                 } else {
@@ -571,7 +588,7 @@ pub fn sys_pselect6(
                             readfds.set_bit(i);
                         }
                         FileClass::Abstr(abs) => {
-                            if abs.available() {
+                            if abs.read_available() {
                                 ret += 1;
                                 readfds.set_bit(i);
                             } else {
@@ -594,7 +611,7 @@ pub fn sys_pselect6(
                             writefds.set_bit(i);
                         }
                         FileClass::Abstr(abs) => {
-                            if abs.available() {
+                            if abs.write_available() {
                                 ret += 1;
                                 writefds.set_bit(i);
                             } else {
@@ -668,8 +685,8 @@ pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
     let path = translated_str(token, path);
     log::debug!("sys_fstatat path: {}, buf: {:#X?}", path, buf);
 
-    let buf_vec = translated_byte_buffer(token, buf, size_of::<Stat>());
-    let mut userbuf = UserBuffer::new(buf_vec);
+    let stat_buf = translated_byte_buffer(token, buf, size_of::<Stat>());
+    let mut stat_userbuf = UserBuffer::new(stat_buf);
 
     let cwd = if dirfd == AT_FDCWD && !path.starts_with("/") {
         task.acquire_inner_lock().current_path.clone()
@@ -677,17 +694,16 @@ pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
         String::from("/")
     };
 
-    // 权宜之计
+    // 权宜之计, 比完赛后删除
     if path == "/dev/null" {
         let mut kstat = Stat::empty();
         kstat.st_mode = S_IFCHR;
-        userbuf.write(kstat.as_bytes());
+        stat_userbuf.write(kstat.as_bytes());
         return 0;
     }
-    // 比完赛后删除
 
-    let ret = if let Some(osfile) = open(&cwd, &path, OpenFlags::RDONLY | OpenFlags::DIRECTROY) {
-        fstat_inner(osfile, &mut userbuf)
+    let ret = if let Some(osfile) = open(&cwd, &path, OpenFlags::RDONLY) {
+        fstat_inner(osfile, &mut stat_userbuf)
     } else {
         -ENOENT
     };

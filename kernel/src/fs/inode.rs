@@ -179,43 +179,37 @@ impl OSInode {
         let (size, _, _, _, _) = inner.inode.stat();
         return size as usize;
     }
-
+    // TODO: create with long file name entry
     pub fn create(&self, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
         let inner = self.inner.lock();
         let cur_inode = inner.inode.clone();
         if !cur_inode.is_dir() {
-            log::debug!("[create]:{} is not a directory!", path);
+            log::warn!("[create]:{} is not a directory!", path);
             return None;
         }
         let mut pathv: Vec<&str> = path.split('/').collect();
         // log::debug!("pathv: {:#?}", pathv);
-        let (readable, writable) = (true, true);
+        let (readable, writable) = flags.read_write();
+        // if already exists, delete
         if let Some(inode) = cur_inode.find_vfile_bypath(path) {
-            // already exists, clear
             inode.delete();
         }
-        {
-            // create file
-            let name = pathv.pop().unwrap();
-            if let Some(temp_inode) = cur_inode.find_vfile_bypath(path) {
-                let attribute = if flags.contains(OpenFlags::DIRECTROY) {
-                    FileAttributes::DIRECTORY
-                } else {
-                    FileAttributes::FILE
-                };
-                temp_inode
-                    .create(name, attribute)
-                    .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
-            } else {
-                let attribute = if flags.contains(OpenFlags::DIRECTROY) {
-                    FileAttributes::DIRECTORY
-                } else {
-                    FileAttributes::FILE
-                };
-                cur_inode
-                    .create(name, attribute)
-                    .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
-            }
+        // create file
+        let filename = pathv.pop().unwrap();
+        let attribute = if flags.contains(OpenFlags::DIRECTROY) {
+            FileAttributes::DIRECTORY
+        } else {
+            FileAttributes::FILE
+        };
+        let create_path = path.trim_end_matches(filename);
+        if let Some(temp_inode) = cur_inode.find_vfile_bypath(create_path) {
+            temp_inode
+                .create(filename, attribute)
+                .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
+        } else {
+            cur_inode
+                .create(filename, attribute)
+                .map(|inode| Arc::new(OSInode::new(readable, writable, inode)))
         }
     }
 
@@ -302,11 +296,14 @@ lazy_static! {
 }
 
 pub fn init_rootfs() {
+    let _proc = open("/", "proc", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _tmp = open("/", "tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _dev = open("/", "dev", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
-    let _var_tmp = open("/", "/var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    // let _var_tmp = open("/", "/var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    // let _mounts = open("/proc", "mounts", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    // let _meminfo = open("/proc", "meminfo", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
 }
 
 pub fn list_apps() {
@@ -336,7 +333,7 @@ impl OpenFlags {
     /// Do not check validity for simplicity
     /// Return (readable, writable)
     pub fn read_write(&self) -> (bool, bool) {
-        if self.is_empty() {
+        if self.is_empty() || self.contains(Self::RDONLY) {
             (true, false)
         } else if self.contains(Self::WRONLY) {
             (false, true)
@@ -460,7 +457,10 @@ impl File for OSInode {
         }
         total_write_size
     }
-    fn available(&self) -> bool {
-        true
+    fn read_available(&self) -> bool {
+        self.readable
+    }
+    fn write_available(&self) -> bool {
+        self.writable
     }
 }

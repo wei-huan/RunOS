@@ -38,8 +38,11 @@ impl File for Stdin {
     fn write(&self, _user_buf: UserBuffer) -> usize {
         panic!("Cannot write to stdin!");
     }
-    fn available(&self) -> bool {
-        true
+    fn read_available(&self) -> bool {
+        self.readable()
+    }
+    fn write_available(&self) -> bool {
+        self.writable()
     }
 }
 
@@ -59,7 +62,10 @@ impl File for Stdout {
         }
         user_buf.len()
     }
-    fn available(&self) -> bool {
-        true
+    fn read_available(&self) -> bool {
+        self.readable()
+    }
+    fn write_available(&self) -> bool {
+        self.writable()
     }
 }

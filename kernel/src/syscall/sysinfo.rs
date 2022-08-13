@@ -41,6 +41,7 @@ impl SysInfo {
 }
 
 pub fn sys_sysinfo(buf: *mut u8) -> isize {
+    log::debug!("sys_sysinfo buf: {:#X?}", buf as usize);
     let token = current_user_token();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<SysInfo>());
     let sysinfo = SysInfo::new();

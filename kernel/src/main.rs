@@ -65,29 +65,29 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         fpu::init();
-        logo::show();
+        // logo::show();
         logger::init();
         fs::init_rootfs();
         scheduler::add_initproc();
-        logger::show_basic_info();
-        fs::list_apps();
+        // logger::show_basic_info();
+        // fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
-        cpu::boot_all_harts(hartid);
-        log::info!(
-            "{}",
-            alloc::format!("Main Hart {} successfully init", hart_id()).green()
-        );
+        // cpu::boot_all_harts(hartid);
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Main Hart {} successfully init", hart_id()).green()
+        // );
         scheduler::schedule();
     } else {
         trap::init();
         mm::init();
         fpu::init();
         timer::init();
-        log::info!(
-            "{}",
-            alloc::format!("Hart {} successfully init", hart_id()).green()
-        );
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Hart {} successfully init", hart_id()).green()
+        // );
         scheduler::schedule();
     }
 }
@@ -106,11 +106,11 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         logger::init();
         scheduler::add_initproc();
         fs::init_rootfs();
-        logger::show_basic_info();
+        // logger::show_basic_info();
         // fs::list_apps();
         timer::init();
         // SMP_START will turn to true in this function
-        cpu::boot_all_harts(hartid);
+        // cpu::boot_all_harts(hartid);
         // log::info!(
         //     "{}",
         //     alloc::format!("Main Hart {} successfully booted", hart_id()).green()
@@ -121,10 +121,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         mm::init();
         fpu::init();
         timer::init();
-        log::info!(
-            "{}",
-            alloc::format!("Hart {} successfully booted", hart_id()).green()
-        );
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Hart {} successfully booted", hart_id()).green()
+        // );
         scheduler::schedule();
     }
 }

@@ -172,9 +172,12 @@ impl File for Pipe {
             }
         }
     }
-    fn available(&self) -> bool {
+    fn read_available(&self) -> bool {
         let bufferlock = self.buffer.lock();
-        (self.readable() && bufferlock.available_read() > 0)
-            || (self.writable() && bufferlock.available_write() > 0)
+        self.readable() && bufferlock.available_read() > 0
+    }
+    fn write_available(&self) -> bool {
+        let bufferlock = self.buffer.lock();
+        self.writable() && bufferlock.available_write() > 0
     }
 }
