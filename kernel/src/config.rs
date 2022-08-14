@@ -28,8 +28,8 @@
 
 pub const PAGE_SIZE: usize = 4096;
 pub const PAGE_SIZE_BITS: usize = 0xc;
-pub const MEMORY_END: usize = 0x80800000;
-pub const KERNEL_HEAP_SIZE: usize = 0x42_0000;
+pub const MEMORY_END: usize = 0x80900000;
+pub const KERNEL_HEAP_SIZE: usize = 0x41_0000;
 
 // for buddy_system_allocator
 pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;

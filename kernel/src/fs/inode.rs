@@ -305,10 +305,13 @@ pub fn init_rootfs() {
     )
     .unwrap();
     let _ls = open("/", "ls", OpenFlags::CREATE).unwrap();
+    let _test_txt = open("/", "test.txt", OpenFlags::CREATE).unwrap();
+    let _busybox_cmd_bak = open("/", "busybox_cmd.bak", OpenFlags::CREATE).unwrap();
     let _tmp = open("/", "tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _dev = open("/", "dev", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
-    // let _var_tmp = open("/", "/var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    // let _var_tmp = open("/", "var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    // let _var_tmp = open("/", "var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
 }
 

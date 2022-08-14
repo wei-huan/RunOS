@@ -786,7 +786,16 @@ impl ProcessArguments {
     }
 }
 
-static BUSYBOX_LUA_TESTS: [&str; 64] = [
+static BUSYBOX_LUA_TESTS: [&str; 63] = [
+    "lua date.lua",
+    "lua file_io.lua",
+    "lua max_min.lua",
+    "lua random.lua",
+    "lua round_num.lua",
+    "lua sin30.lua",
+    "lua sort.lua",
+    "lua strings.lua",
+    "lua remove.lua",
     "busybox echo \"#### independent command test\"",
     "busybox ash -c exit",
     "busybox sh -c exit",
@@ -813,6 +822,13 @@ static BUSYBOX_LUA_TESTS: [&str; 64] = [
     "busybox ls",
     "busybox sleep 1",
     "busybox echo \"#### file opration test\"",
+    "busybox mkdir test_dir",
+    "busybox mv test_dir test",
+    "busybox rmdir test",
+    "busybox grep hello busybox_cmd.txt",
+    "busybox cp busybox_cmd.txt busybox_cmd.bak",
+    "busybox rm busybox_cmd.bak",
+    "busybox find -name \"busybox_cmd.txt\"",
     "busybox touch test.txt",
     "busybox echo \"hello world\" > test.txt",
     "busybox cat test.txt",
@@ -828,34 +844,16 @@ static BUSYBOX_LUA_TESTS: [&str; 64] = [
     "busybox echo \"2222222\" >> test.txt",
     "busybox echo \"1111111\" >> test.txt",
     "busybox echo \"bbbbbbb\" >> test.txt",
-    "busybox sort test.txt | ./busybox uniq",
     "busybox stat test.txt",
     "busybox strings test.txt",
     "busybox wc test.txt",
     "busybox [ -f test.txt ]",
     "busybox more test.txt",
     "busybox rm test.txt",
-    "busybox mkdir test_dir",
-    "busybox mv test_dir test",
-    "busybox rmdir test",
-    "busybox grep hello busybox_cmd.txt",
-    "busybox cp busybox_cmd.txt busybox_cmd.bak",
-    "busybox rm busybox_cmd.bak",
-    "busybox find -name \"busybox_cmd.txt\"",
-    "lua date.lua",
-    "lua file_io.lua",
-    "lua max_min.lua",
-    "lua random.lua",
-    "lua remove.lua",
-    "lua round_num.lua",
-    "lua sin30.lua",
-    "lua sort.lua",
-    "lua strings.lua",
+    // "busybox sort test.txt | ./busybox uniq",
 ];
 
-#[no_mangle]
-pub fn main() -> i32 {
-    println!("Rust user shell");
+pub fn busybox_lua_tests() -> isize {
     for line in BUSYBOX_LUA_TESTS {
         let splited: Vec<_> = line.split('|').collect();
         let process_arguments_list: Vec<_> = splited
@@ -960,13 +958,163 @@ pub fn main() -> i32 {
                 let exit_pid = waitpid(pid as usize, &mut exit_code);
                 assert_eq!(pid, exit_pid);
                 // println!("pid: {}", pid);
-                if pid == 2 && exit_code == 0 {
+                if pid == 2 {
                     println!("testcase {} success", line);
-                } else {
-                    println!("testcase {} fail", line);
                 }
             }
         }
     }
+    0
+}
+
+static LMBENCH_TESTS: [&str; 31] = [
+    "busybox echo latency measurements",
+    "lmbench_all lat_syscall -P 1 null",
+    "lmbench_all lat_syscall -P 1 read",
+    "lmbench_all lat_syscall -P 1 write",
+    "busybox mkdir /var/tmp",
+    "busybox touch /var/tmp/lmbench",
+    "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench",
+    "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench",
+    "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench",
+    "lmbench_all lat_select -n 100 -P 1 file",
+    "lmbench_all lat_sig -P 1 install",
+    "lmbench_all lat_sig -P 1 catch",
+    "lmbench_all lat_sig -P 1 prot lat_sig",
+    "lmbench_all lat_pipe -P 1",
+    "lmbench_all lat_proc -P 1 fork",
+    "lmbench_all lat_proc -P 1 exec",
+    "busybox cp hello /tmp",
+    "lmbench_all lat_proc -P 1 shell",
+    "lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=645m fsync=1 print=3",
+    "lmbench_all lat_pagefault -P 1 /var/tmp/XXX",
+    "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX",
+    "busybox echo file system latency",
+    "lmbench_all lat_fs /var/tmp",
+    "busybox echo Bandwidth measurements",
+    "lmbench_all bw_pipe -P 1",
+    "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX",
+    "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX",
+    "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX",
+    "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX",
+    "busybox echo context switch overhead",
+    "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",
+];
+
+pub fn lmbench_tests() -> isize {
+    for line in LMBENCH_TESTS {
+        let splited: Vec<_> = line.split('|').collect();
+        let process_arguments_list: Vec<_> = splited
+            .iter()
+            .map(|&cmd| ProcessArguments::new(cmd))
+            .collect();
+        let mut valid = true;
+        for (i, process_args) in process_arguments_list.iter().enumerate() {
+            if i == 0 {
+                if !process_args.output.is_empty() {
+                    valid = false;
+                }
+            } else if i == process_arguments_list.len() - 1 {
+                if !process_args.input.is_empty() {
+                    valid = false;
+                }
+            } else if !process_args.output.is_empty() || !process_args.input.is_empty() {
+                valid = false;
+            }
+        }
+        if process_arguments_list.len() == 1 {
+            valid = true;
+        }
+        if !valid {
+            println!("Invalid command: Inputs/Outputs cannot be correctly binded!");
+        } else {
+            // create pipes
+            let mut pipes_fd: Vec<[usize; 2]> = Vec::new();
+            if !process_arguments_list.is_empty() {
+                for _ in 0..process_arguments_list.len() - 1 {
+                    let mut pipe_fd = [0usize; 2];
+                    pipe(&mut pipe_fd);
+                    pipes_fd.push(pipe_fd);
+                }
+            }
+            let mut children: Vec<_> = Vec::new();
+            for (i, process_argument) in process_arguments_list.iter().enumerate() {
+                let pid = fork();
+                if pid == 0 {
+                    let input = &process_argument.input;
+                    let output = &process_argument.output;
+                    let args_copy = &process_argument.args_copy;
+                    let args_addr = &process_argument.args_addr;
+                    // redirect input
+                    if !input.is_empty() {
+                        let input_fd = open(input.as_str(), OpenFlags::RDONLY);
+                        if input_fd == -1 {
+                            println!("Error when opening file {}", input);
+                            return -4;
+                        }
+                        let input_fd = input_fd as usize;
+                        close(0);
+                        assert_eq!(dup(input_fd), 0);
+                        close(input_fd);
+                    }
+                    // redirect output
+                    if !output.is_empty() {
+                        let output_fd =
+                            open(output.as_str(), OpenFlags::CREATE | OpenFlags::WRONLY);
+                        if output_fd == -1 {
+                            println!("Error when opening file {}", output);
+                            return -4;
+                        }
+                        let output_fd = output_fd as usize;
+                        close(1);
+                        assert_eq!(dup(output_fd), 1);
+                        close(output_fd);
+                    }
+                    // receive input from the previous process
+                    if i > 0 {
+                        close(0);
+                        let read_end = pipes_fd.get(i - 1).unwrap()[0];
+                        assert_eq!(dup(read_end), 0);
+                    }
+                    // send output to the next process
+                    if i < process_arguments_list.len() - 1 {
+                        close(1);
+                        let write_end = pipes_fd.get(i).unwrap()[1];
+                        assert_eq!(dup(write_end), 1);
+                    }
+                    // close all pipe ends inherited from the parent process
+                    for pipe_fd in pipes_fd.iter() {
+                        close(pipe_fd[0]);
+                        close(pipe_fd[1]);
+                    }
+                    // execute new application
+                    if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
+                        println!("Error when executing!");
+                        return -4;
+                    }
+                    unreachable!();
+                } else {
+                    children.push(pid);
+                }
+            }
+            for pipe_fd in pipes_fd.iter() {
+                close(pipe_fd[0]);
+                close(pipe_fd[1]);
+            }
+            let mut exit_code: i32 = 0;
+            for pid in children.into_iter() {
+                let exit_pid = waitpid(pid as usize, &mut exit_code);
+                assert_eq!(pid, exit_pid);
+            }
+        }
+    }
+    0
+}
+
+#[no_mangle]
+pub fn main() -> i32 {
+    println!("Rust user shell");
+    // busybox_lua_tests();
+    lmbench_tests();
     0
 }

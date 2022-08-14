@@ -70,7 +70,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         fs::init_rootfs();
         scheduler::add_initproc();
         // logger::show_basic_info();
-        fs::list_rootfs();
+        // fs::list_rootfs();
         timer::init();
         // SMP_START will turn to true in this function
         // cpu::boot_all_harts(hartid);

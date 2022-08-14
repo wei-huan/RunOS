@@ -327,12 +327,12 @@ const WNOWAIT: isize = 0x01000000;
 /// Else If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, suspend_current_and_run_next.
 pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
-    log::debug!(
-        "sys_wait4, pid: {}, wstatus: {:#X?}, option: {}",
-        pid,
-        wstatus,
-        option
-    );
+    // log::debug!(
+    //     "sys_wait4, pid: {}, wstatus: {:#X?}, option: {}",
+    //     pid,
+    //     wstatus,
+    //     option
+    // );
     loop {
         let task = current_task().unwrap();
         // No any child process waiting

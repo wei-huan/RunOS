@@ -367,7 +367,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     if inner.fd_table[old_fd].is_none() {
         return -1;
     }
-    // 太傻比了，为了一个 fd 添加这么多，以后要改
+    
     if new_fd >= inner.fd_table.len() {
         for _ in inner.fd_table.len()..(new_fd + 1) {
             inner.fd_table.push(None);
