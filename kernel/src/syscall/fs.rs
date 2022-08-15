@@ -230,7 +230,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
     let path = translated_str(token, path);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    let flags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
+    let flags = OpenFlags::from_bits(flags).unwrap();
     log::debug!(
         "sys_open_at dirfd: {} path: {:#?}, flags: {:#?}, mode: {}",
         dirfd,

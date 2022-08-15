@@ -309,8 +309,8 @@ pub fn init_rootfs() {
     let _busybox_cmd_bak = open("/", "busybox_cmd.bak", OpenFlags::CREATE).unwrap();
     let _tmp = open("/", "tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _dev = open("/", "dev", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
-    let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
-    let _var_tmp = open("/", "var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    // let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
+    // let _var_tmp = open("/", "var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _var_tmp_lmbench = open("/", "var/tmp/lmbench", OpenFlags::CREATE).unwrap();
     // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
 }
@@ -329,13 +329,14 @@ pub fn list_rootfs() {
 
 bitflags! {
     pub struct OpenFlags: u32 {
-        const RDONLY = 0;
-        const WRONLY = 1 << 0;
-        const RDWR = 1 << 1;
-        const CREATE = 1 << 6;
-        const TRUNC = 1 << 9;
-        const APPEND = 1 << 10;
-        const DIRECTROY = 1 << 16;
+        const RDONLY = 0o0;
+        const WRONLY = 0o1;
+        const RDWR = 0o2;
+        const CREATE = 0o100;
+        const EXCL  = 0o200;
+        const TRUNC = 0o1000;
+        const APPEND = 0o2000;
+        const DIRECTROY = 0o200000;
     }
 }
 

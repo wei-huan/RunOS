@@ -969,36 +969,36 @@ pub fn busybox_lua_tests() -> isize {
 
 static LMBENCH_TESTS: [&str; 2] = [
     // "busybox echo latency measurements",
-    // "lmbench_all lat_syscall -P 1 null",
-    // "lmbench_all lat_syscall -P 1 read",
+    "lmbench_all lat_syscall -P 1 null",     // ok
+    // "lmbench_all lat_syscall -P 1 read",     // ok
     // "lmbench_all lat_syscall -P 1 write",    // loop
     // "busybox mkdir /var/tmp",
     // "busybox touch /var/tmp/lmbench",
-    // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench",
-    // "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench",
-    // "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench",
-    // "lmbench_all lat_select -n 100 -P 1 file", // Could not create temp file lat_selectdnN7do
-    // "lmbench_all lat_sig -P 1 install",
-    // "lmbench_all lat_sig -P 1 catch",    // Exception(StorePageFault) process bomb
-    // "lmbench_all lat_sig -P 1 prot lat_sig", // Exception(StorePageFault) process bomb
-    // "lmbench_all lat_pipe -P 1", // Shit No pages
-    "lmbench_all lat_proc -P 1 fork",
-    "lmbench_all lat_proc -P 1 exec",
+    // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench",    // ok
+    // "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench",   // ok
+    // "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop
+    "lmbench_all lat_select -n 100 -P 1 file", // ok Could not create temp file lat_selectdnN7do
+    // "lmbench_all lat_sig -P 1 install",     // loop
+    // "lmbench_all lat_sig -P 1 catch",    // need to implement signals
+    // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals
+    // "lmbench_all lat_pipe -P 1",            // Stuck in sys_wait4
+    // "lmbench_all lat_proc -P 1 fork",    // loop
+    // "lmbench_all lat_proc -P 1 exec",    // loop
     // "busybox cp hello /tmp",
-    // "lmbench_all lat_proc -P 1 shell",
+    // "lmbench_all lat_proc -P 1 shell",   // too many busybox error 
     // "lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=645m fsync=1 print=3",
     // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX",
     // "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX",
     // "busybox echo file system latency",
-    // "lmbench_all lat_fs /var/tmp",
+    // "lmbench_all lat_fs /var/tmp",  // need many stack size
     // "busybox echo Bandwidth measurements",
-    // "lmbench_all bw_pipe -P 1",
+    // "lmbench_all bw_pipe -P 1", // need to implement signal, pselect6 loop
     // "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX",
     // "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX",
     // "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX",
     // "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX",
     // "busybox echo context switch overhead",
-    // "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",
+    // "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",  // pselect6 loop
 ];
 
 pub fn lmbench_tests() -> isize {

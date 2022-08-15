@@ -27,4 +27,8 @@ Simple write: 38.3691 microseconds
 
 5. 很多 lmbench 测试会 clone 3个进程进行测试, 但没有 exec 新内容, 所以白白复制了 3 次地址空间, 非常浪费, 在 K210 平台还会耗尽 Pages 造成崩溃 所以实现写时复制(Copy on Write)刻不容缓了
 
-测试过程怎么有时快有时慢, 非常奇怪
+6. 测试过程怎么有时快有时慢, 非常奇怪, 原来是 syscall pselect6 实现时理解有点问题, 有个小bug, 改了之后耗时还短了, 乐
+
+7. 还是必须实现信号机制, 只能说透心凉吧
+
+8. sys_open_at 的 OpenFlags 有 bug, 改正之后 Select on 100 fd's: 17268.5681 microseconds 好了

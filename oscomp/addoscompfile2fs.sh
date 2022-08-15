@@ -37,7 +37,7 @@ sudo rm -rf ${FAT32_DIR}/fs/*
 
 for programname in $(ls ../oscomp1)
 do 
-    sudo cp ../oscomp1/$programname ${FAT32_DIR}/fs/"$programname"
+    sudo cp -r ../oscomp1/$programname ${FAT32_DIR}/fs/"$programname"
 done
 
 for programname in $(ls ../user/src/bin)
