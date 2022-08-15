@@ -34,16 +34,6 @@ pub fn add_task(task: Arc<TaskControlBlock>) {
     SCHEDULER.add_task(task);
 }
 
-pub fn add_task2designate_ready_queue(task: Arc<TaskControlBlock>, queue_id: usize) {
-    PID2TCB.lock().insert(task.getpid(), Arc::clone(&task));
-    SCHEDULER.add_task2designate_ready_queue(task, queue_id);
-}
-
-#[allow(unused)]
-pub fn have_ready_task() -> bool {
-    SCHEDULER.have_ready_task()
-}
-
 pub fn pid2task(pid: usize) -> Option<Arc<TaskControlBlock>> {
     let map = PID2TCB.lock();
     map.get(&pid).map(Arc::clone)
@@ -73,7 +63,7 @@ lazy_static! {
 
 pub fn add_initproc() {
     add_initproc_into_fs();
-    add_task2designate_ready_queue(INITPROC.clone(), 0);
+    add_task(INITPROC.clone());
     // println!("add_initproc finish");
 }
 

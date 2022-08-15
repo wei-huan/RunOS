@@ -116,7 +116,8 @@ pub fn user_trap_handler() -> ! {
         | Trap::Exception(Exception::InstructionPageFault)
         | Trap::Exception(Exception::LoadFault)
         | Trap::Exception(Exception::LoadPageFault) => {
-            let pid = current_task().unwrap().getpid();
+            let task = current_task().unwrap();
+            let pid = task.getpid();
             let trap_ctx = current_trap_cx();
             let sepc = trap_ctx.sepc;
             log::warn!(
@@ -126,9 +127,8 @@ pub fn user_trap_handler() -> ! {
                 stval,
                 sepc,
             );
-            // let token = current_user_token();
-            // let fp = trap_ctx.x[8];
-            // unsafe { user_backtrace(token, fp) };
+            let inner = task.acquire_inner_lock();
+            inner.addrspace.do_copy_on_write(stval);
             current_add_signal(SIGSEGV);
         }
         Trap::Exception(Exception::IllegalInstruction) => {
@@ -139,9 +139,6 @@ pub fn user_trap_handler() -> ! {
             pid,
             stval,
             sepc);
-            // let token = current_user_token();
-            // let fp = trap_ctx.x[8];
-            // unsafe { user_backtrace(token, fp) };
             current_add_signal(SIGILL);
         }
         Trap::Interrupt(Interrupt::SupervisorTimer) => {

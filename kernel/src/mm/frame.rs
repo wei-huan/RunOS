@@ -8,6 +8,7 @@ use core::fmt::{self, Debug, Formatter};
 use lazy_static::*;
 use spin::Mutex;
 
+#[derive(Clone)]
 pub struct Frame {
     pub ppn: PhysPageNum,
 }

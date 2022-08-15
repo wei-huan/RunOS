@@ -1,3 +1,4 @@
+#![allow(unused)]
 /// Hart State ManageMent Extension
 use crate::opensbi::opensbi_call;
 use crate::opensbi::SBIResult;

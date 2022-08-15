@@ -24,6 +24,7 @@ pub enum MapType {
     Identical,
 }
 
+#[derive(Clone)]
 pub struct Section {
     pub name: String,
     perm: MapPermission,
@@ -202,5 +203,25 @@ impl Section {
             left_section.data_frames.insert(right_vpn, frame);
         }
         (left_section, right_section)
+    }
+    pub fn share_map(
+        &mut self,
+        dst_page_table: &mut PageTable,
+        src_page_table: &mut PageTable,
+    ) -> Result<(), ()> {
+        let map_perm = self.perm.difference(MapPermission::W);
+        let pte_flags = PTEFlags::from_bits(map_perm.bits).unwrap();
+        for vpn in self.vpn_range {
+            if let Some(mut pte) = src_page_table.translate(vpn) {
+                let ppn = pte.ppn();
+                if !dst_page_table.is_mapped(vpn) {
+                    dst_page_table.map(vpn, ppn, pte_flags);
+                    pte.set_permission(map_perm);
+                } else {
+                    return Err(());
+                }
+            }
+        }
+        Ok(())
     }
 }

@@ -341,7 +341,7 @@ impl TaskControlBlock {
         // ---- hold parent PCB lock
         let mut parent_inner = self.acquire_inner_lock();
         // copy user space(include trap context)
-        let addrspace = AddrSpace::from_existed_user(&parent_inner.addrspace);
+        let addrspace = AddrSpace::from_existed_user(&mut parent_inner.addrspace);
         let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
             .unwrap()

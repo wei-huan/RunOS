@@ -1,6 +1,7 @@
 use super::{
     address::{PhysAddr, PhysPageNum, StepByOne, VirtAddr, VirtPageNum},
     frame::{frame_alloc, Frame},
+    MapPermission,
 };
 // use crate::cpu::current_task;
 use alloc::string::String;
@@ -71,6 +72,10 @@ impl PageTableEntry {
 
     pub fn is_user_access(&self) -> bool {
         (self.flags() & PTEFlags::U) != PTEFlags::empty()
+    }
+
+    pub fn set_permission(&mut self, flags: MapPermission) {
+        self.0 = (self.0 & 0xffff_ffff_ffff_ffe1) | (flags.bits() as usize)
     }
 }
 
@@ -217,6 +222,18 @@ impl PageTable {
                     println!("va:0x{:X}  pa:0x{:X} flags:{:?}", va, pa, flags);
                 }
             }
+        }
+    }
+    /// Predicate for the valid bit.
+    pub fn is_mapped(&mut self, vpn: VirtPageNum) -> bool {
+        if let Some(i) = self.find_pte(vpn) {
+            if i.is_valid() {
+                true
+            } else {
+                false
+            }
+        } else {
+            false
         }
     }
 }
