@@ -128,10 +128,10 @@ pub fn user_trap_handler() -> ! {
                 sepc,
             );
             let mut inner = task.acquire_inner_lock();
-            if inner.addrspace.do_copy_on_write(stval) != Ok(()) {
-                log::error!("Page Fault Not about CopyOnWrite, SIGSEGV");
-                inner.signals.add_sig(SIGSEGV);
-            }
+            inner.signals.add_sig(SIGSEGV);
+            // if inner.addrspace.do_copy_on_write(stval) != Ok(()) {
+            //     log::error!("Page Fault Not about CopyOnWrite, SIGSEGV");
+            // }
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             let pid = current_task().unwrap().getpid();

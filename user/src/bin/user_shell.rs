@@ -823,11 +823,8 @@ static BUSYBOX_LUA_TESTS: [&str; 63] = [
     "busybox sleep 1",
     "busybox echo \"#### file opration test\"",
     "busybox mkdir test_dir",
-    "busybox mv test_dir test",
-    "busybox rmdir test",
     "busybox grep hello busybox_cmd.txt",
     "busybox cp busybox_cmd.txt busybox_cmd.bak",
-    "busybox rm busybox_cmd.bak",
     "busybox find -name \"busybox_cmd.txt\"",
     "busybox touch test.txt",
     "busybox echo \"hello world\" > test.txt",
@@ -850,6 +847,9 @@ static BUSYBOX_LUA_TESTS: [&str; 63] = [
     "busybox [ -f test.txt ]",
     "busybox more test.txt",
     "busybox rm test.txt",
+    "busybox rm busybox_cmd.bak",
+    "busybox mv test_dir test",
+    "busybox rmdir test",
     // "busybox sort test.txt | ./busybox uniq",
 ];
 
@@ -967,26 +967,25 @@ pub fn busybox_lua_tests() -> isize {
     0
 }
 
-static LMBENCH_TESTS: [&str; 2] = [
+static LMBENCH_TESTS: [&str; 8] = [
     // "busybox echo latency measurements",
-    "lmbench_all lat_syscall -P 1 null",     // ok
-    // "lmbench_all lat_syscall -P 1 read",     // ok
-    // "lmbench_all lat_syscall -P 1 write",    // loop
-    // "busybox mkdir /var/tmp",
+    "lmbench_all lat_syscall -P 1 null",         // sys_pselect6 loop, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 read",         // ok, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 write",        // ok, sometimes error process3 exit_group eariler, no copy on write just ok
     // "busybox touch /var/tmp/lmbench",
-    // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench",    // ok
-    // "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench",   // ok
-    // "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop
-    "lmbench_all lat_select -n 100 -P 1 file", // ok Could not create temp file lat_selectdnN7do
-    // "lmbench_all lat_sig -P 1 install",     // loop
+    "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench",    // ok, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench",   // ok, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop, no copy on write just ok
+    "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
+    "lmbench_all lat_sig -P 1 install",     // loop, no copy on write just ok
     // "lmbench_all lat_sig -P 1 catch",    // need to implement signals
     // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals
-    // "lmbench_all lat_pipe -P 1",            // Stuck in sys_wait4
-    // "lmbench_all lat_proc -P 1 fork",    // loop
-    // "lmbench_all lat_proc -P 1 exec",    // loop
+    // "lmbench_all lat_pipe -P 1",            // Stuck in sys_wait4, no copy on write shit no pages
+    // "lmbench_all lat_proc -P 1 fork",    // loop, no copy on write shit no pages
+    // "lmbench_all lat_proc -P 1 exec",    // loop, no copy on write shit no pages
     // "busybox cp hello /tmp",
-    // "lmbench_all lat_proc -P 1 shell",   // too many busybox error 
-    // "lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=645m fsync=1 print=3",
+    // "lmbench_all lat_proc -P 1 shell",   // too many busybox error, no copy on write shit no pages
+    // "lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=1m fsync=1 print=3",
     // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX",
     // "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX",
     // "busybox echo file system latency",
@@ -1115,7 +1114,7 @@ pub fn lmbench_tests() -> isize {
 #[no_mangle]
 pub fn main() -> i32 {
     println!("Rust user shell");
-    // busybox_lua_tests();
+    busybox_lua_tests();
     lmbench_tests();
     0
 }

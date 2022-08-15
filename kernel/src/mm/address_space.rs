@@ -598,71 +598,12 @@ impl AddrSpace {
             }
         }
     }
-    // pub fn from_existed_user(user_space: &AddrSpace) -> AddrSpace {
-    //     let mut addr_space = Self::new_empty();
-    //     // map trampoline
-    //     addr_space.map_trampoline();
-    //     // copy data sections/trap_context/user_stack/heap
-    //     for area in user_space.sections.iter() {
-    //         let new_area = Section::from_another(area);
-    //         addr_space.push_section(new_area, None);
-    //         // copy data from another space
-    //         for vpn in area.vpn_range {
-    //             let src_ppn = user_space.translate(vpn).unwrap().ppn();
-    //             let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
-    //             // if vpn.0 == 111 {
-    //             //     println!("we have 111000 mapped");
-    //             // }
-    //             dst_ppn
-    //                 .get_bytes_array()
-    //                 .copy_from_slice(src_ppn.get_bytes_array());
-    //         }
-    //     }
-    //     // copy mmap_sections
-    //     for area in user_space.mmap_sections.iter() {
-    //         let new_area = Section::from_another(area);
-    //         addr_space.push_mmap_section(new_area, None);
-    //         // copy data from another space
-    //         for vpn in area.vpn_range {
-    //             let src_ppn = user_space.translate(vpn).unwrap().ppn();
-    //             let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
-    //             dst_ppn
-    //                 .get_bytes_array()
-    //                 .copy_from_slice(src_ppn.get_bytes_array());
-    //         }
-    //     }
-    //     addr_space
-    // }
-    pub fn from_existed_user(user_space: &mut AddrSpace) -> AddrSpace {
+    pub fn from_existed_user(user_space: &AddrSpace) -> AddrSpace {
         let mut addr_space = Self::new_empty();
         // map trampoline
         addr_space.map_trampoline();
-        // share map data sections/user_stack/heap
-        for area in user_space
-            .sections
-            .iter()
-            .filter(|sect| sect.name != ".trap_cx")
-        {
-            let mut new_area = (*area).clone();
-            new_area
-                .share_map(&mut addr_space.page_table, &mut user_space.page_table)
-                .unwrap();
-            addr_space.sections.push(new_area);
-        }
-        // share map mmap_sections
-        for area in user_space.mmap_sections.iter() {
-            let mut new_area = (*area).clone();
-            new_area
-                .share_map(&mut addr_space.page_table, &mut user_space.page_table)
-                .unwrap();
-            addr_space.mmap_sections.push(new_area);
-        }
-        // copy trap_cx section
-        if let Some(area) = user_space
-            .sections
-            .iter()
-            .find(|sect| sect.name == ".trap_cx")
-        {
+        // copy data sections/trap_context/user_stack/heap
+        for area in user_space.sections.iter() {
             let new_area = Section::from_another(area);
             addr_space.push_section(new_area, None);
             // copy data from another space
@@ -674,8 +615,64 @@ impl AddrSpace {
                     .copy_from_slice(src_ppn.get_bytes_array());
             }
         }
+        // copy mmap_sections
+        for area in user_space.mmap_sections.iter() {
+            let new_area = Section::from_another(area);
+            addr_space.push_mmap_section(new_area, None);
+            // copy data from another space
+            for vpn in area.vpn_range {
+                let src_ppn = user_space.translate(vpn).unwrap().ppn();
+                let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
+                dst_ppn
+                    .get_bytes_array()
+                    .copy_from_slice(src_ppn.get_bytes_array());
+            }
+        }
         addr_space
     }
+    // pub fn from_existed_user(user_space: &mut AddrSpace) -> AddrSpace {
+    //     let mut addr_space = Self::new_empty();
+    //     // map trampoline
+    //     addr_space.map_trampoline();
+    //     // share map data sections/user_stack/heap
+    //     for area in user_space
+    //         .sections
+    //         .iter()
+    //         .filter(|sect| sect.name != ".trap_cx")
+    //     {
+    //         let mut new_area = (*area).clone();
+    //         new_area
+    //             .share_map(&mut addr_space.page_table, &mut user_space.page_table)
+    //             .unwrap();
+    //         addr_space.sections.push(new_area);
+    //     }
+    //     // share map mmap_sections
+    //     for area in user_space.mmap_sections.iter() {
+    //         let mut new_area = (*area).clone();
+    //         new_area
+    //             .share_map(&mut addr_space.page_table, &mut user_space.page_table)
+    //             .unwrap();
+    //         addr_space.mmap_sections.push(new_area);
+    //     }
+    //     // copy trap_cx section
+    //     if let Some(area) = user_space
+    //         .sections
+    //         .iter()
+    //         .find(|sect| sect.name == ".trap_cx")
+    //     {
+    //         let new_area = Section::from_another(area);
+    //         addr_space.push_section(new_area, None);
+    //         // copy data from another space
+    //         for vpn in area.vpn_range {
+    //             let src_ppn = user_space.translate(vpn).unwrap().ppn();
+    //             let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
+    //             dst_ppn
+    //                 .get_bytes_array()
+    //                 .copy_from_slice(src_ppn.get_bytes_array());
+    //         }
+    //     }
+    //     addr_space
+    // }
     pub fn recycle_data_pages(&mut self) {
         self.sections.clear();
     }

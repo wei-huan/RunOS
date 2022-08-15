@@ -124,7 +124,7 @@ pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 
 pub fn sys_pread(fd: usize, buf: *mut u8, count: usize, offset: usize) -> isize {
     log::debug!(
-        "sys_read fd: {}, buf: {:#X?}, count: {}, offset: {:#X?}",
+        "sys_pread fd: {}, buf: {:#X?}, count: {}, offset: {:#X?}",
         fd,
         buf,
         count,
@@ -230,7 +230,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
     let path = translated_str(token, path);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    let flags = OpenFlags::from_bits(flags).unwrap();
+    let flags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
     log::debug!(
         "sys_open_at dirfd: {} path: {:#?}, flags: {:#?}, mode: {}",
         dirfd,
