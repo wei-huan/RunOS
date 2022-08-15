@@ -967,7 +967,7 @@ pub fn busybox_lua_tests() -> isize {
     0
 }
 
-static LMBENCH_TESTS: [&str; 1] = [
+static LMBENCH_TESTS: [&str; 4] = [
     // "busybox echo latency measurements",
     // "lmbench_all lat_syscall -P 1 null",
     // "lmbench_all lat_syscall -P 1 read",
@@ -981,9 +981,9 @@ static LMBENCH_TESTS: [&str; 1] = [
     // "lmbench_all lat_sig -P 1 install",
     // "lmbench_all lat_sig -P 1 catch",    // Exception(StorePageFault) process bomb
     // "lmbench_all lat_sig -P 1 prot lat_sig", // Exception(StorePageFault) process bomb
-    // "lmbench_all lat_pipe -P 1", // Shit No pages
-    // "lmbench_all lat_proc -P 1 fork",
-    // "lmbench_all lat_proc -P 1 exec",
+    "lmbench_all lat_pipe -P 1", // Shit No pages
+    "lmbench_all lat_proc -P 1 fork",
+    "lmbench_all lat_proc -P 1 exec",
     // "busybox cp hello /tmp",
     // "lmbench_all lat_proc -P 1 shell",
     // "lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=645m fsync=1 print=3",

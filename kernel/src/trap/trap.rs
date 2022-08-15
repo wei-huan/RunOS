@@ -127,9 +127,10 @@ pub fn user_trap_handler() -> ! {
                 stval,
                 sepc,
             );
-            let inner = task.acquire_inner_lock();
-            inner.addrspace.do_copy_on_write(stval);
-            current_add_signal(SIGSEGV);
+            let mut inner = task.acquire_inner_lock();
+            if inner.addrspace.do_copy_on_write(stval) != Ok(()) {
+                inner.signals.add_sig(SIGSEGV);
+            }
         }
         Trap::Exception(Exception::IllegalInstruction) => {
             let pid = current_task().unwrap().getpid();

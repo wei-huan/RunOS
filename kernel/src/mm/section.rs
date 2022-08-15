@@ -5,8 +5,8 @@ use super::{
     page_table::{PTEFlags, PageTable},
 };
 use crate::config::PAGE_SIZE;
-use alloc::collections::BTreeMap;
 use alloc::string::String;
+use alloc::{collections::BTreeMap, sync::Arc};
 use bitflags::bitflags;
 
 bitflags! {
@@ -30,7 +30,7 @@ pub struct Section {
     perm: MapPermission,
     map_type: MapType,
     pub vpn_range: VPNRange,
-    data_frames: BTreeMap<VirtPageNum, Frame>,
+    pub data_frames: BTreeMap<VirtPageNum, Arc<Frame>>,
 }
 
 impl Section {
@@ -67,7 +67,7 @@ impl Section {
             MapType::Framed => {
                 let frame = frame_alloc().unwrap();
                 ppn = frame.ppn;
-                self.data_frames.insert(vpn, frame);
+                self.data_frames.insert(vpn, Arc::new(frame));
             }
         }
         let pte_flags = PTEFlags::from_bits(self.perm.bits).unwrap();

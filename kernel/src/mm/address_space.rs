@@ -30,7 +30,6 @@ extern "C" {
     fn ebss();
     fn ekernel();
     fn strampoline();
-    // fn etrampoline();
 }
 
 lazy_static! {
@@ -745,9 +744,40 @@ impl AddrSpace {
     }
     pub fn do_copy_on_write(&mut self, addr: usize) -> Result<(), ()> {
         let fault_vpn = VirtAddr::from(addr).floor();
-        // search in sections
-        
-        Ok(())
+        // search in common sections
+        if let Some(sect) = self
+            .sections
+            .iter_mut()
+            .find(|area| area.vpn_range.is_include(fault_vpn))
+        {
+            let frame = sect.data_frames.remove(&fault_vpn).unwrap();
+            sect.unmap_one_page(&mut self.page_table, fault_vpn);
+            sect.map_one_page(&mut self.page_table, fault_vpn);
+            let new_frame = sect.data_frames.get_mut(&fault_vpn).unwrap();
+            new_frame
+                .ppn
+                .get_bytes_array()
+                .copy_from_slice(frame.ppn.get_bytes_array());
+            Ok(())
+        }
+        // search in mmap sections
+        else if let Some(sect) = self
+            .mmap_sections
+            .iter_mut()
+            .find(|area| area.vpn_range.is_include(fault_vpn))
+        {
+            let frame = sect.data_frames.remove(&fault_vpn).unwrap();
+            sect.unmap_one_page(&mut self.page_table, fault_vpn);
+            sect.map_one_page(&mut self.page_table, fault_vpn);
+            let new_frame = sect.data_frames.get_mut(&fault_vpn).unwrap();
+            new_frame
+                .ppn
+                .get_bytes_array()
+                .copy_from_slice(frame.ppn.get_bytes_array());
+            Ok(())
+        } else {
+            Err(()) // not found vpn
+        }
     }
 }
 

@@ -277,6 +277,9 @@ where
     pub fn set_end(&mut self, new_end: T) {
         self.r = new_end;
     }
+    pub fn is_include(&self, vpn: T) -> bool {
+        self.l <= vpn && vpn < self.r
+    }
 }
 impl<T> IntoIterator for SimpleRange<T>
 where
