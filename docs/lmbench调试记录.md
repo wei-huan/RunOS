@@ -26,3 +26,5 @@ Simple write: 38.3691 microseconds
 同时 stat fstat 和 sig install 测试也都通过了
 
 5. 很多 lmbench 测试会 clone 3个进程进行测试, 但没有 exec 新内容, 所以白白复制了 3 次地址空间, 非常浪费, 在 K210 平台还会耗尽 Pages 造成崩溃 所以实现写时复制(Copy on Write)刻不容缓了
+
+测试过程怎么有时快有时慢, 非常奇怪

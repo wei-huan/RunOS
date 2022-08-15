@@ -27,7 +27,7 @@ pub enum MapType {
 #[derive(Clone)]
 pub struct Section {
     pub name: String,
-    perm: MapPermission,
+    pub perm: MapPermission,
     map_type: MapType,
     pub vpn_range: VPNRange,
     pub data_frames: BTreeMap<VirtPageNum, Arc<Frame>>,

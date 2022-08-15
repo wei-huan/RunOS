@@ -96,7 +96,7 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 #[cfg(all(feature = "platform-k210", feature = "rustsbi"))]
 #[no_mangle]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    if hartid == 0 {
+    // if hartid == 0 {
         clear_bss();
         trap::init();
         dt::init(dtb_ptr);
@@ -111,22 +111,22 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         timer::init();
         // SMP_START will turn to true in this function
         // cpu::boot_all_harts(hartid);
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Main Hart {} successfully booted", hart_id()).green()
-        // );
+        log::info!(
+            "{}",
+            alloc::format!("Main Hart {} successfully booted", hart_id()).green()
+        );
         scheduler::schedule();
-    } else {
-        trap::init();
-        mm::init();
-        fpu::init();
-        timer::init();
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Hart {} successfully booted", hart_id()).green()
-        // );
-        scheduler::schedule();
-    }
+    // } else {
+    //     trap::init();
+    //     mm::init();
+    //     fpu::init();
+    //     timer::init();
+    //     // log::info!(
+    //     //     "{}",
+    //     //     alloc::format!("Hart {} successfully booted", hart_id()).green()
+    //     // );
+    //     scheduler::schedule();
+    // }
 }
 
 // // qemu rustsbi

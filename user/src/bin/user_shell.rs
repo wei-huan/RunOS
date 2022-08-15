@@ -967,11 +967,11 @@ pub fn busybox_lua_tests() -> isize {
     0
 }
 
-static LMBENCH_TESTS: [&str; 4] = [
+static LMBENCH_TESTS: [&str; 2] = [
     // "busybox echo latency measurements",
     // "lmbench_all lat_syscall -P 1 null",
     // "lmbench_all lat_syscall -P 1 read",
-    // "lmbench_all lat_syscall -P 1 write",
+    // "lmbench_all lat_syscall -P 1 write",    // loop
     // "busybox mkdir /var/tmp",
     // "busybox touch /var/tmp/lmbench",
     // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench",
@@ -981,7 +981,7 @@ static LMBENCH_TESTS: [&str; 4] = [
     // "lmbench_all lat_sig -P 1 install",
     // "lmbench_all lat_sig -P 1 catch",    // Exception(StorePageFault) process bomb
     // "lmbench_all lat_sig -P 1 prot lat_sig", // Exception(StorePageFault) process bomb
-    "lmbench_all lat_pipe -P 1", // Shit No pages
+    // "lmbench_all lat_pipe -P 1", // Shit No pages
     "lmbench_all lat_proc -P 1 fork",
     "lmbench_all lat_proc -P 1 exec",
     // "busybox cp hello /tmp",
@@ -998,11 +998,12 @@ static LMBENCH_TESTS: [&str; 4] = [
     // "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX",
     // "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX",
     // "busybox echo context switch overhead",
-    "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",
+    // "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",
 ];
 
 pub fn lmbench_tests() -> isize {
     for line in LMBENCH_TESTS {
+        println!("{}", line);
         let splited: Vec<_> = line.split('|').collect();
         let process_arguments_list: Vec<_> = splited
             .iter()

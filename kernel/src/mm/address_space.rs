@@ -12,8 +12,11 @@ use crate::task::{
     AuxHeader, AT_BASE, AT_CLKTCK, AT_EGID, AT_ENTRY, AT_EUID, AT_FLAGS, AT_GID, AT_HWCAP,
     AT_NOTELF, AT_PAGESZ, AT_PHDR, AT_PHENT, AT_PHNUM, AT_PLATFORM, AT_SECURE, AT_UID,
 };
-use alloc::string::{String, ToString};
 use alloc::vec::Vec;
+use alloc::{
+    string::{String, ToString},
+    sync::Arc,
+};
 use core::arch::asm;
 use lazy_static::lazy_static;
 use riscv::register::satp;
@@ -634,7 +637,7 @@ impl AddrSpace {
         let mut addr_space = Self::new_empty();
         // map trampoline
         addr_space.map_trampoline();
-        // share mmap data sections/user_stack/heap
+        // share map data sections/user_stack/heap
         for area in user_space
             .sections
             .iter()
@@ -646,7 +649,7 @@ impl AddrSpace {
                 .unwrap();
             addr_space.sections.push(new_area);
         }
-        // share mmap_sections
+        // share map mmap_sections
         for area in user_space.mmap_sections.iter() {
             let mut new_area = (*area).clone();
             new_area
@@ -654,7 +657,7 @@ impl AddrSpace {
                 .unwrap();
             addr_space.mmap_sections.push(new_area);
         }
-        // copy trap_cx
+        // copy trap_cx section
         if let Some(area) = user_space
             .sections
             .iter()
@@ -751,13 +754,20 @@ impl AddrSpace {
             .find(|area| area.vpn_range.is_include(fault_vpn))
         {
             let frame = sect.data_frames.remove(&fault_vpn).unwrap();
-            sect.unmap_one_page(&mut self.page_table, fault_vpn);
-            sect.map_one_page(&mut self.page_table, fault_vpn);
-            let new_frame = sect.data_frames.get_mut(&fault_vpn).unwrap();
-            new_frame
-                .ppn
-                .get_bytes_array()
-                .copy_from_slice(frame.ppn.get_bytes_array());
+            // other address space have already copied to other frame, so don't need to move and copy in this address space
+            if Arc::strong_count(&frame) == 1 {
+                sect.data_frames.insert(fault_vpn, frame);
+                self.page_table
+                    .set_pte_flags(fault_vpn, PTEFlags::from_bits(sect.perm.bits()).unwrap());
+            } else {
+                sect.unmap_one_page(&mut self.page_table, fault_vpn);
+                sect.map_one_page(&mut self.page_table, fault_vpn);
+                let new_frame = sect.data_frames.get_mut(&fault_vpn).unwrap();
+                new_frame
+                    .ppn
+                    .get_bytes_array()
+                    .copy_from_slice(frame.ppn.get_bytes_array());
+            }
             Ok(())
         }
         // search in mmap sections
@@ -767,13 +777,19 @@ impl AddrSpace {
             .find(|area| area.vpn_range.is_include(fault_vpn))
         {
             let frame = sect.data_frames.remove(&fault_vpn).unwrap();
-            sect.unmap_one_page(&mut self.page_table, fault_vpn);
-            sect.map_one_page(&mut self.page_table, fault_vpn);
-            let new_frame = sect.data_frames.get_mut(&fault_vpn).unwrap();
-            new_frame
-                .ppn
-                .get_bytes_array()
-                .copy_from_slice(frame.ppn.get_bytes_array());
+            if Arc::strong_count(&frame) == 1 {
+                sect.data_frames.insert(fault_vpn, frame);
+                self.page_table
+                    .set_pte_flags(fault_vpn, PTEFlags::from_bits(sect.perm.bits()).unwrap());
+            } else {
+                sect.unmap_one_page(&mut self.page_table, fault_vpn);
+                sect.map_one_page(&mut self.page_table, fault_vpn);
+                let new_frame = sect.data_frames.get_mut(&fault_vpn).unwrap();
+                new_frame
+                    .ppn
+                    .get_bytes_array()
+                    .copy_from_slice(frame.ppn.get_bytes_array());
+            }
             Ok(())
         } else {
             Err(()) // not found vpn

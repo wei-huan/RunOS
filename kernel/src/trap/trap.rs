@@ -121,7 +121,7 @@ pub fn user_trap_handler() -> ! {
             let trap_ctx = current_trap_cx();
             let sepc = trap_ctx.sepc;
             log::warn!(
-                "[kernel] {:?} in process {}, bad addr = {:#X}, bad instruction = {:#X}, kernel killed it.",
+                "[kernel] {:?} in process {}, bad addr = {:#X}, bad instruction = {:#X}",
                 scause.cause(),
                 pid,
                 stval,
@@ -129,6 +129,7 @@ pub fn user_trap_handler() -> ! {
             );
             let mut inner = task.acquire_inner_lock();
             if inner.addrspace.do_copy_on_write(stval) != Ok(()) {
+                log::error!("Page Fault Not about CopyOnWrite, SIGSEGV");
                 inner.signals.add_sig(SIGSEGV);
             }
         }

@@ -16,6 +16,7 @@ use alloc::vec::Vec;
 use core::fmt::write;
 use core::mem::size_of;
 use core::task;
+use riscv::register::hedeleg::read;
 use spin::MutexGuard;
 
 use super::{EINVAL, EPERM};
@@ -367,7 +368,7 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
     if inner.fd_table[old_fd].is_none() {
         return -1;
     }
-    
+
     if new_fd >= inner.fd_table.len() {
         for _ in inner.fd_table.len()..(new_fd + 1) {
             inner.fd_table.push(None);
@@ -513,6 +514,18 @@ pub fn sys_pselect6(
         timeout,
         sigmask as usize
     );
+    if readfds as usize != 0 {
+        let readfds_copy = translated_refmut(token, readfds);
+        log::debug!("readfds[0]: {:#X?}", readfds_copy.fds_bits[0]);
+    }
+    if writefds as usize != 0 {
+        let writefds_copy = translated_refmut(token, writefds);
+        log::debug!("writefds[0]: {:#X?}", writefds_copy.fds_bits[0]);
+    }
+    if exceptfds as usize != 0 {
+        let exceptfds_copy = translated_refmut(token, exceptfds);
+        log::debug!("exceptfds[0]: {:#X?}", exceptfds_copy.fds_bits[0]);
+    }
     let mut ret: isize = 0;
     if timeout.nsec != 0 || timeout.sec != 0 {
         let timeout_ns: u64 =
@@ -522,16 +535,17 @@ pub fn sys_pselect6(
             if readfds as usize != 0 {
                 let readfds = translated_refmut(token, readfds);
                 for i in 0..nfds as usize {
+                    if !readfds.contains_bit(i) {
+                        continue;
+                    }
                     if let Some(f) = &inner.fd_table[i] {
                         match &f {
                             FileClass::File(file) => {
                                 ret += 1;
-                                readfds.set_bit(i);
                             }
                             FileClass::Abstr(abs) => {
                                 if abs.read_available() {
                                     ret += 1;
-                                    readfds.set_bit(i);
                                 } else {
                                     readfds.clear_bit(i);
                                 }
@@ -545,16 +559,17 @@ pub fn sys_pselect6(
             if writefds as usize != 0 {
                 let writefds = translated_refmut(token, writefds);
                 for i in 0..nfds as usize {
+                    if !writefds.contains_bit(i) {
+                        continue;
+                    }
                     if let Some(f) = &inner.fd_table[i] {
                         match &f {
                             FileClass::File(file) => {
                                 ret += 1;
-                                writefds.set_bit(i);
                             }
                             FileClass::Abstr(abs) => {
                                 if abs.write_available() {
                                     ret += 1;
-                                    writefds.set_bit(i);
                                 } else {
                                     writefds.clear_bit(i);
                                 }
@@ -582,16 +597,17 @@ pub fn sys_pselect6(
         if readfds as usize != 0 {
             let readfds = translated_refmut(token, readfds);
             for i in 0..nfds as usize {
+                if !readfds.contains_bit(i) {
+                    continue;
+                }
                 if let Some(f) = &inner.fd_table[i] {
                     match &f {
                         FileClass::File(file) => {
                             ret += 1;
-                            readfds.set_bit(i);
                         }
                         FileClass::Abstr(abs) => {
                             if abs.read_available() {
                                 ret += 1;
-                                readfds.set_bit(i);
                             } else {
                                 readfds.clear_bit(i);
                             }
@@ -605,16 +621,17 @@ pub fn sys_pselect6(
         if writefds as usize != 0 {
             let writefds = translated_refmut(token, writefds);
             for i in 0..nfds as usize {
+                if !writefds.contains_bit(i) {
+                    continue;
+                }
                 if let Some(f) = &inner.fd_table[i] {
                     match &f {
                         FileClass::File(file) => {
                             ret += 1;
-                            writefds.set_bit(i);
                         }
                         FileClass::Abstr(abs) => {
                             if abs.write_available() {
                                 ret += 1;
-                                writefds.set_bit(i);
                             } else {
                                 writefds.clear_bit(i);
                             }
