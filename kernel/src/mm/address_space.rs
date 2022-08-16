@@ -5,7 +5,7 @@ use super::{
 };
 use crate::config::{
     DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE, USER_STACK_BASE,
-    USER_STACK_SIZE,
+    USER_STACK_SIZE, SIGRETURN_TRAMPOLINE,
 };
 use crate::platform::MMIO;
 use crate::task::{
@@ -234,10 +234,18 @@ impl AddrSpace {
             PTEFlags::R | PTEFlags::X,
         )
     }
+    fn map_sigreturn_trampoline(&mut self) {
+        self.page_table.map(
+            VirtAddr::from(SIGRETURN_TRAMPOLINE).into(),
+            PhysAddr::from(strampoline as usize).into(),
+            PTEFlags::R | PTEFlags::X | PTEFlags::U,
+        );
+    }
     pub fn create_kernel_space() -> Self {
         let mut kernel_space = Self::new_empty();
         // map trampoline
         kernel_space.map_trampoline();
+        kernel_space.map_sigreturn_trampoline();
         // map kernel sections
         // println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
         // println!(
@@ -378,6 +386,7 @@ impl AddrSpace {
         let mut user_space = Self::new_empty();
         // map trampoline
         user_space.map_trampoline();
+        user_space.map_sigreturn_trampoline();
         // map program headers of elf, with U flag
         let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
         let elf_header = elf.header;
@@ -404,15 +413,15 @@ impl AddrSpace {
         // let mut need_data_sec = true;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
-            // let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-            // let name = sect.get_name(&elf).unwrap();
-            // log::debug!(
-            //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
-            //     name,
-            //     ph.get_type().unwrap(),
-            //     ph.virtual_addr(),
-            //     ph.virtual_addr() + ph.mem_size()
-            // );
+            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+            let name = sect.get_name(&elf).unwrap();
+            log::debug!(
+                "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
+                name,
+                ph.get_type().unwrap(),
+                ph.virtual_addr(),
+                ph.virtual_addr() + ph.mem_size()
+            );
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
                 // first section header is dummy, not match program header, so set i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
@@ -435,7 +444,7 @@ impl AddrSpace {
                 if ph_flags.is_execute() {
                     map_perm |= MapPermission::X;
                 }
-                // log::debug!("map_perm: {:#?}", map_perm);
+                log::debug!("program header map_perm: {:#?}", map_perm);
                 let section = Section::new(
                     name.to_string(),
                     start_va,
@@ -569,7 +578,7 @@ impl AddrSpace {
             Section::new(
                 ".trap_cx".to_string(),
                 TRAP_CONTEXT_BASE.into(),
-                TRAMPOLINE.into(),
+                SIGRETURN_TRAMPOLINE.into(),
                 MapType::Framed,
                 MapPermission::R | MapPermission::W,
             ),
@@ -598,12 +607,61 @@ impl AddrSpace {
             }
         }
     }
-    pub fn from_existed_user(user_space: &AddrSpace) -> AddrSpace {
+    // pub fn from_existed_user(user_space: &AddrSpace) -> AddrSpace {
+    //     let mut addr_space = Self::new_empty();
+    //     // map trampoline
+    //     addr_space.map_trampoline();
+    //     // copy data sections/trap_context/user_stack/heap
+    //     for area in user_space.sections.iter() {
+    //         let new_area = Section::from_another(area);
+    //         addr_space.push_section(new_area, None);
+    //         // copy data from another space
+    //         for vpn in area.vpn_range {
+    //             let src_ppn = user_space.translate(vpn).unwrap().ppn();
+    //             let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
+    //             dst_ppn
+    //                 .get_bytes_array()
+    //                 .copy_from_slice(src_ppn.get_bytes_array());
+    //         }
+    //     }
+    //     // copy mmap_sections
+    //     for area in user_space.mmap_sections.iter() {
+    //         let new_area = Section::from_another(area);
+    //         addr_space.push_mmap_section(new_area, None);
+    //         // copy data from another space
+    //         for vpn in area.vpn_range {
+    //             let src_ppn = user_space.translate(vpn).unwrap().ppn();
+    //             let dst_ppn = addr_space.translate(vpn).unwrap().ppn();
+    //             dst_ppn
+    //                 .get_bytes_array()
+    //                 .copy_from_slice(src_ppn.get_bytes_array());
+    //         }
+    //     }
+    //     addr_space
+    // }
+    /* share .text section in lmbench */
+    pub fn from_existed_user(user_space: &mut AddrSpace) -> AddrSpace {
         let mut addr_space = Self::new_empty();
         // map trampoline
         addr_space.map_trampoline();
+        // share map .text sections/user_stack/heap
+        for area in user_space
+            .sections
+            .iter()
+            .filter(|sect| !(sect.perm.contains(MapPermission::W)))
+        {
+            let mut new_area = (*area).clone();
+            new_area
+                .share_map(&mut addr_space.page_table, &mut user_space.page_table)
+                .unwrap();
+            addr_space.sections.push(new_area);
+        }
         // copy data sections/trap_context/user_stack/heap
-        for area in user_space.sections.iter() {
+        for area in user_space
+            .sections
+            .iter()
+            .filter(|sect| (sect.perm.contains(MapPermission::W)))
+        {
             let new_area = Section::from_another(area);
             addr_space.push_section(new_area, None);
             // copy data from another space
@@ -630,6 +688,7 @@ impl AddrSpace {
         }
         addr_space
     }
+    /* copy on write */
     // pub fn from_existed_user(user_space: &mut AddrSpace) -> AddrSpace {
     //     let mut addr_space = Self::new_empty();
     //     // map trampoline

@@ -230,7 +230,13 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
     let path = translated_str(token, path);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
-    let flags = OpenFlags::from_bits(flags).unwrap_or(OpenFlags::RDONLY);
+    let flags = match OpenFlags::from_bits(flags) {
+        Some(flags) => flags,
+        None => {
+            log::warn!("sys_open_at unknown flags");
+            return -EINVAL;
+        }
+    };
     log::debug!(
         "sys_open_at dirfd: {} path: {:#?}, flags: {:#?}, mode: {}",
         dirfd,
@@ -910,7 +916,6 @@ fn get_file_discpt(
 ) -> Option<FileClass> {
     if fd == AT_FDCWD {
         if let Some(inode) = open(inner.get_work_path().as_str(), path.as_str(), oflags) {
-            //println!("find old");
             return Some(FileClass::File(inode));
         } else {
             return None;
@@ -1025,7 +1030,7 @@ pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
     }
 }
 
-pub fn sys_utimensat(fd: isize, path: *const u8, time: usize, flags: u32) -> isize {
+pub fn sys_utimensat(fd: isize, path: *const u8, time: *const [TimeSpec; 2], flags: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
@@ -1034,17 +1039,17 @@ pub fn sys_utimensat(fd: isize, path: *const u8, time: usize, flags: u32) -> isi
         "sys_utimensat: fd: {}, path: {}, time: {:#X?}, flags: {:?}",
         fd,
         path,
-        time,
+        time as usize,
         flags
     );
     let inner = task.acquire_inner_lock();
     if let Some(file) = get_file_discpt(fd, &path, &inner, flags) {
         match file {
             FileClass::File(_f) => return 0,
-            _ => return -1,
+            _ => return -ENOENT,
         }
     } else {
-        return -2;
+        return -ENOENT;
     }
 }
 

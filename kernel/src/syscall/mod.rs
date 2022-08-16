@@ -280,7 +280,7 @@ pub fn syscall(syscall_id: usize, args: [usize; 6]) -> isize {
         SYSCALL_FSTATAT => sys_fstatat(args[0] as _, args[1] as *mut u8, args[2] as *mut u8),
         SYSCALL_FSTAT => sys_fstat(args[0] as _, args[1] as *mut u8),
         SYSCALL_UTIMENSAT => {
-            sys_utimensat(args[0] as _, args[1] as *const u8, args[2], args[3] as u32)
+            sys_utimensat(args[0] as _, args[1] as *const u8, args[2] as _, args[3] as u32)
         }
         SYSCALL_EXIT => sys_exit(args[0] as i32),
         SYSCALL_EXIT_GROUP => sys_exit_group(args[0] as i32),

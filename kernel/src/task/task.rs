@@ -453,7 +453,6 @@ impl TaskControlBlock {
             // adjust mmap section
             log::trace!("start fixing mmap conflict");
             inner.addrspace.fix_mmap_section_conflict(start, length);
-
             // map mmap section at fixed place
             log::trace!("mmap at fixed place start before map: {:#X}", start);
             inner.mmap_area_hint = inner.mmap_area_hint.max(

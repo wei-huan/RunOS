@@ -813,7 +813,7 @@ static BUSYBOX_LUA_TESTS: [&str; 63] = [
     "busybox which ls",
     "busybox uname",
     "busybox uptime",
-    "busybox printf \"abc\n\"",
+    "busybox printf \"abc\\n\"",
     "busybox ps",
     "busybox pwd",
     "busybox free",
@@ -822,10 +822,6 @@ static BUSYBOX_LUA_TESTS: [&str; 63] = [
     "busybox ls",
     "busybox sleep 1",
     "busybox echo \"#### file opration test\"",
-    "busybox mkdir test_dir",
-    "busybox grep hello busybox_cmd.txt",
-    "busybox cp busybox_cmd.txt busybox_cmd.bak",
-    "busybox find -name \"busybox_cmd.txt\"",
     "busybox touch test.txt",
     "busybox echo \"hello world\" > test.txt",
     "busybox cat test.txt",
@@ -841,16 +837,20 @@ static BUSYBOX_LUA_TESTS: [&str; 63] = [
     "busybox echo \"2222222\" >> test.txt",
     "busybox echo \"1111111\" >> test.txt",
     "busybox echo \"bbbbbbb\" >> test.txt",
+    // "busybox sort test.txt | ./busybox uniq",
     "busybox stat test.txt",
     "busybox strings test.txt",
     "busybox wc test.txt",
     "busybox [ -f test.txt ]",
     "busybox more test.txt",
     "busybox rm test.txt",
-    "busybox rm busybox_cmd.bak",
+    "busybox mkdir test_dir",
     "busybox mv test_dir test",
     "busybox rmdir test",
-    // "busybox sort test.txt | ./busybox uniq",
+    "busybox grep hello busybox_cmd.txt",
+    "busybox cp busybox_cmd.txt busybox_cmd.bak",
+    "busybox rm busybox_cmd.bak",
+    "busybox find -name \"busybox_cmd.txt\"",
 ];
 
 pub fn busybox_lua_tests() -> isize {
@@ -967,21 +967,20 @@ pub fn busybox_lua_tests() -> isize {
     0
 }
 
-static LMBENCH_TESTS: [&str; 8] = [
+static LMBENCH_TESTS: [&str; 0] = [
     // "busybox echo latency measurements",
-    "lmbench_all lat_syscall -P 1 null",         // sys_pselect6 loop, no copy on write just ok
-    "lmbench_all lat_syscall -P 1 read",         // ok, no copy on write just ok
-    "lmbench_all lat_syscall -P 1 write",        // ok, sometimes error process3 exit_group eariler, no copy on write just ok
-    // "busybox touch /var/tmp/lmbench",
-    "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench",    // ok, no copy on write just ok
-    "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench",   // ok, no copy on write just ok
-    "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop, no copy on write just ok
-    "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
-    "lmbench_all lat_sig -P 1 install",     // loop, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 null", // sys_pselect6 loop, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 read", // ok, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 write", // ok, sometimes error process3 exit_group eariler, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench", // ok, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench", // ok, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop, no copy on write just ok
+    // "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
+    // "lmbench_all lat_sig -P 1 install",        // loop, no copy on write just ok
     // "lmbench_all lat_sig -P 1 catch",    // need to implement signals
     // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals
     // "lmbench_all lat_pipe -P 1",            // Stuck in sys_wait4, no copy on write shit no pages
-    // "lmbench_all lat_proc -P 1 fork",    // loop, no copy on write shit no pages
+    // "lmbench_all lat_proc -P 1 fork",    // loop, no copy on write shit no pages, share ronly sect ok
     // "lmbench_all lat_proc -P 1 exec",    // loop, no copy on write shit no pages
     // "busybox cp hello /tmp",
     // "lmbench_all lat_proc -P 1 shell",   // too many busybox error, no copy on write shit no pages
@@ -997,7 +996,7 @@ static LMBENCH_TESTS: [&str; 8] = [
     // "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX",
     // "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX",
     // "busybox echo context switch overhead",
-    // "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",  // pselect6 loop
+    // "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",  // need pages
 ];
 
 pub fn lmbench_tests() -> isize {
@@ -1114,7 +1113,7 @@ pub fn lmbench_tests() -> isize {
 #[no_mangle]
 pub fn main() -> i32 {
     println!("Rust user shell");
-    busybox_lua_tests();
+    // busybox_lua_tests();
     lmbench_tests();
     0
 }

@@ -305,8 +305,7 @@ pub fn init_rootfs() {
     )
     .unwrap();
     let _ls = open("/", "ls", OpenFlags::CREATE).unwrap();
-    let _test_txt = open("/", "test.txt", OpenFlags::CREATE).unwrap();
-    let _busybox_cmd_bak = open("/", "busybox_cmd.bak", OpenFlags::CREATE).unwrap();
+    // let _busybox_cmd_bak = open("/", "busybox_cmd.bak", OpenFlags::CREATE).unwrap();
     let _tmp = open("/", "tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _dev = open("/", "dev", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
@@ -329,14 +328,22 @@ pub fn list_rootfs() {
 
 bitflags! {
     pub struct OpenFlags: u32 {
-        const RDONLY = 0o0;
-        const WRONLY = 0o1;
-        const RDWR = 0o2;
-        const CREATE = 0o100;
-        const EXCL  = 0o200;
-        const TRUNC = 0o1000;
-        const APPEND = 0o2000;
-        const DIRECTROY = 0o200000;
+        const RDONLY    =   0o0;
+        const WRONLY    =   0o1;
+        const RDWR      =   0o2;
+        const CREATE    =   0o100;
+        const EXCL      =   0o200;
+        const NOCTTY    =   0o400;
+        const TRUNC     =   0o1000;
+        const APPEND    =   0o2000;
+        const NONBLOCK  =   0o4000;
+        const DSYNC     =   0o10000;
+        const ASYNC     =   0o20000;
+        const DIRECT    =   0o40000;
+        const LARGEFILE =   0o100000;
+        const DIRECTROY =   0o200000;
+        const NOFOLLOW  =   0o400000;
+        const CLOEXEC   =   0o2000000;
     }
 }
 
