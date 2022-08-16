@@ -413,15 +413,15 @@ impl AddrSpace {
         // let mut need_data_sec = true;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
-            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-            let name = sect.get_name(&elf).unwrap();
-            log::debug!(
-                "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
-                name,
-                ph.get_type().unwrap(),
-                ph.virtual_addr(),
-                ph.virtual_addr() + ph.mem_size()
-            );
+            // let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+            // let name = sect.get_name(&elf).unwrap();
+            // log::debug!(
+            //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
+            //     name,
+            //     ph.get_type().unwrap(),
+            //     ph.virtual_addr(),
+            //     ph.virtual_addr() + ph.mem_size()
+            // );
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
                 // first section header is dummy, not match program header, so set i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
@@ -444,7 +444,7 @@ impl AddrSpace {
                 if ph_flags.is_execute() {
                     map_perm |= MapPermission::X;
                 }
-                log::debug!("program header map_perm: {:#?}", map_perm);
+                // log::debug!("program header map_perm: {:#?}", map_perm);
                 let section = Section::new(
                     name.to_string(),
                     start_va,

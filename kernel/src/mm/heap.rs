@@ -8,7 +8,7 @@ static HEAP_ALLOCATOR: LockedHeap<HEAP_ALLOCATOR_MAX_ORDER> = LockedHeap::empty(
 
 #[alloc_error_handler]
 pub fn handle_alloc_error(layout: core::alloc::Layout) -> ! {
-    panic!("Kernel Heap allocation error, layout = {:?}", layout)
+    panic!("Kernel Heap allocation error, layout = {:#?}", layout)
 }
 
 static mut KERNEL_HEAP_SPACE: [u8; KERNEL_HEAP_SIZE] = [0; KERNEL_HEAP_SIZE];

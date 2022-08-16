@@ -10,7 +10,7 @@ use lazy_static::*;
 #[cfg(feature = "platform-k210")]
 const CPU_NUM: usize = 2;
 #[cfg(not(feature = "platform-k210"))]
-const CPU_NUM: usize = 4;
+const CPU_NUM: usize = 2;
 
 #[inline(always)]
 pub fn hart_id() -> usize {
@@ -25,7 +25,6 @@ lazy_static! {
 }
 
 pub fn take_my_cpu() -> RefMut<'static, Cpu> {
-    // log::debug!("hart id: {}", hart_id());
     CPUS[hart_id()].exclusive_access()
 }
 

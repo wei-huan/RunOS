@@ -967,7 +967,7 @@ pub fn busybox_lua_tests() -> isize {
     0
 }
 
-static LMBENCH_TESTS: [&str; 0] = [
+static LMBENCH_TESTS: [&str; 1] = [
     // "busybox echo latency measurements",
     // "lmbench_all lat_syscall -P 1 null", // sys_pselect6 loop, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 read", // ok, no copy on write just ok
@@ -984,7 +984,7 @@ static LMBENCH_TESTS: [&str; 0] = [
     // "lmbench_all lat_proc -P 1 exec",    // loop, no copy on write shit no pages
     // "busybox cp hello /tmp",
     // "lmbench_all lat_proc -P 1 shell",   // too many busybox error, no copy on write shit no pages
-    // "lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=1m fsync=1 print=3",
+    "lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/lmbench move=1m fsync=1 print=3",
     // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX",
     // "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX",
     // "busybox echo file system latency",

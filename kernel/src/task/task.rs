@@ -44,7 +44,7 @@ pub struct ClearChildTid {
 
 pub type FDTable = Vec<Option<FileClass>>;
 pub struct TaskControlBlockInner {
-    pub entry_point: usize, // 用户程序入口点 exec会改变
+    pub entry_point: usize,
     pub trap_cx_ppn: PhysPageNum,
     pub ustack_bottom: usize,
     pub heap_start: usize,
@@ -170,11 +170,25 @@ impl TaskControlBlock {
         // memory_set with elf program headers/trampoline/trap context/user stack
         let (addrspace, heap_start, mut user_sp, entry_point, mut auxv) =
             AddrSpace::create_user_space(elf_data);
+
         let token = addrspace.token();
         let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
             .unwrap()
             .ppn();
+            
+        // **** access current TCB exclusively
+        let mut inner = self.acquire_inner_lock();
+        // substitute addrspace
+        inner.addrspace = addrspace;
+        // set new entry_point
+        inner.entry_point = entry_point;
+        // update trap_cx ppn
+        inner.trap_cx_ppn = trap_cx_ppn;
+        // update heap_start
+        inner.heap_start = heap_start;
+        // update heap_pointer
+        inner.heap_pointer = heap_start;
 
         ////////////// envp[] ///////////////////
         let mut env: Vec<String> = Vec::new();
@@ -308,19 +322,6 @@ impl TaskControlBlock {
         ////////////// argc //////////////////////
         user_sp -= core::mem::size_of::<usize>();
         *translated_refmut(token, user_sp as *mut usize) = args.len();
-
-        // **** access current TCB exclusively
-        let mut inner = self.acquire_inner_lock();
-        // set new entry_point
-        inner.entry_point = entry_point;
-        // substitute addrspace
-        inner.addrspace = addrspace;
-        // update trap_cx ppn
-        inner.trap_cx_ppn = trap_cx_ppn;
-        // update heap_start
-        inner.heap_start = heap_start;
-        // update heap_pointer
-        inner.heap_pointer = heap_start;
 
         // initialize trap_cx
         let mut trap_cx = TrapContext::app_init_context(

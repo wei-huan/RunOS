@@ -1,7 +1,7 @@
 pub const PAGE_SIZE: usize = 4096;
 pub const PAGE_SIZE_BITS: usize = 0xc;
 #[cfg(feature = "platform-qemu")]
-pub const MEMORY_END: usize = 0x809E0000;
+pub const MEMORY_END: usize = 0x80AE0000;
 #[cfg(feature = "platform-k210")]
 pub const MEMORY_END: usize = 0x80800000;
 pub const KERNEL_HEAP_SIZE: usize = 0x44_0000;
