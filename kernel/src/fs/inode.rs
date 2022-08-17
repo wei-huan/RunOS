@@ -1,9 +1,11 @@
 use super::{finfo, Dirent, File, Stat, DT_DIR, DT_REG, DT_UNKNOWN};
-use crate::mm::UserBuffer;
+use crate::config::{MMAP_BASE, PAGE_SIZE};
+use crate::mm::{MapPermission, MapType, Section, UserBuffer, VirtAddr, KERNEL_SPACE};
 use crate::owo_colors::OwoColorize;
 use crate::syscall::EINVAL;
 use crate::{drivers::BLOCK_DEVICE, println};
 use _core::usize;
+use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
@@ -122,6 +124,37 @@ impl OSInode {
         return base;
     }
 
+    // only for exec file to save memory compare to Vec[u8]
+    pub fn mmap_to_kernel(&self) -> &'static [u8] {
+        let size = self.get_size();
+        let start_va = VirtAddr::from(MMAP_BASE);
+        let end_va = VirtAddr::from(MMAP_BASE + size);
+        let mut section = Section::new(
+            ".mmap_elf".to_string(),
+            start_va,
+            end_va,
+            MapType::Framed,
+            MapPermission::R | MapPermission::W,
+        );
+        let ks_page_table = &mut KERNEL_SPACE.lock().page_table;
+        section.map(ks_page_table);
+        let mut inner = self.inner.lock();
+        let mut buffer = [0u8; 512];
+        loop {
+            // println!("here0_1");
+            let len = inner.inode.read_at(inner.offset, &mut buffer);
+            // println!("here0_2 len: {}", len);
+            if len == 0 {
+                break;
+            }
+            section.copy_data(ks_page_table, &buffer[..len], inner.offset);
+            inner.offset += len;
+        }
+        let mut ks_lock = KERNEL_SPACE.lock();
+        ks_lock.mmap_sections.push(section);
+        unsafe { core::slice::from_raw_parts_mut(MMAP_BASE as *mut u8, self.get_size()) }
+    }
+
     pub fn find(&self, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
         let inner = self.inner.lock();
         let vfile = inner.inode.find_vfile_bypath(path);
@@ -179,6 +212,7 @@ impl OSInode {
         let (size, _, _, _, _) = inner.inode.stat();
         return size as usize;
     }
+
     // TODO: create with long file name entry
     pub fn create(&self, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
         let inner = self.inner.lock();
@@ -411,9 +445,9 @@ pub fn open(work_path: &str, path: &str, flags: OpenFlags) -> Option<Arc<OSInode
         }
     } else {
         cur_inode.find_vfile_bypath(path).map(|inode| {
-            if flags.contains(OpenFlags::TRUNC) {
-                // inode.clear();
-            }
+            // if flags.contains(OpenFlags::TRUNC) {
+            //     // inode.clear();
+            // }
             // println!("open finish");
             Arc::new(OSInode::new(readable, writable, inode))
         })

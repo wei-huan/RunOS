@@ -1,9 +1,10 @@
-use crate::config::page_aligned_up;
+use crate::config::{page_aligned_up, MMAP_BASE};
 use crate::cpu::{current_task, current_user_token};
 use crate::dt::TIMER_FREQ;
 use crate::fs::{open, OpenFlags};
 use crate::mm::{
     translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
+    KERNEL_SPACE,
 };
 use crate::scheduler::{add_task, pid2task};
 use crate::syscall::{ENOENT, ESRCH};
@@ -18,7 +19,7 @@ use alloc::vec::Vec;
 use bitflags::*;
 use core::sync::atomic::Ordering;
 
-use super::EFAULT;
+use super::{ECHILD, EFAULT};
 
 pub fn sys_exit(exit_code: i32) -> ! {
     log::debug!("sys_exit");
@@ -253,21 +254,21 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
             args = args.add(1);
         }
     }
-    // println!("args_vec: {:#?}", args_vec);
     let task = current_task().unwrap();
-    let inner = task.acquire_inner_lock();
-    if let Some(app_inode) = open(
-        inner.current_path.as_str(),
-        path.as_str(),
-        OpenFlags::RDONLY,
-    ) {
-        drop(inner);
-        let all_data = app_inode.read_all();
-        let task = current_task().unwrap();
+    let current_path = task.acquire_inner_lock().current_path.clone();
+    if let Some(app_inode) = open(current_path.as_str(), path.as_str(), OpenFlags::RDONLY) {
+        // println!("here0 sys_exec");
+        let all_data = app_inode.mmap_to_kernel();
+        // println!("here1 sys_exec");
+        task.exec(all_data, args_vec);
+        // println!("here2 sys_exec");
+        KERNEL_SPACE
+            .lock()
+            .remove_mmap_area_with_start_vpn(VirtAddr::from(MMAP_BASE).floor());
+        // println!("here3 sys_exec");
+        // let all_data = app_inode.read_all();
+        // task.exec(all_data.as_slice(), args_vec);
         // let argc = args_vec.len();
-        // log::debug!("before task.exec");
-        task.exec(all_data.as_slice(), args_vec);
-        // log::debug!("after task.exec, now return");
         // argc as isize
         0
     } else {
@@ -344,7 +345,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             .iter()
             .any(|p| pid == -1 || pid as usize == p.getpid())
         {
-            return -1;
+            return -ECHILD;
             // ---- release current PCB
         }
         let pair = inner.children.iter().enumerate().find(|(_, p)| {

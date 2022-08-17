@@ -108,9 +108,6 @@ pub fn exit(exit_code: i32) -> ! {
 pub fn yield_() -> isize {
     sys_yield()
 }
-pub fn get_time() -> isize {
-    sys_get_time()
-}
 pub fn getpid() -> isize {
     sys_getpid()
 }
@@ -151,12 +148,25 @@ bitflags! {
         const SIGSEGV   = 1 << 11;
     }
 }
+
 // pub fn kill(pid: usize, signal: i32) -> isize {
 //     sys_kill(pid, signal)
 // }
-pub fn sleep(period_ms: usize) {
-    let start = sys_get_time();
-    while sys_get_time() < start + period_ms as isize {
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct TimeVal {
+    pub sec: usize,
+    pub usec: usize,
+}
+
+pub fn sleep(period_us: usize) {
+    let mut time = TimeVal::default();
+    sys_get_time(&mut time);
+    let start = time.sec * 1000000 + time.usec;
+    let mut cur_time = start;
+    while cur_time < (start + period_us) {
         sys_yield();
+        sys_get_time(&mut time);
+        cur_time = time.sec * 1000000 + time.usec;
     }
 }

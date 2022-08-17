@@ -728,7 +728,7 @@ extern crate user;
 
 use alloc::string::String;
 use alloc::vec::Vec;
-use user::{close, dup, exec, fork, open, pipe, waitpid, OpenFlags};
+use user::{close, dup, exec, fork, open, pipe, sleep, waitpid, OpenFlags};
 
 #[derive(Debug)]
 struct ProcessArguments {
@@ -880,65 +880,11 @@ pub fn busybox_lua_tests() -> isize {
         if !valid {
             println!("Invalid command: Inputs/Outputs cannot be correctly binded!");
         } else {
-            // create pipes
-            let mut pipes_fd: Vec<[usize; 2]> = Vec::new();
-            if !process_arguments_list.is_empty() {
-                for _ in 0..process_arguments_list.len() - 1 {
-                    let mut pipe_fd = [0usize; 2];
-                    pipe(&mut pipe_fd);
-                    pipes_fd.push(pipe_fd);
-                }
-            }
-            let mut children: Vec<_> = Vec::new();
-            for (i, process_argument) in process_arguments_list.iter().enumerate() {
+            for (_, process_argument) in process_arguments_list.iter().enumerate() {
                 let pid = fork();
                 if pid == 0 {
-                    let input = &process_argument.input;
-                    let output = &process_argument.output;
                     let args_copy = &process_argument.args_copy;
                     let args_addr = &process_argument.args_addr;
-                    // redirect input
-                    if !input.is_empty() {
-                        let input_fd = open(input.as_str(), OpenFlags::RDONLY);
-                        if input_fd == -1 {
-                            println!("Error when opening file {}", input);
-                            return -4;
-                        }
-                        let input_fd = input_fd as usize;
-                        close(0);
-                        assert_eq!(dup(input_fd), 0);
-                        close(input_fd);
-                    }
-                    // redirect output
-                    if !output.is_empty() {
-                        let output_fd =
-                            open(output.as_str(), OpenFlags::CREATE | OpenFlags::WRONLY);
-                        if output_fd == -1 {
-                            println!("Error when opening file {}", output);
-                            return -4;
-                        }
-                        let output_fd = output_fd as usize;
-                        close(1);
-                        assert_eq!(dup(output_fd), 1);
-                        close(output_fd);
-                    }
-                    // receive input from the previous process
-                    if i > 0 {
-                        close(0);
-                        let read_end = pipes_fd.get(i - 1).unwrap()[0];
-                        assert_eq!(dup(read_end), 0);
-                    }
-                    // send output to the next process
-                    if i < process_arguments_list.len() - 1 {
-                        close(1);
-                        let write_end = pipes_fd.get(i).unwrap()[1];
-                        assert_eq!(dup(write_end), 1);
-                    }
-                    // close all pipe ends inherited from the parent process
-                    for pipe_fd in pipes_fd.iter() {
-                        close(pipe_fd[0]);
-                        close(pipe_fd[1]);
-                    }
                     // execute new application
                     if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
                         println!("Error when executing!");
@@ -946,20 +892,11 @@ pub fn busybox_lua_tests() -> isize {
                     }
                     unreachable!();
                 } else {
-                    children.push(pid);
-                }
-            }
-            for pipe_fd in pipes_fd.iter() {
-                close(pipe_fd[0]);
-                close(pipe_fd[1]);
-            }
-            let mut exit_code: i32 = 0;
-            for pid in children.into_iter() {
-                let exit_pid = waitpid(pid as usize, &mut exit_code);
-                assert_eq!(pid, exit_pid);
-                // println!("pid: {}", pid);
-                if pid == 2 {
+                    let mut exit_code: i32 = 0;
+                    let exit_pid = waitpid(pid as usize, &mut exit_code);
+                    assert_eq!(pid, exit_pid);
                     println!("testcase {} success", line);
+                    sleep(500000);
                 }
             }
         }
@@ -1113,7 +1050,7 @@ pub fn lmbench_tests() -> isize {
 #[no_mangle]
 pub fn main() -> i32 {
     println!("Rust user shell");
-    // busybox_lua_tests();
-    lmbench_tests();
+    busybox_lua_tests();
+    // lmbench_tests();
     0
 }

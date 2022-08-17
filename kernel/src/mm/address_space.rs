@@ -51,7 +51,7 @@ pub fn kernel_translate(vpn: VirtPageNum) -> Option<PageTableEntry> {
 pub struct AddrSpace {
     pub page_table: PageTable,
     sections: Vec<Section>,
-    mmap_sections: Vec<Section>,
+    pub mmap_sections: Vec<Section>,
 }
 
 impl AddrSpace {
@@ -137,7 +137,7 @@ impl AddrSpace {
         }
         self.sections.push(section);
     }
-    fn push_mmap_section(&mut self, mut section: Section, data: Option<&[u8]>) {
+    pub fn push_mmap_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         section.map(&mut self.page_table);
         if let Some(data) = data {
             section.copy_data(&mut self.page_table, data, 0);
