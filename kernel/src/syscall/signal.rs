@@ -83,10 +83,10 @@ pub fn sys_sigreturn() -> isize {
         inner.handling_sig = -1;
         // restore the trap context
         let trap_ctx = inner.get_trap_cx();
-        let mc_pc_ptr = trap_ctx.x[2] + UContext::pc_offset();
-        let mc_pc = *translated_ref(token, mc_pc_ptr as *mut u32) as usize;
         *trap_ctx = inner.trap_ctx_backup.unwrap();
-        trap_ctx.sepc = mc_pc;
+        // let mc_pc_ptr = trap_ctx.x[2] + UContext::pc_offset();
+        // let mc_pc = *translated_ref(token, mc_pc_ptr as *mut u32) as usize;
+        // trap_ctx.sepc = mc_pc;
         0
     } else {
         -1
@@ -125,20 +125,18 @@ pub fn sys_sigaction(
             }
         } else {
             if old_action as usize != 0 {
-                let sigact_old = translated_refmut(token, old_action);
-                sigact_old.sa_handler = SIGDEF;
-                sigact_old.sa_mask = SigSet::default();
+                *translated_refmut(token, old_action) = SignalAction::default();
             }
         }
         if action as usize != 0 {
             let new_action = *translated_ref(token, action);
-            // log::debug!(
-            //     "new_action handler {:#X?}, mask {:?}, sa_flags {:?}, sa_restorer {:#X?}",
-            //     new_action.sa_handler,
-            //     new_action.sa_mask,
-            //     new_action.sa_flags,
-            //     new_action.sa_restorer
-            // );
+            log::debug!(
+                "new_action handler {:#X?}, mask {:?}, sa_restorer {:#X?}, sa_flags {:?}",
+                new_action.sa_handler,
+                new_action.sa_flags,
+                new_action.sa_restorer,
+                new_action.sa_mask,
+            );
             inner.signal_actions.insert(signum as u32, new_action);
         }
         return 0;

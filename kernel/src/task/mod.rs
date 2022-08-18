@@ -111,11 +111,11 @@ fn call_kernel_signal_handler(sig: usize) {
 fn call_user_signal_handler(sig: usize) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
-
     let handler = task_inner.signal_actions[&(sig as u32)].sa_handler;
     // change current mask
     task_inner.signal_mask = task_inner.signal_actions[&(sig as u32)].sa_mask;
     // handle flag
+    log::error!(" handling signal now change to sig{}", sig);
     task_inner.handling_sig = sig as i32;
     task_inner.signals.clear_sig(sig);
 
@@ -130,7 +130,8 @@ fn call_user_signal_handler(sig: usize) {
         fn __uservec();
     }
     //put ra
-    trap_ctx.x[1] = __sigreturn as usize - __uservec as usize + SIGRETURN_TRAMPOLINE;
+    trap_ctx.x[1] = SIGRETURN_TRAMPOLINE;
+    log::debug!("sighandler ra: {:#X?}", trap_ctx.x[1]);
     // put args (a0)
     trap_ctx.x[10] = sig;
     if task_inner.signal_actions[&(sig as u32)]
@@ -140,11 +141,11 @@ fn call_user_signal_handler(sig: usize) {
         let token = task_inner.get_user_token();
         trap_ctx.x[2] -= size_of::<UContext>(); // sp -= sizeof(ucontext)
         trap_ctx.x[12] = trap_ctx.x[2]; // a2  = sp
-                                        // log::debug!(
-                                        //     "sighandler prepare: sp = {:#x?}, a2 = {:#x?}",
-                                        //     trap_ctx.x[2],
-                                        //     trap_ctx.x[12]
-                                        // );
+        log::debug!(
+            "sighandler prepare: sp = {:#x?}, a2 = {:#x?}",
+            trap_ctx.x[2],
+            trap_ctx.x[12]
+        );
         let mut userbuf = UserBuffer::new(translated_byte_buffer(
             token,
             trap_ctx.x[2] as *const u8,

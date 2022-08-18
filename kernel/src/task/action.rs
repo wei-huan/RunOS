@@ -21,7 +21,7 @@ bitflags! {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SignalAction {
     pub sa_handler: usize, // void (*__sighandler_t) (int)
-    pub sa_mask: SigSet,
     pub sa_flags: SAFlags,
     pub sa_restorer: usize, // void __restorefn_t(void)
+    pub sa_mask: SigSet,
 }

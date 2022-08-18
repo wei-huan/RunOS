@@ -676,7 +676,7 @@ pub fn busybox_lua_tests() -> isize {
     0
 }
 
-static LMBENCH_TESTS: [&str; 1] = [
+static LMBENCH_TESTS: [&str; 2] = [
     // "busybox echo latency measurements",
     // "lmbench_all lat_syscall -P 1 null",        // sys_pselect6 loop, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 read",     // ok, no copy on write just ok
@@ -686,7 +686,7 @@ static LMBENCH_TESTS: [&str; 1] = [
     // "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop, no copy on write just ok
     // "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
     // "lmbench_all lat_sig -P 1 install",        // loop, no copy on write just ok
-    // "lmbench_all lat_sig -P 1 catch",    // need to implement signals
+    "lmbench_all lat_sig -P 1 catch",    // need to implement signals
     "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals
     // "lmbench_all lat_pipe -P 1",            // Stuck in sys_wait4, no copy on write shit no pages, mmap exec stuck in wait4 may need implement signal
     // "lmbench_all lat_proc -P 1 fork",    // loop, no copy on write shit no pages, share ronly sect ok

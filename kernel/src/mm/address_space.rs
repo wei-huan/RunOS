@@ -4,8 +4,8 @@ use super::{
     section::{MapPermission, MapType, Section},
 };
 use crate::config::{
-    DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, TRAMPOLINE, TRAP_CONTEXT_BASE, USER_STACK_BASE,
-    USER_STACK_SIZE, SIGRETURN_TRAMPOLINE,
+    DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, SIGRETURN_TRAMPOLINE, TRAMPOLINE, TRAP_CONTEXT_BASE,
+    USER_STACK_BASE, USER_STACK_SIZE,
 };
 use crate::platform::MMIO;
 use crate::task::{
@@ -33,6 +33,7 @@ extern "C" {
     fn ebss();
     fn ekernel();
     fn strampoline();
+    fn ssignaltrampoline();
 }
 
 lazy_static! {
@@ -237,7 +238,7 @@ impl AddrSpace {
     fn map_sigreturn_trampoline(&mut self) {
         self.page_table.map(
             VirtAddr::from(SIGRETURN_TRAMPOLINE).into(),
-            PhysAddr::from(strampoline as usize).into(),
+            PhysAddr::from(ssignaltrampoline as usize).into(),
             PTEFlags::R | PTEFlags::X | PTEFlags::U,
         );
     }
@@ -245,7 +246,6 @@ impl AddrSpace {
         let mut kernel_space = Self::new_empty();
         // map trampoline
         kernel_space.map_trampoline();
-        kernel_space.map_sigreturn_trampoline();
         // map kernel sections
         // println!(".text [{:#x}, {:#x})", stext as usize, etext as usize);
         // println!(
@@ -385,8 +385,8 @@ impl AddrSpace {
         let mut auxv: Vec<AuxHeader> = Vec::new();
         let mut user_space = Self::new_empty();
         // map trampoline
-        user_space.map_trampoline();
         user_space.map_sigreturn_trampoline();
+        user_space.map_trampoline();
         // map program headers of elf, with U flag
         let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
         let elf_header = elf.header;
@@ -643,6 +643,7 @@ impl AddrSpace {
     pub fn from_existed_user(user_space: &mut AddrSpace) -> AddrSpace {
         let mut addr_space = Self::new_empty();
         // map trampoline
+        addr_space.map_sigreturn_trampoline();
         addr_space.map_trampoline();
         // share map .text sections/user_stack/heap
         for area in user_space
