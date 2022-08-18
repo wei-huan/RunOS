@@ -58,7 +58,7 @@ fn clear_bss() {
 #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 #[no_mangle]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    // if !SMP_START.load(Ordering::Acquire) {
+    if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         // println!("here 0");
         trap::init();
@@ -79,24 +79,24 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         //     alloc::format!("Main Hart {} successfully init", hart_id()).green()
         // );
         scheduler::schedule();
-    // } else {
-    //     trap::init();
-    //     mm::init();
-    //     fpu::init();
-    //     timer::init();
-    //     // log::info!(
-    //     //     "{}",
-    //     //     alloc::format!("Hart {} successfully init", hart_id()).green()
-    //     // );
-    //     scheduler::schedule();
-    // }
+    } else {
+        trap::init();
+        mm::init();
+        fpu::init();
+        timer::init();
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Hart {} successfully init", hart_id()).green()
+        // );
+        scheduler::schedule();
+    }
 }
 
 // k210 rustsbi
 #[cfg(all(feature = "platform-k210", feature = "rustsbi"))]
 #[no_mangle]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    // if hartid == 0 {
+    if hartid == 0 {
         clear_bss();
         println!("here0");
         trap::init();
@@ -117,17 +117,17 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
             alloc::format!("Main Hart {} successfully booted", hart_id()).green()
         );
         scheduler::schedule();
-    // } else {
-    //     trap::init();
-    //     mm::init();
-    //     fpu::init();
-    //     timer::init();
-    //     // log::info!(
-    //     //     "{}",
-    //     //     alloc::format!("Hart {} successfully booted", hart_id()).green()
-    //     // );
-    //     scheduler::schedule();
-    // }
+    } else {
+        trap::init();
+        mm::init();
+        fpu::init();
+        timer::init();
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Hart {} successfully booted", hart_id()).green()
+        // );
+        scheduler::schedule();
+    }
 }
 
 // // qemu rustsbi
