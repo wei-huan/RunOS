@@ -13,7 +13,6 @@ fn main() -> i32 {
         exec("user_shell\0", &[0 as *const u8]);
     } else {
         loop {
-            // println!("Init Process Waiting");
             let mut exit_code: i32 = 0;
             let pid = wait(&mut exit_code);
             if pid == -1 {

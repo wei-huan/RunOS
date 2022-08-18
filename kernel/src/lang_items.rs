@@ -47,6 +47,7 @@ pub unsafe fn backtrace() {
     println!("---END   BACKTRACE---");
 }
 
+#[allow(unused)]
 pub unsafe fn user_backtrace(token: usize, s0: usize) {
     let mut fp = s0;
     println!("---START USER BACKTRACE---");

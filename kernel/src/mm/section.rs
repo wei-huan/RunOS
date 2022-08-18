@@ -6,7 +6,10 @@ use super::{
 };
 use crate::config::PAGE_SIZE;
 use alloc::string::String;
-use alloc::{collections::BTreeMap, sync::Arc};
+use alloc::{
+    collections::{BTreeMap, VecDeque},
+    sync::Arc,
+};
 use bitflags::bitflags;
 
 bitflags! {
@@ -73,6 +76,17 @@ impl Section {
         let pte_flags = PTEFlags::from_bits(self.perm.bits).unwrap();
         page_table.map(vpn, ppn, pte_flags);
     }
+    pub fn map_one_page_with_frame(
+        &mut self,
+        page_table: &mut PageTable,
+        vpn: VirtPageNum,
+        frame: Arc<Frame>,
+    ) {
+        assert!(self.map_type == MapType::Framed);
+        let pte_flags = PTEFlags::from_bits(self.perm.bits).unwrap();
+        page_table.map(vpn, frame.ppn, pte_flags);
+        self.data_frames.insert(vpn, frame);
+    }
     pub fn unmap_one_page(&mut self, page_table: &mut PageTable, vpn: VirtPageNum) {
         if self.map_type == MapType::Framed {
             self.data_frames.remove(&vpn);
@@ -84,6 +98,16 @@ impl Section {
             self.map_one_page(page_table, vpn);
         }
     }
+    pub fn map_with_frames(
+        &mut self,
+        page_table: &mut PageTable,
+        mut frames: VecDeque<Arc<Frame>>,
+    ) {
+        for vpn in self.vpn_range {
+            self.map_one_page_with_frame(page_table, vpn, frames.pop_front().unwrap());
+        }
+    }
+
     pub fn unmap(&mut self, page_table: &mut PageTable) {
         for vpn in self.vpn_range {
             self.unmap_one_page(page_table, vpn);

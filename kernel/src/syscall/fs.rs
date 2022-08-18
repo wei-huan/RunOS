@@ -473,6 +473,18 @@ fn fstat_inner(f: Arc<OSInode>, userbuf: &mut UserBuffer) -> isize {
     0
 }
 
+pub fn sys_fsync(fd: usize) -> isize {
+    log::debug!("sys_fsync fd: {}", fd);
+    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let fd_table = inner.fd_table.clone();
+    if fd >= fd_table.len() || fd_table[fd].is_none() {
+        return -EBADF;
+    }
+    0
+}
+
 type FdMask = u64;
 
 const FD_SETSIZE: usize = 256;

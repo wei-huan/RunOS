@@ -1,14 +1,17 @@
 use super::{finfo, Dirent, File, Stat, DT_DIR, DT_REG, DT_UNKNOWN};
 use crate::config::{MMAP_BASE, PAGE_SIZE};
-use crate::mm::{MapPermission, MapType, Section, UserBuffer, VirtAddr, KERNEL_SPACE};
+use crate::mm::{
+    frame_alloc, Frame, MapPermission, MapType, Section, UserBuffer, VirtAddr, KERNEL_SPACE,
+};
 use crate::owo_colors::OwoColorize;
 use crate::syscall::EINVAL;
 use crate::{drivers::BLOCK_DEVICE, println};
-use _core::usize;
+use alloc::collections::VecDeque;
 use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
+use core::arch::asm;
 use lazy_static::*;
 use runfs::{FileAttributes, RunFileSystem, VFile};
 use spin::rwlock::RwLock;
@@ -124,8 +127,39 @@ impl OSInode {
         return base;
     }
 
+    // // only for exec file to save memory compare to Vec[u8]
+    // pub fn mmap_to_kernel(&self) -> &'static [u8] {
+    //     let size = self.get_size();
+    //     let start_va = VirtAddr::from(MMAP_BASE);
+    //     let end_va = VirtAddr::from(MMAP_BASE + size);
+    //     let mut section = Section::new(
+    //         ".mmap_elf".to_string(),
+    //         start_va,
+    //         end_va,
+    //         MapType::Framed,
+    //         MapPermission::R | MapPermission::W,
+    //     );
+    //     let ks_page_table = &mut KERNEL_SPACE.lock().page_table;
+    //     section.map(ks_page_table);
+    //     let mut buffer = [0u8; 512];
+    //     let mut inner = self.inner.lock();
+    //     loop {
+    //         // println!("here0_1");
+    //         let len = inner.inode.read_at(inner.offset, &mut buffer);
+    //         // println!("here0_2 len: {}", len);
+    //         if len == 0 {
+    //             break;
+    //         }
+    //         section.copy_data(ks_page_table, &buffer[..len], inner.offset);
+    //         inner.offset += len;
+    //     }
+    //     let mut ks_lock = KERNEL_SPACE.lock();
+    //     ks_lock.mmap_sections.push(section);
+    //     unsafe { core::slice::from_raw_parts_mut(MMAP_BASE as *mut u8, self.get_size()) }
+    // }
+
     // only for exec file to save memory compare to Vec[u8]
-    pub fn mmap_to_kernel(&self) -> &'static [u8] {
+    pub fn mmap_to_kernel(&self) {
         let size = self.get_size();
         let start_va = VirtAddr::from(MMAP_BASE);
         let end_va = VirtAddr::from(MMAP_BASE + size);
@@ -136,23 +170,31 @@ impl OSInode {
             MapType::Framed,
             MapPermission::R | MapPermission::W,
         );
-        let ks_page_table = &mut KERNEL_SPACE.lock().page_table;
-        section.map(ks_page_table);
+        // get enough frames
+        let mut frames: VecDeque<Arc<Frame>> = VecDeque::new();
+        for _ in section.vpn_range {
+            frames.push_back(Arc::new(frame_alloc().unwrap()));
+        }
+        // println!("mmap allocate frames: {}", frames.len());
+        // copy data to frames
         let mut inner = self.inner.lock();
-        let mut buffer = [0u8; 512];
+        let mut buffer = [0u8; PAGE_SIZE];
         loop {
             // println!("here0_1");
             let len = inner.inode.read_at(inner.offset, &mut buffer);
             // println!("here0_2 len: {}", len);
-            if len == 0 {
+            let dst = &mut frames[inner.offset / PAGE_SIZE].ppn.get_bytes_array()[..len];
+            dst.copy_from_slice(&buffer[..len]);
+            if len < buffer.len() {
                 break;
             }
-            section.copy_data(ks_page_table, &buffer[..len], inner.offset);
             inner.offset += len;
         }
+        // map secton with existed frames;
         let mut ks_lock = KERNEL_SPACE.lock();
+        section.map_with_frames(&mut ks_lock.page_table, frames);
         ks_lock.mmap_sections.push(section);
-        unsafe { core::slice::from_raw_parts_mut(MMAP_BASE as *mut u8, self.get_size()) }
+        // println!("end mmap to kernel");
     }
 
     pub fn find(&self, path: &str, flags: OpenFlags) -> Option<Arc<OSInode>> {
@@ -230,11 +272,14 @@ impl OSInode {
         }
         // create file
         let filename = pathv.pop().unwrap();
-        let attribute = if flags.contains(OpenFlags::DIRECTROY) {
+        let mut attribute = if flags.contains(OpenFlags::DIRECTROY) {
             FileAttributes::DIRECTORY
         } else {
             FileAttributes::FILE
         };
+        if !writable {
+            attribute |= FileAttributes::READ_ONLY;
+        }
         let create_path = path.trim_end_matches(filename);
         if let Some(temp_inode) = cur_inode.find_vfile_bypath(create_path) {
             temp_inode
@@ -385,7 +430,7 @@ impl OpenFlags {
     /// Do not check validity for simplicity
     /// Return (readable, writable)
     pub fn read_write(&self) -> (bool, bool) {
-        if self.is_empty() || self.contains(Self::RDONLY) {
+        if self.contains(Self::RDONLY) {
             (true, false)
         } else if self.contains(Self::WRONLY) {
             (false, true)

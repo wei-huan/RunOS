@@ -178,12 +178,13 @@ pub fn sys_clone(
     let clone_flags = CloneFlags::from_bits(flags).unwrap();
     let token = current_user_token();
     log::debug!(
-        "sys_clone flags: {:?}, stack_ptr: {:#X?}, ptid: {:#X?}, newtls: {}, ctid: {:#X?}",
+        "sys_clone flags: {:?}, stack_ptr: {:#X?}, ptid: {:#X?}, newtls: {}, ctid: {:#X?}, exit_signal: {}",
         clone_flags,
         stack_ptr,
         ptid_ptr as usize,
         newtls,
-        ctid_ptr as usize
+        ctid_ptr as usize,
+        (flags & 0xff) as usize
     );
     let new_task = current_task.fork();
     if stack_ptr != 0 {
@@ -257,15 +258,14 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
     let task = current_task().unwrap();
     let current_path = task.acquire_inner_lock().current_path.clone();
     if let Some(app_inode) = open(current_path.as_str(), path.as_str(), OpenFlags::RDONLY) {
-        // println!("here0 sys_exec");
-        let all_data = app_inode.mmap_to_kernel();
-        // println!("here1 sys_exec");
+        app_inode.mmap_to_kernel();
+        let all_data =
+            unsafe { core::slice::from_raw_parts_mut(MMAP_BASE as *mut u8, app_inode.get_size()) };
         task.exec(all_data, args_vec);
-        // println!("here2 sys_exec");
         KERNEL_SPACE
             .lock()
             .remove_mmap_area_with_start_vpn(VirtAddr::from(MMAP_BASE).floor());
-        // println!("here3 sys_exec");
+
         // let all_data = app_inode.read_all();
         // task.exec(all_data.as_slice(), args_vec);
         // let argc = args_vec.len();
@@ -328,12 +328,12 @@ const WNOWAIT: isize = 0x01000000;
 /// Else If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, suspend_current_and_run_next.
 pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
-    // log::debug!(
-    //     "sys_wait4, pid: {}, wstatus: {:#X?}, option: {}",
-    //     pid,
-    //     wstatus,
-    //     option
-    // );
+    log::debug!(
+        "sys_wait4, pid: {}, wstatus: {:#X?}, option: {}",
+        pid,
+        wstatus,
+        option
+    );
     loop {
         let task = current_task().unwrap();
         // No any child process waiting
@@ -345,7 +345,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
             .iter()
             .any(|p| pid == -1 || pid as usize == p.getpid())
         {
-            return -ECHILD;
+            return -1;
             // ---- release current PCB
         }
         let pair = inner.children.iter().enumerate().find(|(_, p)| {
@@ -356,12 +356,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         if let Some((idx, _)) = pair {
             let child = inner.children.remove(idx);
             // confirm that child will be deallocated after being removed from children list
-            assert_eq!(
-                Arc::strong_count(&child),
-                1,
-                "strong count: {}",
-                Arc::strong_count(&child)
-            );
+            assert_eq!(Arc::strong_count(&child), 1);
             let found_pid = child.getpid();
             // ++++ temporarily access child PCB exclusively
             let exit_code = child.acquire_inner_lock().exit_code;

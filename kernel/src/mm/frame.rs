@@ -1,8 +1,7 @@
 extern crate alloc;
 extern crate spin;
 use super::address::{PhysAddr, PhysPageNum};
-use crate::config::MEMORY_END;
-use alloc::collections::VecDeque;
+use crate::config::{MEMORY_END, PAGE_SIZE};
 use alloc::vec::Vec;
 use core::fmt::{self, Debug, Formatter};
 use lazy_static::*;
@@ -42,37 +41,39 @@ trait FrameAllocator {
     fn dealloc(&mut self, ppn: PhysPageNum);
 }
 
-pub struct FIFOFrameAllocator {
+pub struct StackFrameAllocator {
     end: usize,
     current: usize,
-    recycled: VecDeque<usize>,
+    recycled: Vec<usize>,
 }
 
-impl FIFOFrameAllocator {
+impl StackFrameAllocator {
     pub fn init(&mut self, start: PhysPageNum, end: PhysPageNum) {
         self.current = start.0;
         self.end = end.0;
-        // for ppn_usize in self.current..self.end {
-        //     let mut ppn: PhysPageNum = (ppn_usize << 12).into();
-        //     ppn.clear();
-        // }
     }
     pub fn add_free(&mut self, ppn: usize) {
-        self.recycled.push_back(ppn);
+        self.recycled.push(ppn);
+    }
+    pub fn unallocated_frames(&self) -> usize {
+        self.recycled.len() + self.end - self.current
+    }
+    pub fn free_space_size(&self) -> usize {
+        self.unallocated_frames() * PAGE_SIZE
     }
 }
 
-impl FrameAllocator for FIFOFrameAllocator {
+impl FrameAllocator for StackFrameAllocator {
     fn new() -> Self {
         Self {
             end: 0,
             current: 0,
-            recycled: VecDeque::new(),
+            recycled: Vec::new(),
         }
     }
 
     fn alloc(&mut self) -> Option<PhysPageNum> {
-        if let Some(ppn) = self.recycled.pop_front() {
+        if let Some(ppn) = self.recycled.pop() {
             Some(ppn.into())
         } else if self.current == self.end {
             panic!("Shit No pages");
@@ -89,7 +90,7 @@ impl FrameAllocator for FIFOFrameAllocator {
             panic!("Frame ppn={:#x} has not been allocated!", ppn);
         }
         // recycle
-        self.recycled.push_back(ppn);
+        self.recycled.push(ppn);
     }
 }
 
@@ -104,7 +105,7 @@ pub fn frame_test() {
     println!("frame test pass");
 }
 
-type FrameAllocatorImpl = FIFOFrameAllocator;
+type FrameAllocatorImpl = StackFrameAllocator;
 
 lazy_static! {
     pub static ref FRAME_ALLOCATOR: Mutex<FrameAllocatorImpl> =

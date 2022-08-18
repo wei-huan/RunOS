@@ -1,11 +1,11 @@
 pub const PAGE_SIZE: usize = 4096;
 pub const PAGE_SIZE_BITS: usize = 0xc;
 #[cfg(feature = "platform-qemu")]
-pub const MEMORY_END: usize = 0x819E0000;
+pub const MEMORY_END: usize = 0x889E0000;
 #[cfg(feature = "platform-k210")]
 pub const MEMORY_END: usize = 0x80800000;
 // pub const KERNEL_HEAP_SIZE: usize = 0x43_0000;
-pub const KERNEL_HEAP_SIZE: usize = 0x60_0000;
+pub const KERNEL_HEAP_SIZE: usize = 0x100_0000;
 
 // for buddy_system_allocator
 pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;
@@ -16,7 +16,7 @@ pub const SIGRETURN_TRAMPOLINE: usize = TRAMPOLINE - PAGE_SIZE;
 
 // Kernel Address Space 's Address
 pub const KERNEL_STACK_BASE: usize = SIGRETURN_TRAMPOLINE - PAGE_SIZE; // stack grow down, so stack base address is high end
-pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 8;
+pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 4;
 pub const BOOT_STACK_SIZE: usize = PAGE_SIZE * 2; // 16 KB
 
 // User Address Space 's Address
