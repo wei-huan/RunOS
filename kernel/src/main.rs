@@ -60,7 +60,7 @@ fn clear_bss() {
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     // if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
-        // println!("here 0");
+        println!("here 0");
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
@@ -96,8 +96,9 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 #[cfg(all(feature = "platform-k210", feature = "rustsbi"))]
 #[no_mangle]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    // if hartid == 0 {
+    if hartid == 0 {
         clear_bss();
+        println!("here 0");
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
@@ -116,17 +117,17 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
             alloc::format!("Main Hart {} successfully booted", hart_id()).green()
         );
         scheduler::schedule();
-    // } else {
-    //     trap::init();
-    //     mm::init();
-    //     fpu::init();
-    //     timer::init();
-    //     // log::info!(
-    //     //     "{}",
-    //     //     alloc::format!("Hart {} successfully booted", hart_id()).green()
-    //     // );
-    //     scheduler::schedule();
-    // }
+    } else {
+        trap::init();
+        mm::init();
+        fpu::init();
+        timer::init();
+        log::info!(
+            "{}",
+            alloc::format!("Hart {} successfully booted", hart_id()).green()
+        );
+        scheduler::schedule();
+    }
 }
 
 // // qemu rustsbi
@@ -185,39 +186,6 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 //         mm::init();
 //         timer::init();
 //         println!("here 2");
-//         loop {}
-//     }
-// }
-
-// qemu opensbi
-// #[cfg(all(feature = "qemu", feature = "opensbi"))]
-// #[no_mangle]
-// fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-//     // use alloc::sync::Arc;
-//     // use drivers::BLOCK_DEVICE;
-//     // use runfs::RunFileSystem;
-//     // use spin::rwlock::RwLock;
-//     if !SMP_START.load(Ordering::Acquire) {
-//         clear_bss();
-//         // println!("here 0");
-//         trap::init();
-//         dt::init(dtb_ptr);
-//         mm::boot_init();
-//         logo::show();
-//         scheduler::add_initproc();
-//         logger::init();
-//         logger::show_basic_info();
-//         // let runfs:Arc<RwLock<RunFileSystem>> = Arc::new(RwLock::new(RunFileSystem::new(BLOCK_DEVICE.clone())));
-//         // let root_dir = Arc::new(runfs.read().root_vfile(&runfs));
-//         // println!("runfs: {:#?}", runfs.read().bpb());
-//         // let ls = root_dir.ls();
-//         // println!("ls: {:#?}", ls);
-//         // let file = root_dir.find_vfile_bypath("initproc").unwrap();
-//         // println!("file: {:#?}", file.name());
-//         // timer::init();
-//         // SMP_START will turn to true in this function
-//         // cpu::boot_all_harts(hartid);
-//         scheduler::schedule();
 //         loop {}
 //     }
 // }

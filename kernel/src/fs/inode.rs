@@ -11,7 +11,6 @@ use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
-use core::arch::asm;
 use lazy_static::*;
 use runfs::{FileAttributes, RunFileSystem, VFile};
 use spin::rwlock::RwLock;

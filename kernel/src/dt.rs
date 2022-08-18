@@ -6,9 +6,9 @@ use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use fdt::node::FdtNode;
 use fdt::Fdt;
 
-pub static CPU_NUMS: AtomicUsize = AtomicUsize::new(2);
-pub static MEM_SIZE: AtomicUsize = AtomicUsize::new(0);
 pub static MEM_START: AtomicUsize = AtomicUsize::new(0);
+pub static MEM_SIZE: AtomicUsize = AtomicUsize::new(0);
+pub static CPU_NUMS: AtomicUsize = AtomicUsize::new(2);
 pub static TIMER_FREQ: AtomicUsize = AtomicUsize::new(403000000 / 62);
 pub static FDT: AtomicPtr<u8> = AtomicPtr::new(ptr::null_mut());
 // pub static MODEL: AtomicPtr<&str> = AtomicPtr::new(ptr::null_mut());
