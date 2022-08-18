@@ -4,9 +4,9 @@ use crate::opensbi::{impl_id, impl_version, spec_version};
 use crate::rustsbi::{impl_id, impl_version, spec_version};
 use crate::{
     cpu::hart_id,
-    dt::{CPU_NUMS, MEM_SIZE, MEM_START, TIMER_FREQ},
-    timer::get_time,
-    utils::{micros, time_parts},
+    dt::{CPU_NUMS, MEM_SIZE, MEM_START},
+    platform::CLOCK_FREQ,
+    timer::{get_time, get_time_sec_msec},
 };
 use core::sync::atomic::{AtomicUsize, Ordering};
 use log::*;
@@ -65,9 +65,8 @@ impl log::Log for MyLogger {
             mod_path.trim_start_matches("RunOS::")
         };
         let hart_id = hart_id();
-        let freq = TIMER_FREQ.load(core::sync::atomic::Ordering::Relaxed);
         let curr_time = get_time();
-        let (secs, ms, _) = time_parts(micros(curr_time, freq));
+        let (secs, ms) = get_time_sec_msec();
         let color = match record.level() {
             Level::Trace => WHITE,
             Level::Debug => GREEN,
@@ -118,7 +117,7 @@ pub fn show_basic_info() {
     let n_cpus = CPU_NUMS.load(Ordering::Relaxed);
     let mem_size = MEM_SIZE.load(Ordering::Relaxed);
     let mem_start = MEM_START.load(Ordering::Relaxed);
-    let timebase_frequency = TIMER_FREQ.load(Ordering::Relaxed);
+    let timebase_frequency = CLOCK_FREQ;
     log::info!("{}", "=== Machine Info ===".blue());
     log::info!(" Total CPUs: {}", n_cpus);
     log::info!(" RAM: {} MiB @ {:#X}", mem_size, mem_start as usize);

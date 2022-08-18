@@ -1,11 +1,11 @@
 pub const PAGE_SIZE: usize = 4096;
 pub const PAGE_SIZE_BITS: usize = 0xc;
 #[cfg(feature = "platform-qemu")]
-pub const MEMORY_END: usize = 0x889E0000;
+pub const MEMORY_END: usize = 0x809E0000;
 #[cfg(feature = "platform-k210")]
 pub const MEMORY_END: usize = 0x80800000;
 // pub const KERNEL_HEAP_SIZE: usize = 0x43_0000;
-pub const KERNEL_HEAP_SIZE: usize = 0x100_0000;
+pub const KERNEL_HEAP_SIZE: usize = 0x10_0000;
 
 // for buddy_system_allocator
 pub const HEAP_ALLOCATOR_MAX_ORDER: usize = 32;

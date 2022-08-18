@@ -16,9 +16,9 @@ pub fn sys_setitimer(which: i32, new_value: *const ITimerVal, old_value: *mut IT
     //     new_value as usize,
     //     old_value as usize
     // );
-    let token = current_user_token();
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let ret: isize = match which {
         ITIMER_REAL..=ITIMER_PROF => {
             if old_value as usize != 0 {

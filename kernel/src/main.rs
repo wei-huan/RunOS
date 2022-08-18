@@ -51,7 +51,10 @@ fn clear_bss() {
         fn sbss();
         fn ebss();
     }
-    (sbss as usize..ebss as usize).for_each(|a| unsafe { (a as *mut u8).write_volatile(0) })
+    unsafe {
+        core::slice::from_raw_parts_mut(sbss as usize as *mut u8, ebss as usize - sbss as usize)
+            .fill(0);
+    }
 }
 
 // qemu opensbi
@@ -65,11 +68,11 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         fpu::init();
-        // logo::show();
+        logo::show();
         logger::init();
         fs::init_rootfs();
         scheduler::add_initproc();
-        // logger::show_basic_info();
+        logger::show_basic_info();
         // fs::list_rootfs();
         timer::init();
         // SMP_START will turn to true in this function
@@ -98,7 +101,6 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if hartid == 0 {
         clear_bss();
-        println!("here0");
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();

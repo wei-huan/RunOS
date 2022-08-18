@@ -169,6 +169,7 @@ __restore:
     ld sp, 2*8(sp)
     sret
 
+    .align 2
 __sigreturn:
     li a7, 139
     # syscall SIGRETURN

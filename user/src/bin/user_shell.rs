@@ -274,234 +274,6 @@
 //     }
 // }
 
-// fn busybox_test() {
-//     // no busybox bash
-//     let mut busybox_tests_with_args = Vec::new();
-//     busybox_tests_with_args.push("echo \"#### independent command test\"");
-//     busybox_tests_with_args.push("ash -c exit");
-//     busybox_tests_with_args.push("sh -c exit");
-//     busybox_tests_with_args.push("basename /aaa/bbb");
-//     busybox_tests_with_args.push("cal");
-//     busybox_tests_with_args.push("clear");
-//     busybox_tests_with_args.push("date");
-//     busybox_tests_with_args.push("df");
-//     busybox_tests_with_args.push("dirname /aaa/bbb");
-//     busybox_tests_with_args.push("dmesg");
-//     busybox_tests_with_args.push("du");
-//     busybox_tests_with_args.push("expr 1 + 1");
-//     busybox_tests_with_args.push("false");
-//     busybox_tests_with_args.push("true");
-//     busybox_tests_with_args.push("which ls");
-//     busybox_tests_with_args.push("uname");
-//     busybox_tests_with_args.push("uptime");
-//     busybox_tests_with_args.push("printf \"abc\n\"");
-//     busybox_tests_with_args.push("ps");
-//     busybox_tests_with_args.push("pwd");
-//     busybox_tests_with_args.push("free");
-//     busybox_tests_with_args.push("hwclock");
-//     busybox_tests_with_args.push("kill 10");
-//     busybox_tests_with_args.push("ls");
-//     busybox_tests_with_args.push("sleep 1");
-//     busybox_tests_with_args.push("echo \"#### file opration test\"");
-//     busybox_tests_with_args.push("touch test.txt");
-//     busybox_tests_with_args.push("echo \"hello world\" > test.txt");
-//     busybox_tests_with_args.push("cat test.txt");
-//     busybox_tests_with_args.push("cut -c 3 test.txt");
-//     busybox_tests_with_args.push("od test.txt");
-//     busybox_tests_with_args.push("head test.txt");
-//     busybox_tests_with_args.push("tail test.txt");
-//     busybox_tests_with_args.push("hexdump -C test.txt");
-//     busybox_tests_with_args.push("md5sum test.txt");
-//     busybox_tests_with_args.push("echo \"ccccccc\" >> test.txt");
-//     busybox_tests_with_args.push("echo \"bbbbbbb\" >> test.txt");
-//     busybox_tests_with_args.push("echo \"aaaaaaa\" >> test.txt");
-//     busybox_tests_with_args.push("echo \"2222222\" >> test.txt");
-//     busybox_tests_with_args.push("echo \"1111111\" >> test.txt");
-//     busybox_tests_with_args.push("echo \"bbbbbbb\" >> test.txt");
-//     busybox_tests_with_args.push("sort test.txt | ./busybox uniq");
-//     busybox_tests_with_args.push("stat test.txt");
-//     busybox_tests_with_args.push("strings test.txt");
-//     busybox_tests_with_args.push("wc test.txt");
-//     busybox_tests_with_args.push("[ -f test.txt ]");
-//     busybox_tests_with_args.push("more test.txt");
-//     busybox_tests_with_args.push("rm test.txt");
-//     busybox_tests_with_args.push("mkdir test_dir");
-//     busybox_tests_with_args.push("mv test_dir test");
-//     busybox_tests_with_args.push("rmdir test");
-//     busybox_tests_with_args.push("grep hello busybox_cmd.txt");
-//     busybox_tests_with_args.push("cp busybox_cmd.txt busybox_cmd.bak");
-//     busybox_tests_with_args.push("rm busybox_cmd.bak");
-//     busybox_tests_with_args.push("find -name \"busybox_cmd.txt\"");
-
-//     for busybox_test_with_args in busybox_tests_with_args {
-//         let args: Vec<_> = busybox_test_with_args.split(' ').collect();
-//         // println!("args: {:#?}", args);
-//         let args_copy: Vec<_> = args
-//             .iter()
-//             .filter(|&arg| !arg.is_empty())
-//             .map(|&arg| {
-//                 let mut string = String::new();
-//                 string.push_str(arg);
-//                 string.push('\0');
-//                 string
-//             })
-//             .collect();
-//         // println!("args_copy: {:#?}", args_copy);
-//         let mut busybox_args: Vec<*const u8> = Vec::new();
-//         busybox_args.push("./busybox\0".as_ptr());
-//         for arg in args_copy.iter() {
-//             busybox_args.push(arg.as_ptr());
-//         }
-//         busybox_args.push(core::ptr::null::<u8>());
-//         let pid = fork();
-//         if pid == 0 {
-//             // println!("busybox_args: {:#?}", busybox_args);
-//             exec("./busybox\0", busybox_args.as_slice());
-//         } else {
-//             let mut exit_code = 0;
-//             waitpid(pid as usize, &mut exit_code);
-//             if exit_code == 0 {
-//                 println!("testcase busybox {} success", busybox_test_with_args);
-//             } else {
-//                 println!("testcase busybox {} fail", busybox_test_with_args);
-//             }
-//         }
-//     }
-
-//     // with busybox bash
-//     // let mut busybox_args = Vec::new();
-//     // busybox_args.push("busybox_testcode.sh\0".as_ptr());
-//     // busybox_args.push(core::ptr::null::<u8>());
-//     // let pid = fork();
-//     // if pid == 0 {
-//     //     exec("busybox_testcode.sh\0", busybox_args.as_slice());
-//     // } else {
-//     //     let mut exit_code = 0;
-//     //     waitpid(pid as usize, &mut exit_code);
-//     // }
-// }
-
-// fn lua_test() {
-//     // no busybox bash
-//     let mut lua_tests = Vec::new();
-//     lua_tests.push("date.lua\0");
-//     lua_tests.push("file_io.lua\0");
-//     lua_tests.push("max_min.lua\0");
-//     lua_tests.push("random.lua\0");
-//     lua_tests.push("remove.lua\0");
-//     lua_tests.push("round_num.lua\0");
-//     lua_tests.push("sin30.lua\0");
-//     lua_tests.push("sort.lua\0");
-//     lua_tests.push("strings.lua\0");
-
-//     let mut lua_args: Vec<*const u8> = Vec::new();
-//     lua_args.push("./lua\0".as_ptr());
-//     for lua_test in lua_tests {
-//         lua_args.push(lua_test.as_ptr());
-//         lua_args.push(core::ptr::null::<u8>());
-//         let pid = fork();
-//         if pid == 0 {
-//             exec("./lua\0", lua_args.as_slice());
-//         } else {
-//             let mut exit_code = 0;
-//             waitpid(pid as usize, &mut exit_code);
-//             if exit_code == 0 {
-//                 println!("testcase lua {} success", lua_test);
-//             } else {
-//                 println!("testcase lua {} fail", lua_test);
-//             }
-//         }
-//         lua_args.pop();
-//         lua_args.pop();
-//     }
-
-//     // with busybox bash
-//     // let mut lua_tests = Vec::new();
-//     // lua_tests.push("date.lua\0");
-//     // lua_tests.push("file_io.lua\0");
-//     // lua_tests.push("max_min.lua\0");
-//     // lua_tests.push("random.lua\0");
-//     // lua_tests.push("remove.lua\0");
-//     // lua_tests.push("round_num.lua\0");
-//     // lua_tests.push("sin30.lua\0");
-//     // lua_tests.push("sort.lua\0");
-//     // lua_tests.push("strings.lua\0");
-
-//     // let mut lua_args: Vec<*const u8> = Vec::new();
-//     // lua_args.push("./test.sh\0".as_ptr());
-//     // for lua_test in lua_tests {
-//     //     lua_args.push(lua_test.as_ptr());
-//     //     lua_args.push(core::ptr::null::<u8>());
-//     //     let pid = fork();
-//     //     if pid == 0 {
-//     //         exec("./test.sh\0", lua_args.as_slice());
-//     //     } else {
-//     //         let mut exit_code = 0;
-//     //         waitpid(pid as usize, &mut exit_code);
-//     //     }
-//     //     lua_args.pop();
-//     //     lua_args.pop();
-//     // }
-// }
-
-// fn lmbench_test() {
-//     // no busybox bash
-//     let mut lmbench_tests_with_args = Vec::new();
-//     lmbench_tests_with_args.push("lat_syscall -P 1 null\0");
-//     lmbench_tests_with_args.push("read\0");
-//     lmbench_tests_with_args.push("write\0");
-//     lmbench_tests_with_args.push("random.lua\0");
-//     lmbench_tests_with_args.push("remove.lua\0");
-//     lmbench_tests_with_args.push("round_num.lua\0");
-//     lmbench_tests_with_args.push("sin30.lua\0");
-//     lmbench_tests_with_args.push("sort.lua\0");
-//     lmbench_tests_with_args.push("strings.lua\0");
-
-//     let mut lmbench_args: Vec<*const u8> = Vec::new();
-//     lmbench_args.push("lmbench_all\0".as_ptr());
-//     lmbench_args.push("lat_syscall\0".as_ptr());
-//     lmbench_args.push("-P\0".as_ptr());
-//     lmbench_args.push("1\0".as_ptr());
-//     for lmbench_test in lmbench_tests_with_args {
-//         lmbench_args.push(lmbench_test.as_ptr());
-//         lmbench_args.push(core::ptr::null::<u8>());
-//         let pid = fork();
-//         if pid == 0 {
-//             exec("lmbench_all\0", lmbench_args.as_slice());
-//         } else {
-//             let mut exit_code = 0;
-//             waitpid(pid as usize, &mut exit_code);
-//         }
-//         lmbench_args.pop();
-//         lmbench_args.pop();
-//     }
-
-//     // with busybox bash
-//     let mut lmbench_args: Vec<*const u8> = Vec::new();
-//     lmbench_args.push("lmbench_testcode.sh\0".as_ptr());
-//     lmbench_args.push(core::ptr::null::<u8>());
-//     let pid = fork();
-//     if pid == 0 {
-//         exec("lmbench_testcode.sh\0", lmbench_args.as_slice());
-//     } else {
-//         let mut exit_code = 0;
-//         waitpid(pid as usize, &mut exit_code);
-//     }
-// }
-
-// fn final_round_two_test() {
-//     busybox_test();
-//     lua_test();
-//     // lmbench_test();
-// }
-
-// #[no_mangle]
-// pub fn main() -> i32 {
-//     println!("Rust user shell");
-//     final_round_two_test();
-//     0
-// }
-
 // #![no_std]
 // #![no_main]
 // #![allow(clippy::println_empty_string)]
@@ -906,7 +678,7 @@ pub fn busybox_lua_tests() -> isize {
 
 static LMBENCH_TESTS: [&str; 1] = [
     // "busybox echo latency measurements",
-    "lmbench_all lat_syscall -P 1 null",        // sys_pselect6 loop, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 null",        // sys_pselect6 loop, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 read",     // ok, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 write",    // ok, sometimes error process3 exit_group eariler, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench", // ok, no copy on write just ok
@@ -915,13 +687,13 @@ static LMBENCH_TESTS: [&str; 1] = [
     // "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
     // "lmbench_all lat_sig -P 1 install",        // loop, no copy on write just ok
     // "lmbench_all lat_sig -P 1 catch",    // need to implement signals
-    // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals
+    "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals
     // "lmbench_all lat_pipe -P 1",            // Stuck in sys_wait4, no copy on write shit no pages, mmap exec stuck in wait4 may need implement signal
     // "lmbench_all lat_proc -P 1 fork",    // loop, no copy on write shit no pages, share ronly sect ok
     // "lmbench_all lat_proc -P 1 exec",    // loop, no copy on write shit no pages, share ronly and mmap exec sect ok
     // "busybox cp hello /tmp",
     // "lmbench_all lat_proc -P 1 shell",   // too many busybox error, no copy on write shit no pages, share ronly and mmap half ok(have warn error StorePageFault, SIGSEGV=11)
-    // "busybox ash lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=1m fsync=1 print=3",
+    // "lmbench_all lmdd label=\"/var/tmp/XXX\"",
     // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX",
     // "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX",
     // "busybox echo file system latency",

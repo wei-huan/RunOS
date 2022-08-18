@@ -62,12 +62,12 @@ pub fn sys_fcntl(fd: usize, cmd: u32, arg: usize) -> isize {
 }
 
 pub fn sys_write(fd: isize, buf: *const u8, len: usize) -> isize {
-    // if (fd >= 3 || fd == AT_FDCWD) {
-    //     log::debug!("sys_write fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
-    // }
-    let token = current_user_token();
+    if (fd >= 3 || fd == AT_FDCWD) {
+        log::debug!("sys_write fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
+    }
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     if fd as usize >= inner.fd_table.len() {
         return -1;
     }
@@ -90,9 +90,9 @@ pub fn sys_write(fd: isize, buf: *const u8, len: usize) -> isize {
 
 pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
     log::debug!("sys_writev: fd: {}, iov: {:#X?}, iocnt: {}", fd, iov, iocnt);
-    let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
 
     let mut ret = 0isize;
 
@@ -130,9 +130,9 @@ pub fn sys_pread(fd: usize, buf: *mut u8, count: usize, offset: usize) -> isize 
         count,
         offset
     );
-    let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let ret = if let Some(file) = &inner.fd_table[fd] {
         let f: Arc<dyn File + Send + Sync>;
         match &file {
@@ -153,12 +153,12 @@ pub fn sys_pread(fd: usize, buf: *mut u8, count: usize, offset: usize) -> isize 
 }
 
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
-    // if (fd >= 3) {
-    //     log::debug!("sys_read fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
-    // }
-    let token = current_user_token();
+    if (fd >= 3) {
+        log::debug!("sys_read fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
+    }
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     if fd >= inner.fd_table.len() {
         return -EINVAL;
     }
@@ -181,9 +181,9 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
 
 pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
     log::debug!("sys_readv: fd: {}, iov: {:#X?}, iocnt: {}", fd, iov, iocnt);
-    let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
 
     if fd >= inner.fd_table.len() {
         return -1;
@@ -226,10 +226,10 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
 // }
 
 pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isize {
-    let token = current_user_token();
-    let path = translated_str(token, path);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
+    let path = translated_str(token, path);
     let flags = match OpenFlags::from_bits(flags) {
         Some(flags) => flags,
         None => {
@@ -320,7 +320,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
 }
 
 pub fn sys_close(fd: isize) -> isize {
-    // log::debug!("sys_close fd: {}", fd);
+    log::debug!("sys_close fd: {}", fd);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     if fd as usize >= inner.fd_table.len() {
@@ -335,10 +335,10 @@ pub fn sys_close(fd: isize) -> isize {
 
 pub fn sys_getcwd(buf: *mut u8, len: usize) -> isize {
     log::debug!("sys_getcwd buf: {:#X?}, len: {}", buf, len);
-    let token = current_user_token();
     let task = current_task().unwrap();
-    let buf_vec = translated_byte_buffer(token, buf, len);
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
+    let buf_vec = translated_byte_buffer(token, buf, len);
     let mut userbuf = UserBuffer::new(buf_vec);
     if buf as usize == 0 {
         return 0;
@@ -434,11 +434,11 @@ pub fn sys_dup3(old_fd: usize, new_fd: usize) -> isize {
 
 pub fn sys_fstat(fd: isize, buf: *mut u8) -> isize {
     log::debug!("sys_fstat fd: {}, buf: {:#X?}", fd, buf as usize);
-    let token = current_user_token();
     let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let buf_vec = translated_byte_buffer(token, buf, size_of::<Stat>());
     let mut userbuf = UserBuffer::new(buf_vec);
-    let inner = task.acquire_inner_lock();
 
     let ret = if fd == AT_FDCWD {
         let cwd = inner.current_path.clone();
@@ -475,9 +475,9 @@ fn fstat_inner(f: Arc<OSInode>, userbuf: &mut UserBuffer) -> isize {
 
 pub fn sys_fsync(fd: usize) -> isize {
     log::debug!("sys_fsync fd: {}", fd);
-    let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let fd_table = inner.fd_table.clone();
     if fd >= fd_table.len() || fd_table[fd].is_none() {
         return -EBADF;
@@ -520,18 +520,18 @@ pub fn sys_pselect6(
     timeout: *const TimeSpec,
     sigmask: *const SigSet,
 ) -> isize {
-    let token = current_user_token();
     let task = current_task().unwrap();
+    let token = task.acquire_inner_lock().get_user_token();
     let timeout = translated_ref(token, timeout);
-    // log::debug!(
-    //     "sys_pselect6 nfds: {}, readfds: {:#X?}, writefds: {:#X?}, exceptfds: {:#X?}, timeout: {:#X?}, sigmask: {:#X?}",
-    //     nfds,
-    //     readfds as usize,
-    //     writefds as usize,
-    //     exceptfds as usize,
-    //     timeout,
-    //     sigmask as usize
-    // );
+    log::debug!(
+        "sys_pselect6 nfds: {}, readfds: {:#X?}, writefds: {:#X?}, exceptfds: {:#X?}, timeout: {:#X?}, sigmask: {:#X?}",
+        nfds,
+        readfds as usize,
+        writefds as usize,
+        exceptfds as usize,
+        timeout,
+        sigmask as usize
+    );
     // if readfds as usize != 0 {
     //     let readfds_copy = translated_refmut(token, readfds);
     //     log::debug!("readfds[0]: {:#X?}", readfds_copy.fds_bits[0]);
@@ -603,10 +603,6 @@ pub fn sys_pselect6(
                 drop(inner);
                 suspend_current_and_run_next();
             } else {
-                if exceptfds as usize != 0 {
-                    let exceptfds = translated_refmut(token, exceptfds);
-                    exceptfds.clear_all();
-                }
                 break;
             }
         }
@@ -660,10 +656,10 @@ pub fn sys_pselect6(
                 }
             }
         }
-        if exceptfds as usize != 0 {
-            let exceptfds = translated_refmut(token, exceptfds);
-            exceptfds.clear_all();
-        }
+    }
+    if exceptfds as usize != 0 {
+        let exceptfds = translated_refmut(token, exceptfds);
+        exceptfds.clear_all();
     }
     // log::debug!("pselect6 return {}", ret);
     ret
@@ -691,9 +687,9 @@ pub fn sys_ppoll(
     timeout: *mut TimeSpec,
     sigmask: *const SigSet,
 ) -> isize {
-    let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     log::debug!(
         "sys_ppoll fds: {:#X?}, nfds: {}, timeout: {:#X?}, sigmask: {:#X?}",
         fds as usize,
@@ -717,7 +713,8 @@ pub fn sys_ppoll(
 
 pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
     let task = current_task().unwrap();
-    let token = current_user_token();
+    let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let path = translated_str(token, path);
     log::debug!("sys_fstatat path: {}, buf: {:#X?}", path, buf);
 
@@ -725,7 +722,7 @@ pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
     let mut stat_userbuf = UserBuffer::new(stat_buf);
 
     let cwd = if dirfd == AT_FDCWD && !path.starts_with("/") {
-        task.acquire_inner_lock().current_path.clone()
+        inner.current_path.clone()
     } else {
         String::from("/")
     };
@@ -748,10 +745,10 @@ pub fn sys_fstatat(dirfd: isize, path: *mut u8, buf: *mut u8) -> isize {
 
 pub fn sys_pipe(pipe: *mut u32, flags: u32) -> isize {
     let task = current_task().unwrap();
-    let token = current_user_token();
-    let flags = OpenFlags::from_bits(flags).unwrap();
-    // log::debug!("sys_pipe pipe: {:#X?}, flags: {:?}", pipe as usize, flags);
     let mut inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
+    let flags = OpenFlags::from_bits(flags).unwrap();
+    log::debug!("sys_pipe pipe: {:#X?}, flags: {:?}", pipe as usize, flags);
     let (pipe_read, pipe_write) = make_pipe();
     let read_fd = inner.alloc_fd();
     inner.fd_table[read_fd] = Some(FileClass::Abstr(pipe_read));
@@ -763,7 +760,9 @@ pub fn sys_pipe(pipe: *mut u32, flags: u32) -> isize {
 }
 
 pub fn sys_mkdir(dirfd: isize, path: *const u8, mode: u32) -> isize {
-    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let path = translated_str(token, path);
     log::debug!(
         "sys_mkdir: dirfd: {}, path: {}, mode: {}",
@@ -771,8 +770,6 @@ pub fn sys_mkdir(dirfd: isize, path: *const u8, mode: u32) -> isize {
         path,
         mode
     );
-    let task = current_task().unwrap();
-    let inner = task.acquire_inner_lock();
     if dirfd == AT_FDCWD {
         if let Some(_) = open(
             inner.get_work_path().as_str(),
@@ -807,11 +804,11 @@ pub fn sys_mkdir(dirfd: isize, path: *const u8, mode: u32) -> isize {
 }
 
 pub fn sys_chdir(path: *const u8) -> isize {
-    let token = current_user_token();
-    let path = translated_str(token, path);
-    log::debug!("sys_chdir path: {}", path);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
+    let path = translated_str(token, path);
+    log::debug!("sys_chdir path: {}", path);
     let mut work_path = inner.current_path.clone();
     let new_ino_id = ch_dir(work_path.as_str(), path.as_str()) as isize;
     //println!("new inode id = {}", new_ino_id);
@@ -857,10 +854,10 @@ pub fn sys_getdents64(fd: isize, buf: *mut u8, len: usize) -> isize {
         buf as usize,
         len
     );
-    let token = current_user_token();
     let task = current_task().unwrap();
-    let buf_vec = translated_byte_buffer(token, buf, len);
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
+    let buf_vec = translated_byte_buffer(token, buf, len);
     let dent_len = size_of::<Dirent>();
     //let max_num = len / dent_len;
     let mut total_len: usize = 0;
@@ -963,7 +960,9 @@ fn get_file_discpt(
 }
 
 pub fn sys_unlinkat(fd: i32, path: *const u8, flags: u32) -> isize {
-    let token = current_user_token();
+    let task = current_task().unwrap();
+    let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let path = translated_str(token, path);
     let flags = OpenFlags::from_bits(flags).unwrap();
     log::debug!(
@@ -972,8 +971,6 @@ pub fn sys_unlinkat(fd: i32, path: *const u8, flags: u32) -> isize {
         path,
         flags,
     );
-    let task = current_task().unwrap();
-    let inner = task.acquire_inner_lock();
     if let Some(file) = get_file_discpt(fd as isize, &path, &inner, flags) {
         match file {
             FileClass::File(f) => {
@@ -1020,8 +1017,8 @@ pub fn sys_umount(p_special: *const u8, flags: u32) -> isize {
 
 pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isize {
     let task = current_task().unwrap();
-    let token = current_user_token();
-    // 这里传入的地址为用户的虚地址，因此要使用用户的虚地址进行映射
+    let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let path = translated_str(token, path);
     let flags = OpenFlags::from_bits(flags).unwrap();
     log::debug!(
@@ -1031,7 +1028,6 @@ pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
         time,
         flags
     );
-    let inner = task.acquire_inner_lock();
     if let Some(file) = get_file_discpt(fd as isize, &path, &inner, flags) {
         match file {
             FileClass::File(_) => return 0,
@@ -1044,7 +1040,8 @@ pub fn sys_faccessat(fd: usize, path: *const u8, time: usize, flags: u32) -> isi
 
 pub fn sys_utimensat(fd: isize, path: *const u8, time: *const [TimeSpec; 2], flags: u32) -> isize {
     let task = current_task().unwrap();
-    let token = current_user_token();
+    let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     let path = translated_str(token, path);
     let flags = OpenFlags::from_bits(flags).unwrap();
     log::debug!(
@@ -1054,7 +1051,6 @@ pub fn sys_utimensat(fd: isize, path: *const u8, time: *const [TimeSpec; 2], fla
         time as usize,
         flags
     );
-    let inner = task.acquire_inner_lock();
     if let Some(file) = get_file_discpt(fd, &path, &inner, flags) {
         match file {
             FileClass::File(_f) => return 0,
@@ -1069,12 +1065,12 @@ pub fn sys_utimensat(fd: isize, path: *const u8, time: *const [TimeSpec; 2], fla
 pub fn sys_readlinkat(dirfd: i32, pathname: *const u8, buf: *mut u8, bufsize: usize) -> isize {
     let token = current_user_token();
     let pathname_str = translated_str(token, pathname);
-    // log::debug!(
-    //     "sys_readlinkat dirfd: {}, pathname: {}, bufsize: {}",
-    //     dirfd,
-    //     pathname_str,
-    //     bufsize
-    // );
+    log::debug!(
+        "sys_readlinkat dirfd: {}, pathname: {}, bufsize: {}",
+        dirfd,
+        pathname_str,
+        bufsize
+    );
     if pathname_str != "/proc/self/exe" {
         panic!("sys_readlinkat: pathname not support");
     }
@@ -1088,8 +1084,8 @@ pub fn sys_readlinkat(dirfd: i32, pathname: *const u8, buf: *mut u8, bufsize: us
 /* return the num of bytes */
 pub fn sys_sendfile(out_fd: isize, in_fd: isize, offset_ptr: *mut usize, count: usize) -> isize {
     let task = current_task().unwrap();
-    let token = current_user_token();
     let inner = task.acquire_inner_lock();
+    let token = inner.get_user_token();
     log::debug!(
         "sys_sendfile out_fd: {}, in_fd: {} offset_ptr: {:#X?}, count: {}",
         out_fd,
@@ -1158,7 +1154,6 @@ pub fn sys_lseek(fd: usize, offset: isize, whence: i32) -> isize {
 }
 
 pub fn sys_statfs(path: *const u8, buf: *mut u8) -> isize {
-    let task = current_task().unwrap();
     let token = current_user_token();
     let path = translated_str(token, path);
     log::debug!("sys_statfs path: {}, buf: {:#X?}", path, buf as usize);
@@ -1179,7 +1174,6 @@ pub fn sys_renameat2(
     flags: u32,
 ) -> isize {
     let token = current_user_token();
-    let task = current_task().unwrap();
     let oldpath = translated_str(token, oldpath);
     let newpath = translated_str(token, newpath);
     log::debug!(

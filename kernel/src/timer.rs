@@ -1,15 +1,13 @@
 use crate::cpu::current_user_token;
-use crate::dt::TIMER_FREQ;
 use crate::mm::translated_refmut;
 #[cfg(not(feature = "rustsbi"))]
 use crate::opensbi::set_timer;
+use crate::platform::CLOCK_FREQ;
 #[cfg(feature = "rustsbi")]
 use crate::rustsbi::set_timer;
-use core::sync::atomic::Ordering;
 use riscv::register::{sie, time};
 
 const TICKS_PER_SEC: usize = 100;
-#[allow(unused)]
 const MSEC_PER_SEC: usize = 1000;
 pub const USEC_PER_SEC: usize = 1000_000;
 pub const NSEC_PER_SEC: usize = 1000_000_000;
@@ -46,43 +44,44 @@ pub fn get_time() -> usize {
 
 #[allow(unused)]
 pub fn get_time_ms() -> usize {
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
-    time::read() / (timer_freq / MSEC_PER_SEC)
+    time::read() / (CLOCK_FREQ / MSEC_PER_SEC)
 }
 
 pub fn get_time_us() -> usize {
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
-    // time::read() / (timer_freq / USEC_PER_SEC)
-    time::read() * 10 / (timer_freq / 100000)
+    time::read() / (CLOCK_FREQ / USEC_PER_SEC)
 }
 
 pub fn get_time_ns() -> usize {
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
-    // (time::read() / (timer_freq / USEC_PER_SEC)) * MSEC_PER_SEC
-    time::read() * 10000 / (timer_freq / 100000)
+    time::read() * NSEC_PER_SEC / CLOCK_FREQ
 }
 
 #[allow(unused)]
 pub fn get_time_sec() -> usize {
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
-    time::read() / (timer_freq)
+    time::read() / (CLOCK_FREQ)
+}
+
+pub fn get_time_sec_msec() -> (u64, u64) {
+    let ticks = get_time();
+    let sec = (ticks / CLOCK_FREQ) as u64;
+    let msec = ((ticks % CLOCK_FREQ) * MSEC_PER_SEC / CLOCK_FREQ) as u64;
+    // println!("sec: {}", sec);
+    // println!("usec: {}", usec);
+    (sec, msec)
 }
 
 pub fn get_time_sec_usec() -> (u64, u64) {
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
     let ticks = get_time();
-    let sec = (ticks / timer_freq) as u64;
-    let usec = ((ticks % timer_freq) * USEC_PER_SEC / timer_freq) as u64;
+    let sec = (ticks / CLOCK_FREQ) as u64;
+    let usec = ((ticks % CLOCK_FREQ) * USEC_PER_SEC / CLOCK_FREQ) as u64;
     // println!("sec: {}", sec);
     // println!("usec: {}", usec);
     (sec, usec)
 }
 
 pub fn get_time_sec_nsec() -> (u64, u64) {
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire) as u64;
-    let ticks = get_time() as u64;
-    let sec = ticks / timer_freq;
-    let nsec = ((ticks % timer_freq) * (NSEC_PER_SEC as u64)) / timer_freq;
+    let ticks = get_time();
+    let sec = (ticks / CLOCK_FREQ) as u64;
+    let nsec = ((ticks % CLOCK_FREQ) * NSEC_PER_SEC / CLOCK_FREQ) as u64;
     // println!("sec: {}", sec);
     // println!("nsec: {}", usec);
     (sec, nsec)
@@ -98,8 +97,7 @@ pub fn get_time_val(time_val: *mut TimeVal) -> isize {
 // 得到时钟频率的方式不是很好
 // 10毫秒一次中断
 pub fn set_next_trigger() {
-    let timer_freq = TIMER_FREQ.load(Ordering::Acquire);
-    set_timer(get_time() + timer_freq / TICKS_PER_SEC);
+    set_timer(get_time() + CLOCK_FREQ / TICKS_PER_SEC);
 }
 
 #[inline(always)]
