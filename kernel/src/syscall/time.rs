@@ -10,12 +10,12 @@ const ITIMER_VIRTUAL: i32 = 1;
 const ITIMER_PROF: i32 = 2;
 
 pub fn sys_setitimer(which: i32, new_value: *const ITimerVal, old_value: *mut ITimerVal) -> isize {
-    log::debug!(
-        "sys_setitimer which: {}, new_value: {:#X?}, old_value: {:#X?}",
-        which,
-        new_value as usize,
-        old_value as usize
-    );
+    // log::debug!(
+    //     "sys_setitimer which: {}, new_value: {:#X?}, old_value: {:#X?}",
+    //     which,
+    //     new_value as usize,
+    //     old_value as usize
+    // );
     let token = current_user_token();
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();

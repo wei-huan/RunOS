@@ -906,9 +906,9 @@ pub fn busybox_lua_tests() -> isize {
 
 static LMBENCH_TESTS: [&str; 1] = [
     // "busybox echo latency measurements",
-    // "lmbench_all lat_syscall -P 1 null", // sys_pselect6 loop, no copy on write just ok
-    // "lmbench_all lat_syscall -P 1 read", // ok, no copy on write just ok
-    // "lmbench_all lat_syscall -P 1 write", // ok, sometimes error process3 exit_group eariler, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 null",        // sys_pselect6 loop, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 read",     // ok, no copy on write just ok
+    // "lmbench_all lat_syscall -P 1 write",    // ok, sometimes error process3 exit_group eariler, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench", // ok, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench", // ok, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop, no copy on write just ok
@@ -933,7 +933,7 @@ static LMBENCH_TESTS: [&str; 1] = [
     // "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX",
     // "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX",
     // "busybox echo context switch overhead",
-    "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",  // need pages
+    // "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",  // need pages
 ];
 
 pub fn lmbench_tests() -> isize {

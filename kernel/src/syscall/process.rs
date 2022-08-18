@@ -103,7 +103,7 @@ pub fn sys_getpid() -> isize {
 }
 
 pub fn sys_getppid() -> isize {
-    log::debug!("sys_getppid");
+    // log::debug!("sys_getppid");
     current_task().unwrap().getppid() as isize
 }
 
@@ -177,15 +177,15 @@ pub fn sys_clone(
     let current_task = current_task().unwrap();
     let clone_flags = CloneFlags::from_bits(flags).unwrap();
     let token = current_user_token();
-    log::debug!(
-        "sys_clone flags: {:?}, stack_ptr: {:#X?}, ptid: {:#X?}, newtls: {}, ctid: {:#X?}, exit_signal: {}",
-        clone_flags,
-        stack_ptr,
-        ptid_ptr as usize,
-        newtls,
-        ctid_ptr as usize,
-        (flags & 0xff) as usize
-    );
+    // log::debug!(
+    //     "sys_clone flags: {:?}, stack_ptr: {:#X?}, ptid: {:#X?}, newtls: {}, ctid: {:#X?}, exit_signal: {}",
+    //     clone_flags,
+    //     stack_ptr,
+    //     ptid_ptr as usize,
+    //     newtls,
+    //     ctid_ptr as usize,
+    //     (flags & 0xff) as usize
+    // );
     let new_task = current_task.fork();
     if stack_ptr != 0 {
         let trap_cx = new_task.acquire_inner_lock().get_trap_cx();
@@ -238,7 +238,7 @@ pub fn sys_sleep(time_req: &TimeVal, time_remain: &mut TimeVal) -> isize {
 pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
     let token = current_user_token();
     let mut path = translated_str(token, path);
-    log::debug!("sys_exec, path: {}", path);
+    // log::debug!("sys_exec, path: {}", path);
     let mut args_vec: Vec<String> = Vec::new();
     if path.ends_with(".sh") {
         args_vec.push("/busybox".to_string());
@@ -328,12 +328,12 @@ const WNOWAIT: isize = 0x01000000;
 /// Else If there is not a child process whose pid is same as given, return -1.
 /// Else if there is a child process but it is still running, suspend_current_and_run_next.
 pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
-    log::debug!(
-        "sys_wait4, pid: {}, wstatus: {:#X?}, option: {}",
-        pid,
-        wstatus,
-        option
-    );
+    // log::debug!(
+    //     "sys_wait4, pid: {}, wstatus: {:#X?}, option: {}",
+    //     pid,
+    //     wstatus,
+    //     option
+    // );
     loop {
         let task = current_task().unwrap();
         // No any child process waiting
@@ -384,12 +384,12 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
 pub fn sys_brk(mut brk_addr: usize) -> isize {
     let current_task = current_task().unwrap();
     let mut inner = current_task.acquire_inner_lock();
-    log::debug!(
-        "sys_brk: brk_addr: {:#X?}, start: {:#X?}, current_break: {:#X?}",
-        brk_addr,
-        inner.heap_start,
-        inner.heap_pointer
-    );
+    // log::debug!(
+    //     "sys_brk: brk_addr: {:#X?}, start: {:#X?}, current_break: {:#X?}",
+    //     brk_addr,
+    //     inner.heap_start,
+    //     inner.heap_pointer
+    // );
     let heap_start = inner.heap_start;
     brk_addr = page_aligned_up(brk_addr);
     if brk_addr != 0 {

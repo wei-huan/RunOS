@@ -105,12 +105,12 @@ pub fn sys_sigaction(
     action: *const SignalAction,
     old_action: *mut SignalAction,
 ) -> isize {
-    log::debug!(
-        "sys_sigaction signum {}, action {:#X?}, old_action {:#X?}",
-        signum,
-        action as usize,
-        old_action as usize
-    );
+    // log::debug!(
+    //     "sys_sigaction signum {}, action {:#X?}, old_action {:#X?}",
+    //     signum,
+    //     action as usize,
+    //     old_action as usize
+    // );
     if !valid_signal(signum) || check_sigaction_error(signum) {
         log::warn!("here invalid sigaction num {}", signum);
         return -EINVAL;
@@ -130,13 +130,13 @@ pub fn sys_sigaction(
     if action as usize != 0 {
         let new_action = *translated_ref(token, action);
         inner.signal_actions.insert(signum, new_action);
-        log::debug!(
-            "new_action handler {:#X?}, mask {:#X?}, sa_flags {:#X?}, sa_restorer {:#X?}",
-            new_action.sa_handler,
-            new_action.sa_mask,
-            new_action.sa_flags,
-            new_action.sa_restorer
-        );
+        // log::debug!(
+        //     "new_action handler {:#X?}, mask {:#X?}, sa_flags {:#X?}, sa_restorer {:#X?}",
+        //     new_action.sa_handler,
+        //     new_action.sa_mask,
+        //     new_action.sa_flags,
+        //     new_action.sa_restorer
+        // );
     }
     return 0;
 }

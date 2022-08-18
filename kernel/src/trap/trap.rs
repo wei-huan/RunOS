@@ -67,7 +67,7 @@ pub fn kernel_trap_handler() {
             panic!("a trap {:?} from kernel", scause.cause());
         }
         Trap::Exception(Exception::Breakpoint) => {
-            log::debug!("Breakpoint");
+            log::warn!("Breakpoint");
         }
         _ => {
             panic!(
@@ -149,7 +149,7 @@ pub fn user_trap_handler() -> ! {
             suspend_current_and_run_next();
         }
         Trap::Exception(Exception::Breakpoint) => {
-            log::debug!("Breakpoint");
+            log::warn!("user_trap Breakpoint");
             let mut cx = current_trap_cx();
             // jump to syscall next instruction anyway, avoid re-trigger
             cx.sepc += 4;

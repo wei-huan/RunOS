@@ -43,8 +43,8 @@ fn fdt_get_timerfreq(fdt_ptr: *const u8) {
     let hart_id = hart_id();
     let current_cpu = fdt.cpus().find(|cpu| cpu.ids().first() == hart_id).unwrap();
     let timebase_frequency = current_cpu.timebase_frequency();
-    TIMER_FREQ.store(timebase_frequency, Ordering::Release);
-    // println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
+    TIMER_FREQ.store(12500000, Ordering::Release);
+    println!("timer freq: {}", TIMER_FREQ.load(Ordering::Relaxed));
 }
 
 fn fdt_get_ncpu(fdt_ptr: *const u8) {
@@ -91,12 +91,12 @@ pub fn fdt_get_model(fdt_ptr: *const u8) {
 }
 
 // qemu rustsbi
-#[cfg(all(feature = "qemu", feature = "rustsbi"))]
-pub fn init(dts_ptr: *const u8) {
-    TIMER_FREQ.store(100000000, Ordering::Relaxed);
-    CPU_NUMS.store(2, Ordering::Relaxed);
-    FDT.store(dts_ptr as *mut u8, Ordering::Release);
-}
+// #[cfg(all(feature = "qemu", feature = "rustsbi"))]
+// pub fn init(dts_ptr: *const u8) {
+//     TIMER_FREQ.store(100000000, Ordering::Relaxed);
+//     CPU_NUMS.store(2, Ordering::Relaxed);
+//     FDT.store(dts_ptr as *mut u8, Ordering::Release);
+// }
 
 // qemu && opensbi or k210 && rustsbi
 // #[cfg(all(feature = "qemu", feature = "opensbi"))]

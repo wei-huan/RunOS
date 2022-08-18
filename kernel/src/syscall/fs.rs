@@ -62,9 +62,9 @@ pub fn sys_fcntl(fd: usize, cmd: u32, arg: usize) -> isize {
 }
 
 pub fn sys_write(fd: isize, buf: *const u8, len: usize) -> isize {
-    if (fd >= 3 || fd == AT_FDCWD) {
-        log::debug!("sys_write fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
-    }
+    // if (fd >= 3 || fd == AT_FDCWD) {
+    //     log::debug!("sys_write fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
+    // }
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -153,9 +153,9 @@ pub fn sys_pread(fd: usize, buf: *mut u8, count: usize, offset: usize) -> isize 
 }
 
 pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
-    if (fd >= 3) {
-        log::debug!("sys_read fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
-    }
+    // if (fd >= 3) {
+    //     log::debug!("sys_read fd: {}, buf: {:#X?}, len: {}", fd, buf, len);
+    // }
     let token = current_user_token();
     let task = current_task().unwrap();
     let inner = task.acquire_inner_lock();
@@ -320,7 +320,7 @@ pub fn sys_open_at(dirfd: isize, path: *const u8, flags: u32, mode: u32) -> isiz
 }
 
 pub fn sys_close(fd: isize) -> isize {
-    log::debug!("sys_close fd: {}", fd);
+    // log::debug!("sys_close fd: {}", fd);
     let task = current_task().unwrap();
     let mut inner = task.acquire_inner_lock();
     if fd as usize >= inner.fd_table.len() {
@@ -523,27 +523,27 @@ pub fn sys_pselect6(
     let token = current_user_token();
     let task = current_task().unwrap();
     let timeout = translated_ref(token, timeout);
-    log::debug!(
-        "sys_pselect6 nfds: {}, readfds: {:#X?}, writefds: {:#X?}, exceptfds: {:#X?}, timeout: {:#X?}, sigmask: {:#X?}",
-        nfds,
-        readfds as usize,
-        writefds as usize,
-        exceptfds as usize,
-        timeout,
-        sigmask as usize
-    );
-    if readfds as usize != 0 {
-        let readfds_copy = translated_refmut(token, readfds);
-        log::debug!("readfds[0]: {:#X?}", readfds_copy.fds_bits[0]);
-    }
-    if writefds as usize != 0 {
-        let writefds_copy = translated_refmut(token, writefds);
-        log::debug!("writefds[0]: {:#X?}", writefds_copy.fds_bits[0]);
-    }
-    if exceptfds as usize != 0 {
-        let exceptfds_copy = translated_refmut(token, exceptfds);
-        log::debug!("exceptfds[0]: {:#X?}", exceptfds_copy.fds_bits[0]);
-    }
+    // log::debug!(
+    //     "sys_pselect6 nfds: {}, readfds: {:#X?}, writefds: {:#X?}, exceptfds: {:#X?}, timeout: {:#X?}, sigmask: {:#X?}",
+    //     nfds,
+    //     readfds as usize,
+    //     writefds as usize,
+    //     exceptfds as usize,
+    //     timeout,
+    //     sigmask as usize
+    // );
+    // if readfds as usize != 0 {
+    //     let readfds_copy = translated_refmut(token, readfds);
+    //     log::debug!("readfds[0]: {:#X?}", readfds_copy.fds_bits[0]);
+    // }
+    // if writefds as usize != 0 {
+    //     let writefds_copy = translated_refmut(token, writefds);
+    //     log::debug!("writefds[0]: {:#X?}", writefds_copy.fds_bits[0]);
+    // }
+    // if exceptfds as usize != 0 {
+    //     let exceptfds_copy = translated_refmut(token, exceptfds);
+    //     log::debug!("exceptfds[0]: {:#X?}", exceptfds_copy.fds_bits[0]);
+    // }
     let mut ret: isize = 0;
     if timeout.nsec != 0 || timeout.sec != 0 {
         let timeout_ns: u64 =
@@ -665,7 +665,7 @@ pub fn sys_pselect6(
             exceptfds.clear_all();
         }
     }
-    log::debug!("pselect6 return {}", ret);
+    // log::debug!("pselect6 return {}", ret);
     ret
 }
 
@@ -750,7 +750,7 @@ pub fn sys_pipe(pipe: *mut u32, flags: u32) -> isize {
     let task = current_task().unwrap();
     let token = current_user_token();
     let flags = OpenFlags::from_bits(flags).unwrap();
-    log::debug!("sys_pipe pipe: {:#X?}, flags: {:?}", pipe as usize, flags);
+    // log::debug!("sys_pipe pipe: {:#X?}, flags: {:?}", pipe as usize, flags);
     let mut inner = task.acquire_inner_lock();
     let (pipe_read, pipe_write) = make_pipe();
     let read_fd = inner.alloc_fd();
@@ -1069,12 +1069,12 @@ pub fn sys_utimensat(fd: isize, path: *const u8, time: *const [TimeSpec; 2], fla
 pub fn sys_readlinkat(dirfd: i32, pathname: *const u8, buf: *mut u8, bufsize: usize) -> isize {
     let token = current_user_token();
     let pathname_str = translated_str(token, pathname);
-    log::debug!(
-        "sys_readlinkat dirfd: {}, pathname: {}, bufsize: {}",
-        dirfd,
-        pathname_str,
-        bufsize
-    );
+    // log::debug!(
+    //     "sys_readlinkat dirfd: {}, pathname: {}, bufsize: {}",
+    //     dirfd,
+    //     pathname_str,
+    //     bufsize
+    // );
     if pathname_str != "/proc/self/exe" {
         panic!("sys_readlinkat: pathname not support");
     }
