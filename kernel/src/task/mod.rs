@@ -8,6 +8,8 @@ mod recycle_allocator;
 mod signal;
 mod task;
 
+use core::mem::size_of;
+
 pub use action::*;
 pub use aux::*;
 pub use context::TaskContext;
@@ -16,7 +18,9 @@ pub use pid::{pid_alloc, PidHandle};
 pub use signal::*;
 pub use task::{ClearChildTid, TaskControlBlock, TaskControlBlockInner, TaskStatus};
 
+use crate::config::SIGRETURN_TRAMPOLINE;
 use crate::cpu::{current_task, take_current_task};
+use crate::mm::{translated_byte_buffer, UserBuffer};
 use crate::scheduler::{remove_from_pid2task, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
 
@@ -25,6 +29,12 @@ pub fn suspend_current_and_run_next() {
     let task = current_task().unwrap();
     // ---- access current TCB exclusively
     let mut task_inner = task.acquire_inner_lock();
+    if task_inner.killed {
+        log::debug!("task{} killed from suspend", task.getpid());
+        drop(task_inner);
+        drop(task);
+        exit_current_and_run_next(-(SIGKILL as i32));
+    }
     let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
@@ -33,11 +43,11 @@ pub fn suspend_current_and_run_next() {
     // jump to scheduling cycle
     // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);
-    // log::debug!("back to suspend");
+    // log::debug!("back from suspend");
 }
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
-pub fn exit_current_and_run_next(exit_code: i32) {
+pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     // take from Processor
     let task = take_current_task().unwrap();
     // remove from pid2task
@@ -70,21 +80,30 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // we do not have to save task context
     let mut _unused = TaskContext::zero_init();
     save_current_and_back_to_schedule(&mut _unused as *mut _);
+    panic!("never reach here in exit_current_and_run_next!")
 }
 
 pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     let task = current_task().unwrap();
     let task_inner = task.acquire_inner_lock();
-    task_inner.signals.check_error()
+    if let Some(err) = task_inner.signals.check_error() {
+        if task_inner.signal_actions.get(&((err.0 * -1) as u32)).is_some() {
+            None
+        } else {
+            Some(err)
+        }
+    } else {
+        None
+    }
 }
 
-pub fn current_add_signal(sig: i32) {
+pub fn current_add_signal(sig: usize) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
     task_inner.signals.add_sig(sig);
 }
 
-fn call_kernel_signal_handler(sig: i32) {
+fn call_kernel_signal_handler(sig: usize) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
     match sig {
@@ -99,20 +118,20 @@ fn call_kernel_signal_handler(sig: i32) {
             }
         }
         _ => {
+            log::warn!("task{} will be killed", task.getpid());
             task_inner.killed = true;
         }
     }
 }
 
-fn call_user_signal_handler(sig: i32) {
+fn call_user_signal_handler(sig: usize) {
     let task = current_task().unwrap();
     let mut task_inner = task.acquire_inner_lock();
-
-    let handler = task_inner.signal_actions[&(sig as i32)].sa_handler;
+    let handler = task_inner.signal_actions[&(sig as u32)].sa_handler;
     // change current mask
-    task_inner.signal_mask = task_inner.signal_actions[&(sig as i32)].sa_mask;
+    task_inner.signal_mask = task_inner.signal_actions[&(sig as u32)].sa_mask;
     // handle flag
-    task_inner.handling_sig = sig;
+    task_inner.handling_sig = sig as i32;
     task_inner.signals.clear_sig(sig);
 
     // backup trapframe
@@ -121,13 +140,41 @@ fn call_user_signal_handler(sig: i32) {
 
     // modify trapframe
     trap_ctx.sepc = handler;
-
+    extern "C" {
+        fn __sigreturn();
+        fn __uservec();
+    }
+    //put ra
+    trap_ctx.x[1] = SIGRETURN_TRAMPOLINE;
+    log::debug!("sig{} handler ra: {:#X?}", sig, trap_ctx.x[1]);
     // put args (a0)
-    trap_ctx.x[10] = sig as usize;
+    trap_ctx.x[10] = sig;
+    if task_inner.signal_actions[&(sig as u32)]
+        .sa_flags
+        .contains(SAFlags::SA_SIGINFO)
+    {
+        let token = task_inner.get_user_token();
+        trap_ctx.x[2] -= size_of::<UContext>(); // sp -= sizeof(ucontext)
+        trap_ctx.x[12] = trap_ctx.x[2]; // a2  = sp
+        log::debug!(
+            "sighandler prepare: sp = {:#x?}, a2 = {:#x?}",
+            trap_ctx.x[2],
+            trap_ctx.x[12]
+        );
+        let mut userbuf = UserBuffer::new(translated_byte_buffer(
+            token,
+            trap_ctx.x[2] as *const u8,
+            size_of::<UContext>(),
+        ));
+        let mut ucontext = UContext::new();
+        *ucontext.mc_pc() = trap_ctx.sepc;
+        userbuf.write(ucontext.as_bytes()); // copy ucontext to userspace
+    }
+    // log::debug!("sig{} handler address {:#X?}", sig, handler);
 }
 
 fn check_pending_signals() {
-    for sig in 1..(NSIG + 1) as i32 {
+    for sig in 1..(NSIG + 1) {
         let task = current_task().unwrap();
         let task_inner = task.acquire_inner_lock();
         if task_inner.signals.contains_sig(sig) && (!task_inner.signal_mask.contains_sig(sig)) {
@@ -143,7 +190,7 @@ fn check_pending_signals() {
                     return;
                 }
             } else {
-                if !task_inner.signal_actions[&task_inner.handling_sig]
+                if !task_inner.signal_actions[&(task_inner.handling_sig as u32)]
                     .sa_mask
                     .contains_sig(sig)
                 {
@@ -164,6 +211,17 @@ fn check_pending_signals() {
 }
 
 pub fn handle_signals() {
+    let task = current_task().unwrap();
+    let task_inner = task.acquire_inner_lock();
+    if task_inner.handling_sig != -1 {
+        log::debug!(
+            "already handling signal: {} return",
+            task_inner.handling_sig
+        );
+        return;
+    }
+    drop(task_inner);
+    drop(task);
     check_pending_signals();
     loop {
         let task = current_task().unwrap();

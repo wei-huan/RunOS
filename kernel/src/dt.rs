@@ -91,19 +91,19 @@ pub fn fdt_get_model(fdt_ptr: *const u8) {
 }
 
 // qemu rustsbi
-#[cfg(all(feature = "qemu", feature = "rustsbi"))]
-pub fn init(dts_ptr: *const u8) {
-    TIMER_FREQ.store(100000000, Ordering::Relaxed);
-    CPU_NUMS.store(2, Ordering::Relaxed);
-    FDT.store(dts_ptr as *mut u8, Ordering::Release);
-}
+// #[cfg(all(feature = "qemu", feature = "rustsbi"))]
+// pub fn init(dts_ptr: *const u8) {
+//     TIMER_FREQ.store(100000000, Ordering::Relaxed);
+//     CPU_NUMS.store(2, Ordering::Relaxed);
+//     FDT.store(dts_ptr as *mut u8, Ordering::Release);
+// }
 
 // qemu && opensbi or k210 && rustsbi
 // #[cfg(all(feature = "qemu", feature = "opensbi"))]
 pub fn init(dtb_ptr: *const u8) {
     FDT.store(dtb_ptr as *mut u8, Ordering::Release);
     fdt_get_ncpu(dtb_ptr);
-    fdt_get_timerfreq(dtb_ptr);
+    // fdt_get_timerfreq(dtb_ptr);
     fdt_get_ram(dtb_ptr);
     // fdt_get_model(dtb_ptr);
 }

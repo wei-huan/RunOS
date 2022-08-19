@@ -65,7 +65,7 @@ pub struct TaskControlBlockInner {
     // the signal which is being handling
     pub handling_sig: i32,
     // Signal actions
-    pub signal_actions: BTreeMap<i32, SignalAction>,
+    pub signal_actions: BTreeMap<u32, SignalAction>,
     // if the task is killed
     pub killed: bool,
     // if the task is frozen by a signal

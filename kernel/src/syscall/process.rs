@@ -1,6 +1,5 @@
 use crate::config::{page_aligned_up, MMAP_BASE};
 use crate::cpu::{current_task, current_user_token};
-use crate::dt::TIMER_FREQ;
 use crate::fs::{open, OpenFlags};
 use crate::mm::{
     translated_ref, translated_refmut, translated_str, PTEFlags, VirtAddr, VirtPageNum,
@@ -495,6 +494,8 @@ pub fn sys_prlimit(pid: usize, res: usize, rlim: *const RLimit, old_rlim: *mut R
 }
 
 pub fn sys_mprotect(address: usize, length: usize, prot: usize) -> isize {
+    let task = current_task().unwrap();
+    let mut inner = task.acquire_inner_lock();
     let flags = PTEFlags::from_bits((prot << 1) as u8).unwrap();
     log::debug!(
         "sys_mprotect address: {:#X} length: {:#X} flags: {:?}",
@@ -502,8 +503,6 @@ pub fn sys_mprotect(address: usize, length: usize, prot: usize) -> isize {
         length,
         flags
     );
-    let task = current_task().unwrap();
-    let mut inner = task.acquire_inner_lock();
     let start_vpn = VirtAddr::from(address).floor();
     let end_vpn = VirtAddr::from(address + length).ceil();
     for vpn in start_vpn..end_vpn {

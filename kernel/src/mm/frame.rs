@@ -55,12 +55,12 @@ impl StackFrameAllocator {
     pub fn add_free(&mut self, ppn: usize) {
         self.recycled.push(ppn);
     }
-    pub fn unallocated_frames(&self) -> usize {
-        self.recycled.len() + self.end - self.current
-    }
-    pub fn free_space_size(&self) -> usize {
-        self.unallocated_frames() * PAGE_SIZE
-    }
+    // pub fn unallocated_frames(&self) -> usize {
+    //     self.recycled.len() + self.end - self.current
+    // }
+    // pub fn free_space_size(&self) -> usize {
+    //     self.unallocated_frames() * PAGE_SIZE
+    // }
 }
 
 impl FrameAllocator for StackFrameAllocator {

@@ -51,25 +51,28 @@ fn clear_bss() {
         fn sbss();
         fn ebss();
     }
-    (sbss as usize..ebss as usize).for_each(|a| unsafe { (a as *mut u8).write_volatile(0) })
+    unsafe {
+        core::slice::from_raw_parts_mut(sbss as usize as *mut u8, ebss as usize - sbss as usize)
+            .fill(0);
+    }
 }
 
 // qemu opensbi
 #[cfg(all(feature = "platform-qemu", feature = "opensbi"))]
 #[no_mangle]
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-    // if !SMP_START.load(Ordering::Acquire) {
+    if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
         println!("here 0");
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
         fpu::init();
-        // logo::show();
+        logo::show();
         logger::init();
         fs::init_rootfs();
         scheduler::add_initproc();
-        // logger::show_basic_info();
+        logger::show_basic_info();
         // fs::list_rootfs();
         timer::init();
         // SMP_START will turn to true in this function
@@ -79,17 +82,17 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         //     alloc::format!("Main Hart {} successfully init", hart_id()).green()
         // );
         scheduler::schedule();
-    // } else {
-    //     trap::init();
-    //     mm::init();
-    //     fpu::init();
-    //     timer::init();
-    //     // log::info!(
-    //     //     "{}",
-    //     //     alloc::format!("Hart {} successfully init", hart_id()).green()
-    //     // );
-    //     scheduler::schedule();
-    // }
+    } else {
+        trap::init();
+        mm::init();
+        fpu::init();
+        timer::init();
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Hart {} successfully init", hart_id()).green()
+        // );
+        scheduler::schedule();
+    }
 }
 
 // k210 rustsbi
@@ -122,10 +125,17 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         mm::init();
         fpu::init();
         timer::init();
+<<<<<<< HEAD
         log::info!(
             "{}",
             alloc::format!("Hart {} successfully booted", hart_id()).green()
         );
+=======
+        // log::info!(
+        //     "{}",
+        //     alloc::format!("Hart {} successfully booted", hart_id()).green()
+        // );
+>>>>>>> final2-dev2
         scheduler::schedule();
     }
 }
@@ -188,4 +198,8 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
 //         println!("here 2");
 //         loop {}
 //     }
+<<<<<<< HEAD
 // }
+=======
+// }
+>>>>>>> final2-dev2
