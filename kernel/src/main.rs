@@ -125,17 +125,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         mm::init();
         fpu::init();
         timer::init();
-<<<<<<< HEAD
         log::info!(
             "{}",
             alloc::format!("Hart {} successfully booted", hart_id()).green()
         );
-=======
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Hart {} successfully booted", hart_id()).green()
-        // );
->>>>>>> final2-dev2
         scheduler::schedule();
     }
 }
