@@ -11,7 +11,6 @@ use alloc::string::ToString;
 use alloc::sync::Arc;
 use alloc::vec::Vec;
 use bitflags::*;
-use core::arch::asm;
 use lazy_static::*;
 use runfs::{FileAttributes, RunFileSystem, VFile};
 use spin::rwlock::RwLock;
@@ -328,10 +327,11 @@ impl OSInode {
     }
 
     pub fn lseek(&self, offset: isize, whence: i32) -> isize {
-        log::trace!("lseek offset: {}", offset);
-        log::trace!("lseek whence: {}", whence);
+        log::debug!("lseek offset: {}", offset);
+        log::debug!("lseek whence: {}", whence);
         let mut inner = self.inner.lock();
         let size = inner.inode.size();
+        log::debug!("lseek size: {}", size);
         let cur_offset: isize = inner.offset as isize;
         match whence {
             SEEK_SET => {
@@ -357,6 +357,7 @@ impl OSInode {
             }
             _ => return -EINVAL,
         }
+        log::debug!("offset after seek: {}", inner.offset);
         inner.offset as isize
     }
 }
@@ -390,7 +391,7 @@ pub fn init_rootfs() {
     // let _var = open("/", "var", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     // let _var_tmp = open("/", "var/tmp", OpenFlags::CREATE | OpenFlags::DIRECTROY).unwrap();
     let _var_tmp_lmbench = open("/", "var/tmp/lmbench", OpenFlags::CREATE).unwrap();
-    // let _null = open("/", "dev/null", OpenFlags::CREATE, DiskInodeType::Directory).unwrap();
+    let _xxx = open("/", "var/tmp/XXX", OpenFlags::CREATE).unwrap();
 }
 
 pub fn list_rootfs() {

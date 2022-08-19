@@ -500,7 +500,7 @@ extern crate user;
 
 use alloc::string::String;
 use alloc::vec::Vec;
-use user::{exec, fork, waitpid};
+use user::{exec, fork, wait, waitpid, yield_};
 
 #[derive(Debug)]
 struct ProcessArguments {
@@ -677,7 +677,6 @@ pub fn busybox_lua_tests() -> isize {
 }
 
 static LMBENCH_TESTS: [&str; 1] = [
-    "busybox ash lmbench_testcode.sh",
     // "busybox echo latency measurements",
     // "lmbench_all lat_syscall -P 1 null",        // sys_pselect6 loop, no copy on write just ok
     // "lmbench_all lat_syscall -P 1 read",     // ok, no copy on write just ok
@@ -688,25 +687,25 @@ static LMBENCH_TESTS: [&str; 1] = [
     // "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
     // "lmbench_all lat_sig -P 1 install",        // loop, no copy on write just ok
     // "lmbench_all lat_sig -P 1 catch",    // need to implement signals, now ok
-    // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals, now ok
+    // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals, now ok, what the fuck, now ok
     // "lmbench_all lat_pipe -P 1",            // Stuck in sys_wait4, no copy on write shit no pages, mmap exec stuck in wait4 may need implement signal, now ok
     // "lmbench_all lat_proc -P 1 fork",    // loop, no copy on write shit no pages, share ronly sect ok
     // "lmbench_all lat_proc -P 1 exec",    // loop, no copy on write shit no pages, share ronly and mmap exec sect ok
     // "busybox cp hello /tmp",
     // "lmbench_all lat_proc -P 1 shell",   // too many busybox error, no copy on write shit no pages, share ronly and mmap half ok(have warn error StorePageFault, SIGSEGV=11)
-    // "lmbench_all lmdd label=\"/var/tmp/XXX\"",
-    // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX",
-    // "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX",
+    // "busybox ash lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=1m fsync=1 print=3",
+    // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX", // after create large file XXX now ok, what the fuck
+    // "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX", // after create large file XXX now ok
     // "busybox echo file system latency",
     // "lmbench_all lat_fs /var/tmp",  // need many stack size, 40 pages okk
     // "busybox echo Bandwidth measurements",
     // "lmbench_all bw_pipe -P 1", // share ronly and mmap exec sect ok
-    // "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX",
-    // "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX",
-    // "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX",
-    // "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX",
+    // "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX",    // after create large file XXX now ok
+    // "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
+    // "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX",  // after create large file XXX now ok
+    // "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
     // "busybox echo context switch overhead",
-    // "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96",  // need pages
+    "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96", // need pages
 ];
 
 pub fn lmbench_tests() -> isize {
@@ -766,5 +765,17 @@ pub fn main() -> i32 {
     // println!("testcase busybox sort test.txt | ./busybox uniq success");
     lmbench_tests();
     println!("!TEST FINISH!");
+    // loop {
+    //     let mut exit_code: i32 = 0;
+    //     let pid = wait(&mut exit_code);
+    //     if pid == -1 {
+    //         yield_();
+    //         continue;
+    //     }
+    //     println!(
+    //         "[initproc] Released a zombie process, pid={}, exit_code={}",
+    //         pid, exit_code,
+    //     );
+    // }
     0
 }

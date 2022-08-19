@@ -163,14 +163,14 @@ pub fn user_trap_handler() -> ! {
             );
         }
     }
-    // handle signals (handle the sent signal)
-    if !is_sigreturn {
-        handle_signals();
-    }
     // check error signals (if error then exit)
     if let Some((errno, msg)) = check_signals_error_of_current() {
         log::error!("[kernel] {}", msg);
         exit_current_and_run_next(errno);
+    }
+    // handle signals (handle the sent signal)
+    if !is_sigreturn {
+        handle_signals();
     }
     trap_return();
 }

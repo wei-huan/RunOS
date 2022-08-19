@@ -102,7 +102,7 @@ pub fn sys_getpid() -> isize {
 }
 
 pub fn sys_getppid() -> isize {
-    // log::debug!("sys_getppid");
+    log::debug!("sys_getppid");
     current_task().unwrap().getppid() as isize
 }
 

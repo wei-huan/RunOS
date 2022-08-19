@@ -86,7 +86,15 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
 pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     let task = current_task().unwrap();
     let task_inner = task.acquire_inner_lock();
-    task_inner.signals.check_error()
+    if let Some(err) = task_inner.signals.check_error() {
+        if task_inner.signal_actions.get(&((err.0 * -1) as u32)).is_some() {
+            None
+        } else {
+            Some(err)
+        }
+    } else {
+        None
+    }
 }
 
 pub fn current_add_signal(sig: usize) {
@@ -138,7 +146,7 @@ fn call_user_signal_handler(sig: usize) {
     }
     //put ra
     trap_ctx.x[1] = SIGRETURN_TRAMPOLINE;
-    log::debug!("sighandler ra: {:#X?}", trap_ctx.x[1]);
+    log::debug!("sig{} handler ra: {:#X?}", sig, trap_ctx.x[1]);
     // put args (a0)
     trap_ctx.x[10] = sig;
     if task_inner.signal_actions[&(sig as u32)]
@@ -206,7 +214,7 @@ pub fn handle_signals() {
     let task = current_task().unwrap();
     let task_inner = task.acquire_inner_lock();
     if task_inner.handling_sig != -1 {
-        log::warn!(
+        log::debug!(
             "already handling signal: {} return",
             task_inner.handling_sig
         );
