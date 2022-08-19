@@ -257,16 +257,16 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
     let task = current_task().unwrap();
     let current_path = task.acquire_inner_lock().current_path.clone();
     if let Some(app_inode) = open(current_path.as_str(), path.as_str(), OpenFlags::RDONLY) {
-        // app_inode.mmap_to_kernel();
-        // let all_data =
-        //     unsafe { core::slice::from_raw_parts_mut(MMAP_BASE as *mut u8, app_inode.get_size()) };
-        // task.exec(all_data, args_vec);
-        // KERNEL_SPACE
-        //     .lock()
-        //     .remove_mmap_area_with_start_vpn(VirtAddr::from(MMAP_BASE).floor());
+        app_inode.mmap_to_kernel();
+        let all_data =
+            unsafe { core::slice::from_raw_parts_mut(MMAP_BASE as *mut u8, app_inode.get_size()) };
+        task.exec(all_data, args_vec);
+        KERNEL_SPACE
+            .lock()
+            .remove_mmap_area_with_start_vpn(VirtAddr::from(MMAP_BASE).floor());
 
-        let all_data = app_inode.read_all();
-        task.exec(all_data.as_slice(), args_vec);
+        // let all_data = app_inode.read_all();
+        // task.exec(all_data.as_slice(), args_vec);
         // let argc = args_vec.len();
         // argc as isize
         0

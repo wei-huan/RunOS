@@ -111,7 +111,7 @@ pub fn sys_writev(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
         }
         // release current task PCB inner manually to avoid multi-borrow
         drop(inner);
-
+        drop(task);
         for i in 0..iocnt {
             let iovec = translated_ref(token, unsafe { iov.add(i) });
             let buf = translated_byte_buffer(token, iovec.iov_base, iovec.iov_len);
@@ -172,6 +172,7 @@ pub fn sys_read(fd: usize, buf: *const u8, len: usize) -> isize {
         }
         // release current task PCB inner manually to avoid multi-borrow
         drop(inner);
+        drop(task);
         // log::debug!("sys_read ptr: {:#X?}, len: {:#X?}", buf, len);
         file.read(UserBuffer::new(translated_byte_buffer(token, buf, len))) as isize
     } else {
@@ -201,7 +202,7 @@ pub fn sys_readv(fd: usize, iov: *const IOVec, iocnt: usize) -> isize {
         }
         // release current task PCB inner manually to avoid multi-borrow
         drop(inner);
-
+        drop(task);
         for i in 0..iocnt {
             let iovec = translated_ref(token, unsafe { iov.add(i) });
             let buf = translated_byte_buffer(token, iovec.iov_base, iovec.iov_len);
@@ -749,7 +750,7 @@ pub fn sys_pipe(pipe: *mut u32, flags: u32) -> isize {
     let token = inner.get_user_token();
     let flags = OpenFlags::from_bits(flags).unwrap();
     log::debug!("sys_pipe pipe: {:#X?}, flags: {:?}", pipe as usize, flags);
-    let (pipe_read, pipe_write) = make_pipe();
+    let (pipe_read, pipe_write) = make_pipe(flags);
     let read_fd = inner.alloc_fd();
     inner.fd_table[read_fd] = Some(FileClass::Abstr(pipe_read));
     let write_fd = inner.alloc_fd();

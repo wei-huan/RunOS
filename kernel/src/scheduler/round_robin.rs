@@ -27,7 +27,7 @@ impl Scheduler for RoundRobinScheduler {
             interrupt_off();
             let mut cpu = take_my_cpu();
             if let Some(last_task) = cpu.take_current() {
-                add_task(last_task);
+                self.add_task(last_task);
             }
             if let Some(task) = self.fetch_task() {
                 let idle_task_cx_ptr = cpu.get_idle_task_cx_ptr();

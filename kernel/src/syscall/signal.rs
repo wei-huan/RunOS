@@ -3,7 +3,7 @@ use crate::{
     mm::{translated_ref, translated_refmut},
     scheduler::pid2task,
     syscall::{EINVAL, EPERM, ESRCH},
-    task::{SigSet, SignalAction, NSIG, SIGDEF, SIGKILL, SIGQUIT, SIGSTOP, SIGTRAP, UContext},
+    task::{SigSet, SignalAction, UContext, NSIG, SIGDEF, SIGKILL, SIGQUIT, SIGSTOP, SIGTRAP},
 };
 
 pub fn sys_kill(pid: isize, signum: i32) -> isize {
@@ -16,7 +16,10 @@ pub fn sys_kill(pid: isize, signum: i32) -> isize {
         if signum >= 1 && signum as usize <= NSIG {
             let mut inner = task.acquire_inner_lock();
             inner.signals.add_sig(signum as usize);
-            0
+            if signum as usize == SIGKILL {
+                inner.killed = true;
+            }
+            return 0;
         } else {
             return -EINVAL;
         }

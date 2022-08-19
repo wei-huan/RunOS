@@ -29,6 +29,12 @@ pub fn suspend_current_and_run_next() {
     let task = current_task().unwrap();
     // ---- access current TCB exclusively
     let mut task_inner = task.acquire_inner_lock();
+    if task_inner.killed {
+        log::debug!("task{} killed from suspend", task.getpid());
+        drop(task_inner);
+        drop(task);
+        exit_current_and_run_next(-(SIGKILL as i32));
+    }
     let task_cx_ptr = &mut task_inner.task_cx as *mut TaskContext;
     // Change status to Ready
     task_inner.task_status = TaskStatus::Ready;
@@ -37,11 +43,11 @@ pub fn suspend_current_and_run_next() {
     // jump to scheduling cycle
     // log::debug!("suspend 1");
     save_current_and_back_to_schedule(task_cx_ptr);
-    // log::debug!("back to suspend");
+    // log::debug!("back from suspend");
 }
 
 /// 将当前任务退出重新加入就绪队列，并调度新的任务
-pub fn exit_current_and_run_next(exit_code: i32) {
+pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     // take from Processor
     let task = take_current_task().unwrap();
     // remove from pid2task
@@ -74,6 +80,7 @@ pub fn exit_current_and_run_next(exit_code: i32) {
     // we do not have to save task context
     let mut _unused = TaskContext::zero_init();
     save_current_and_back_to_schedule(&mut _unused as *mut _);
+    panic!("never reach here in exit_current_and_run_next!")
 }
 
 pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
@@ -103,6 +110,7 @@ fn call_kernel_signal_handler(sig: usize) {
             }
         }
         _ => {
+            log::warn!("task{} will be killed", task.getpid());
             task_inner.killed = true;
         }
     }
@@ -115,7 +123,6 @@ fn call_user_signal_handler(sig: usize) {
     // change current mask
     task_inner.signal_mask = task_inner.signal_actions[&(sig as u32)].sa_mask;
     // handle flag
-    log::error!(" handling signal now change to sig{}", sig);
     task_inner.handling_sig = sig as i32;
     task_inner.signals.clear_sig(sig);
 
@@ -199,7 +206,10 @@ pub fn handle_signals() {
     let task = current_task().unwrap();
     let task_inner = task.acquire_inner_lock();
     if task_inner.handling_sig != -1 {
-        println!("now handling signal: {} return", task_inner.handling_sig);
+        log::warn!(
+            "already handling signal: {} return",
+            task_inner.handling_sig
+        );
         return;
     }
     drop(task_inner);
