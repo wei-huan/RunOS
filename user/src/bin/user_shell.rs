@@ -699,10 +699,10 @@ static LMBENCH_TESTS: [&str; 26] = [
     "lmbench_all lat_fs /var/tmp", // need many stack size, 40 pages okk
     "busybox echo Bandwidth measurements",
     "lmbench_all bw_pipe -P 1", // share ronly and mmap exec sect ok
-    "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX", // after create large file XXX now ok
-    "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
-    "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX", // after create large file XXX now ok
-    "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
+    "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX", // after create 1M large file XXX now ok
+    "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX", // after create 1M large file XXX now ok
+    "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX", // after create 1M large file XXX now ok
+    "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX", // after create 1M large file XXX now ok
     "busybox echo context switch overhead",
     "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96", // need pages
 ];
