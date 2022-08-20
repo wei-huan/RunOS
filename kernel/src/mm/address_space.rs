@@ -410,7 +410,6 @@ impl AddrSpace {
 
         let mut head_va = 0;
         let mut at_base = 0;
-        // let mut need_data_sec = true;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
             // let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
@@ -426,10 +425,6 @@ impl AddrSpace {
                 // first section header is dummy, not match program header, so set i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
                 let name = sect.get_name(&elf).unwrap();
-                // log::debug!("name: {}", name);
-                // if name == ".data" {
-                //     need_data_sec = false;
-                // }
                 let start_va: VirtAddr = (ph.virtual_addr() as usize).into();
                 let end_va: VirtAddr = ((ph.virtual_addr() + ph.mem_size()) as usize).into();
                 let offset = start_va.page_offset();
@@ -531,18 +526,6 @@ impl AddrSpace {
             value: 0x112d as usize,
         });
 
-        // if need_data_sec == true {
-        //     let map_perm = MapPermission::U | MapPermission::R | MapPermission::W;
-        //     let section = Section::new(
-        //         "data".into(),
-        //         0x1000.into(),
-        //         0x4000.into(),
-        //         MapType::Framed,
-        //         map_perm,
-        //     );
-        //     user_space.push_section(section, Some(&[0u8; 0x3000]));
-        // }
-
         let ph_head_addr = head_va + elf.header.pt2.ph_offset() as usize;
         auxv.push(AuxHeader {
             aux_type: AT_PHDR,
@@ -562,6 +545,8 @@ impl AddrSpace {
         let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
         // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
         // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
+
+        // map user_stack
         user_space.push_section(
             Section::new(
                 ".ustack".to_string(),

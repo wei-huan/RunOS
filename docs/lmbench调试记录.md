@@ -33,4 +33,6 @@ Simple write: 38.3691 microseconds
 
 8. sys_open_at 的 OpenFlags 有 bug, 改正之后 Select on 100 fd's: 17268.5681 microseconds 好了
 
-9. 目前内存空间还是很紧张, 经常物理页帧不够用, 发现内核堆竟然膨胀到了了4.2MB, 原因就是 sys_exec 加载 elf 时用了堆空间, lmbench 大小 1.1 MB, 根据伙伴系统的原理那么就需要 2 MB内存去加载, 显然对于 K210 不合理, 不如直接 map 到 frame 中, 可以砍去至少 2 MB 的内核堆  
+9. 目前内存空间还是很紧张, 经常物理页帧不够用, 发现内核堆竟然膨胀到了了4.2MB, 原因就是 sys_exec 加载 elf 时用了堆空间, lmbench 大小 1.1 MB, 根据伙伴系统的原理那么就需要 2 MB内存去加载, 显然对于 K210 不合理, 不如直接 map 到 frame 中, 可以砍去至少 2 MB 的内核堆, 目前只要1MB就够了
+
+10. lat_fs 要 40 个页面的用户栈, 太吓人了, k210 跑不动了, 准备把 initproc 和 user_shell 的栈设小些
