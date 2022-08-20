@@ -40,9 +40,6 @@ pub const SIGPROF: usize = 27; /* Profiling timer expired */
 pub const SIGWINCH: usize = 28; /* Window resize signal */
 pub const SIGIO: usize = 29; /* I/O now possible */
 pub const SIGPOLL: usize = SIGIO; /* Pollable event */
-/*
-pub const  SIGLOST		29
-*/
 pub const SIGPWR: usize = 30; /* Power failure */
 pub const SIGSYS: usize = 31; /* Bad system call.  */
 pub const SIGUNUSED: usize = 31; /* Synonymous with SIGSYS */
@@ -101,29 +98,5 @@ impl SigSet {
         } else {
             None
         }
-    }
-}
-
-#[repr(C)]
-pub struct UContext {
-    pub __bits: [usize; 25],
-}
-
-impl UContext {
-    pub fn new() -> Self {
-        Self { __bits: [0; 25] }
-    }
-
-    pub fn as_bytes(&self) -> &[u8] {
-        let size = core::mem::size_of::<Self>();
-        unsafe { core::slice::from_raw_parts(self as *const _ as usize as *mut u8, size) }
-    }
-
-    pub fn pc_offset() -> usize {
-        176
-    }
-
-    pub fn mc_pc(&mut self) -> &mut usize {
-        &mut self.__bits[Self::pc_offset() / size_of::<usize>()]
     }
 }

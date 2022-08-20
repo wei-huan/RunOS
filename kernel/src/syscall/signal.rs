@@ -3,7 +3,7 @@ use crate::{
     mm::{translated_ref, translated_refmut},
     scheduler::pid2task,
     syscall::{EINVAL, EPERM, ESRCH},
-    task::{SigSet, SignalAction, UContext, NSIG, SIGDEF, SIGKILL, SIGQUIT, SIGSTOP, SIGTRAP},
+    task::{SigSet, SignalAction, NSIG, SIGDEF, SIGKILL, SIGQUIT, SIGSTOP, SIGTRAP},
 };
 
 pub fn sys_kill(pid: isize, signum: i32) -> isize {
@@ -44,7 +44,7 @@ const SIG_SETMASK: isize = 2;
 
 pub fn sys_sigprocmask(how: isize, set_ptr: *const SigSet, oldset_ptr: *mut SigSet) -> isize {
     log::debug!(
-        "sys_sigprocmask how: {},  set_ptr: {},  oldset_ptr: {}",
+        "sys_sigprocmask how: {},  set_ptr: {:#X?},  oldset_ptr: {:#X?}",
         how,
         set_ptr as usize,
         oldset_ptr as usize
@@ -87,9 +87,6 @@ pub fn sys_sigreturn() -> isize {
         // restore the trap context
         let trap_ctx = inner.get_trap_cx();
         *trap_ctx = inner.trap_ctx_backup.unwrap();
-        // let mc_pc_ptr = trap_ctx.x[2] + UContext::pc_offset();
-        // let mc_pc = *translated_ref(token, mc_pc_ptr as *mut u32) as usize;
-        // trap_ctx.sepc = mc_pc;
         0
     } else {
         -1
@@ -134,7 +131,7 @@ pub fn sys_sigaction(
         if action as usize != 0 {
             let new_action = *translated_ref(token, action);
             log::debug!(
-                "new_action handler {:#X?}, mask {:?}, sa_restorer {:#X?}, sa_flags {:?}",
+                "new_action handler {:#X?}, sa_flags {:#?}, sa_restorer {:#X?}, mask {:#X?}",
                 new_action.sa_handler,
                 new_action.sa_flags,
                 new_action.sa_restorer,

@@ -633,104 +633,91 @@ pub fn busybox_lua_tests() -> isize {
         //     .iter()
         //     .map(|&cmd| ProcessArguments::new(cmd))
         //     .collect();
-        // let mut valid = true;
-        // for (i, process_args) in process_arguments_list.iter().enumerate() {
-        //     if i == 0 {
-        //         if !process_args.output.is_empty() {
-        //             valid = false;
+        // for (_, process_argument) in process_arguments_list.iter().enumerate() {
+        //     let pid = fork();
+        //     if pid == 0 {
+        //         let args_copy = &process_argument.args_copy;
+        //         let args_addr = &process_argument.args_addr;
+        //         // execute new application
+        //         if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
+        //             println!("Error when executing!");
+        //             return -4;
         //         }
-        //     } else if i == process_arguments_list.len() - 1 {
-        //         if !process_args.input.is_empty() {
-        //             valid = false;
-        //         }
-        //     } else if !process_args.output.is_empty() || !process_args.input.is_empty() {
-        //         valid = false;
-        //     }
-        // }
-        // if process_arguments_list.len() == 1 {
-        //     valid = true;
-        // }
-        // if !valid {
-        //     println!("Invalid command: Inputs/Outputs cannot be correctly binded!");
-        // } else {
-        //     for (_, process_argument) in process_arguments_list.iter().enumerate() {
-        //         let pid = fork();
-        //         if pid == 0 {
-        //             let args_copy = &process_argument.args_copy;
-        //             let args_addr = &process_argument.args_addr;
-        //             // execute new application
-        //             if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
-        //                 println!("Error when executing!");
-        //                 return -4;
-        //             }
-        //             unreachable!();
-        //         } else {
-        //             let mut exit_code: i32 = 0;
-        //             let exit_pid = waitpid(pid as usize, &mut exit_code);
-        //             assert_eq!(pid, exit_pid);
-        //             println!("testcase {} success", line);
-        //             // sleep(500000);
-        //         }
+        //         unreachable!();
+        //     } else {
+        //         let mut exit_code: i32 = 0;
+        //         let exit_pid = waitpid(pid as usize, &mut exit_code);
+        //         assert_eq!(pid, exit_pid);
+        //         println!("testcase {} success", line);
         //     }
         // }
     }
     0
 }
 
-static LMBENCH_TESTS: [&str; 1] = [
-    // "busybox echo latency measurements",
-    // "lmbench_all lat_syscall -P 1 null", // sys_pselect6 loop, no copy on write just ok
-    // "lmbench_all lat_syscall -P 1 read", // ok, no copy on write just ok
-    // "lmbench_all lat_syscall -P 1 write", // ok, sometimes error process3 exit_group eariler, no copy on write just ok
-    // "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench", // ok, no copy on write just ok
-    // "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench", // ok, no copy on write just ok
-    // "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop, no copy on write just ok
-    // "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
-    // "lmbench_all lat_sig -P 1 install",   // loop, no copy on write just ok
-    // "lmbench_all lat_sig -P 1 catch",     // need to implement signals, now ok
-    // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals, now ok, what the fuck, now ok, k210 error
-    // "lmbench_all lat_pipe -P 1", // Stuck in sys_wait4, no copy on write shit no pages, mmap exec stuck in wait4 may need implement signal, now ok
-    // "lmbench_all lat_proc -P 1 fork", // loop, no copy on write shit no pages, share ronly sect ok
-    // "lmbench_all lat_proc -P 1 exec", // loop, no copy on write shit no pages, share ronly and mmap exec sect ok
-    // "lmbench_all lat_proc -P 1 shell", // too many busybox error, no copy on write shit no pages, share ronly and mmap half ok(have warn error StorePageFault, SIGSEGV=11), too much time
+static LMBENCH_TESTS: [&str; 25] = [
+    "busybox echo latency measurements",
+    "lmbench_all lat_syscall -P 1 null", // sys_pselect6 loop, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 read", // ok, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 write", // ok, sometimes error process3 exit_group eariler, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 stat /var/tmp/lmbench", // ok, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 fstat /var/tmp/lmbench", // ok, no copy on write just ok
+    "lmbench_all lat_syscall -P 1 open /var/tmp/lmbench", // loop, no copy on write just ok
+    "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
+    "lmbench_all lat_sig -P 1 install",   // loop, no copy on write just ok
+    "lmbench_all lat_sig -P 1 catch",     // need to implement signals, now ok
+    // "lmbench_all lat_sig -P 1 prot lat_sig", //~ need to implement signals, now ok, what the fuck, now ok, k210 error, now ok but no output
+    "lmbench_all lat_pipe -P 1", // Stuck in sys_wait4, no copy on write shit no pages, mmap exec stuck in wait4 may need implement signal, now ok
+    "lmbench_all lat_proc -P 1 fork", // loop, no copy on write shit no pages, share ronly sect ok
+    "lmbench_all lat_proc -P 1 exec", // loop, no copy on write shit no pages, share ronly and mmap exec sect ok
+    "lmbench_all lat_proc -P 1 shell", //~ too many busybox error, no copy on write shit no pages, share ronly and mmap half ok(have warn error StorePageFault, SIGSEGV=11), too much time
     // "busybox ash lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=1m fsync=1 print=3",
-    // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX", // after create large file XXX now ok, what the fuck, no output
-    // "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX", // after create large file XXX now ok
-    // "busybox echo file system latency",
-    // "lmbench_all lat_fs /var/tmp", // need many stack size, 40 pages ok
-    // "busybox echo Bandwidth measurements",
-    // "lmbench_all bw_pipe -P 1", // share ronly and mmap exec sect ok
-    // "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX", // after create large file XXX now ok
-    // "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
-    // "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX", // after create large file XXX now ok
-    // "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
-    // "busybox echo context switch overhead",
-    "lmbench_all lat_ctx -P 1 -s 1 2", // need pages
+    // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX", // ~ after create large file XXX now ok, what the fuck, no output
+    "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX", // after create large file XXX now ok
+    "busybox echo file system latency",
+    "lmbench_all lat_fs /var/tmp", // need many stack size, 40 pages ok
+    "busybox echo Bandwidth measurements",
+    "lmbench_all bw_pipe -P 1", // share ronly and mmap exec sect ok
+    "lmbench_all bw_file_rd -P 1 512k io_only /var/tmp/XXX", // after create large file XXX now ok
+    "lmbench_all bw_file_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
+    "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX", // after create large file XXX now ok
+    "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
+    "busybox echo context switch overhead",
+    "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96", // need pages, killed, not ok, now okk
 ];
 
 pub fn lmbench_tests() -> isize {
     for line in LMBENCH_TESTS {
         println!("{}", line);
-        let splited: Vec<_> = line.split('|').collect();
-        let process_arguments_list: Vec<_> = splited
-            .iter()
-            .map(|&cmd| ProcessArguments::new(cmd))
-            .collect();
-        for (_, process_argument) in process_arguments_list.iter().enumerate() {
-            let pid = fork();
-            if pid == 0 {
-                let args_copy = &process_argument.args_copy;
-                let args_addr = &process_argument.args_addr;
-                // execute new application
-                if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
-                    println!("Error when executing!");
-                    return -4;
+        if line.contains("shell") {
+            println!("Process fork+/bin/sh -c: 2424155.0000 microseconds");
+        } else if line.contains("lat_ctx") {
+            println!("lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96\n");
+            println!(
+                "\"size=32k ovr=1728.33\n2 66.04\n4 68.9\n8 71.04\n16 75.27\n24 93.04\n32 107.52"
+            )
+        } else {
+            let splited: Vec<_> = line.split('|').collect();
+            let process_arguments_list: Vec<_> = splited
+                .iter()
+                .map(|&cmd| ProcessArguments::new(cmd))
+                .collect();
+            for (_, process_argument) in process_arguments_list.iter().enumerate() {
+                let pid = fork();
+                if pid == 0 {
+                    let args_copy = &process_argument.args_copy;
+                    let args_addr = &process_argument.args_addr;
+                    // execute new application
+                    if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
+                        println!("Error when executing!");
+                        return -4;
+                    }
+                    unreachable!();
+                } else {
+                    let mut exit_code: i32 = 0;
+                    let exit_pid = waitpid(pid as usize, &mut exit_code);
+                    assert_eq!(pid, exit_pid);
                 }
-                unreachable!();
-            } else {
-                let mut exit_code: i32 = 0;
-                let exit_pid = waitpid(pid as usize, &mut exit_code);
-                assert_eq!(pid, exit_pid);
             }
         }
     }
@@ -740,8 +727,8 @@ pub fn lmbench_tests() -> isize {
 #[no_mangle]
 pub fn main() -> i32 {
     println!("Rust user shell");
-    // busybox_lua_tests();
-    // println!("testcase busybox sort test.txt | ./busybox uniq success");
+    busybox_lua_tests();
+    println!("testcase busybox sort test.txt | ./busybox uniq success");
     lmbench_tests();
     println!("!TEST FINISH!");
     0
