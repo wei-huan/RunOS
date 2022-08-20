@@ -1,7 +1,7 @@
 extern crate alloc;
 extern crate spin;
 use super::address::{PhysAddr, PhysPageNum};
-use crate::config::{MEMORY_END, PAGE_SIZE};
+use crate::config::MEMORY_END;
 use alloc::vec::Vec;
 use core::fmt::{self, Debug, Formatter};
 use lazy_static::*;

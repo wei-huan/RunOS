@@ -17,13 +17,13 @@ pub const SIGRETURN_TRAMPOLINE: usize = TRAMPOLINE - PAGE_SIZE;
 // Kernel Address Space 's Address
 pub const KERNEL_STACK_BASE: usize = SIGRETURN_TRAMPOLINE - PAGE_SIZE; // stack grow down, so stack base address is high end
 pub const KERNEL_STACK_SIZE: usize = PAGE_SIZE * 4;
-pub const BOOT_STACK_SIZE: usize = PAGE_SIZE * 4; // 16 KB
+pub const BOOT_STACK_SIZE: usize = PAGE_SIZE * 4; // 16 KB, if have to adjust, please sync adjust in entry.asm 
 
 // User Address Space 's Address
 pub const TRAP_CONTEXT_BASE: usize = SIGRETURN_TRAMPOLINE - PAGE_SIZE;
 pub const USER_STACK_BASE: usize = TRAP_CONTEXT_BASE - PAGE_SIZE; // stack grow down, so stack base address is high end
 pub const USER_STACK_SIZE: usize = PAGE_SIZE * 40;
-pub const USER_LIGHT_STACK_SIZE: usize = PAGE_SIZE * 2;
+pub const USER_LIGHT_STACK_SIZE: usize = PAGE_SIZE * 12;
 pub const MMAP_BASE: usize = 0x10_0000_0000;
 pub const DLL_LOADER_BASE: usize = 0x30_0000_0000; // dynamic link library loader base address
 

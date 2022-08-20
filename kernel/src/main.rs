@@ -45,6 +45,7 @@ use core::sync::atomic::Ordering;
 
 global_asm!(include_str!("entry.asm"));
 global_asm!(include_str!("firm_apps.S"));
+global_asm!(include_str!("task/sigreturn.S"));
 
 fn clear_bss() {
     extern "C" {
@@ -63,7 +64,6 @@ fn clear_bss() {
 fn os_main(hartid: usize, dtb_ptr: *mut u8) {
     if !SMP_START.load(Ordering::Acquire) {
         clear_bss();
-        // println!("here 0");
         trap::init();
         dt::init(dtb_ptr);
         mm::boot_init();
@@ -76,21 +76,21 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         // fs::list_rootfs();
         timer::init();
         // SMP_START will turn to true in this function
-        // cpu::boot_all_harts(hartid);
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Main Hart {} successfully init", hart_id()).green()
-        // );
+        cpu::boot_all_harts(hartid);
+        log::info!(
+            "{}",
+            alloc::format!("Main Hart {} successfully init", hart_id()).green()
+        );
         scheduler::schedule();
     } else {
         trap::init();
         mm::init();
         fpu::init();
         timer::init();
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Hart {} successfully init", hart_id()).green()
-        // );
+        log::info!(
+            "{}",
+            alloc::format!("Hart {} successfully init", hart_id()).green()
+        );
         scheduler::schedule();
     }
 }
@@ -105,15 +105,15 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         dt::init(dtb_ptr);
         mm::boot_init();
         fpu::init();
-        // logo::show();
+        logo::show();
         logger::init();
         scheduler::add_initproc();
         fs::init_rootfs();
-        // logger::show_basic_info();
+        logger::show_basic_info();
         // fs::list_rootfs();
         timer::init();
         // SMP_START will turn to true in this function
-        // cpu::boot_all_harts(hartid);
+        cpu::boot_all_harts(hartid);
         log::info!(
             "{}",
             alloc::format!("Main Hart {} successfully booted", hart_id()).green()
@@ -124,70 +124,10 @@ fn os_main(hartid: usize, dtb_ptr: *mut u8) {
         mm::init();
         fpu::init();
         timer::init();
-        // log::info!(
-        //     "{}",
-        //     alloc::format!("Hart {} successfully booted", hart_id()).green()
-        // );
+        log::info!(
+            "{}",
+            alloc::format!("Hart {} successfully booted", hart_id()).green()
+        );
         scheduler::schedule();
     }
 }
-
-// // qemu rustsbi
-// #[no_mangle]
-// #[cfg(all(feature = "k210", feature = "rustsbi"))]
-// fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-//     if hartid == 0 {
-//         clear_bss();
-//         // println!("here 0");
-//         trap::init();
-//         dt::init(dtb_ptr);
-//         mm::boot_init();
-//         // fs::init_rootfs();
-//         logo::show();
-//         logger::init();
-//         logger::show_basic_info();
-//         fs::list_apps();
-//         timer::init();
-//         scheduler::add_initproc();
-//         // SMP_START will turn to true in this function
-//         cpu::boot_all_harts(hartid);
-//         // log::info!("here 4");
-//         scheduler::schedule();
-//     } else {
-//         log::info!(
-//             "{}",
-//             alloc::format!("Hart {} successfully booted", hart_id()).green()
-//         );
-//         trap::init();
-//         mm::init();
-//         timer::init();
-//         scheduler::schedule();
-//     }
-// }
-
-// // qemu rustsbi
-// #[cfg(all(feature = "k210", feature = "opensbi"))]
-// #[no_mangle]
-// fn os_main(hartid: usize, dtb_ptr: *mut u8) {
-//     if hartid == 0 {
-//         clear_bss();
-//         println!("here 0");
-//         dt::init(dtb_ptr);
-//         logger::init();
-//         mm::boot_init();
-//         logger::show_machine_sbi_os_info();
-//         // scheduler::add_apps();
-//         trap::init();
-//         // timer::init();
-//         // SMP_START will turn to true in this function
-//         cpu::boot_all_harts(hartid);
-//         println!("here 1");
-//         loop {}
-//     } else {
-//         trap::init();
-//         mm::init();
-//         timer::init();
-//         println!("here 2");
-//         loop {}
-//     }
-// }

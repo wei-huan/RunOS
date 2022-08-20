@@ -362,7 +362,7 @@ pub fn sys_wait4(pid: isize, wstatus: *mut i32, option: isize) -> isize {
         if let Some((idx, _)) = pair {
             let child = inner.children.remove(idx);
             // confirm that child will be deallocated after being removed from children list
-            assert_eq!(Arc::strong_count(&child), 1);
+            assert_eq!(Arc::strong_count(&child), 1, "process{} cant recycled", child.getpid());
             let found_pid = child.getpid();
             // ++++ temporarily access child PCB exclusively
             let exit_code = child.acquire_inner_lock().exit_code;

@@ -235,7 +235,7 @@ impl AddrSpace {
             PTEFlags::R | PTEFlags::X,
         )
     }
-    fn map_sigreturn_trampoline(&mut self) {
+    fn map_signal_trampoline(&mut self) {
         self.page_table.map(
             VirtAddr::from(SIGRETURN_TRAMPOLINE).into(),
             PhysAddr::from(ssignaltrampoline as usize).into(),
@@ -385,7 +385,7 @@ impl AddrSpace {
         let mut auxv: Vec<AuxHeader> = Vec::new();
         let mut user_space = Self::new_empty();
         // map trampoline
-        user_space.map_sigreturn_trampoline();
+        user_space.map_signal_trampoline();
         user_space.map_trampoline();
         // map program headers of elf, with U flag
         let elf = xmas_elf::ElfFile::new(elf_data).unwrap();
@@ -412,15 +412,15 @@ impl AddrSpace {
         let mut at_base = 0;
         for i in 0..ph_count {
             let ph = elf.program_header(i).unwrap();
-            // let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
-            // let name = sect.get_name(&elf).unwrap();
-            // log::debug!(
-            //     "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
-            //     name,
-            //     ph.get_type().unwrap(),
-            //     ph.virtual_addr(),
-            //     ph.virtual_addr() + ph.mem_size()
-            // );
+            let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
+            let name = sect.get_name(&elf).unwrap();
+            log::trace!(
+                "program header name: {:#?} type: {:#?}, vaddr: [{:#X?}, {:#X?})",
+                name,
+                ph.get_type().unwrap(),
+                ph.virtual_addr(),
+                ph.virtual_addr() + ph.mem_size()
+            );
             if ph.get_type().unwrap() == xmas_elf::program::Type::Load {
                 // first section header is dummy, not match program header, so set i + 1
                 let sect = elf.section_header((i + 1).try_into().unwrap()).unwrap();
@@ -625,7 +625,7 @@ impl AddrSpace {
     pub fn from_existed_user(user_space: &mut AddrSpace) -> AddrSpace {
         let mut addr_space = Self::new_empty();
         // map trampoline
-        addr_space.map_sigreturn_trampoline();
+        addr_space.map_signal_trampoline();
         addr_space.map_trampoline();
         // share map .text sections/user_stack/heap
         for area in user_space

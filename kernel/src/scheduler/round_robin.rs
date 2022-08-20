@@ -1,7 +1,6 @@
 use super::Scheduler;
 use super::__schedule;
 use crate::cpu::take_my_cpu;
-use crate::scheduler::add_task;
 use crate::sync::interrupt_off;
 use crate::task::{TaskContext, TaskControlBlock, TaskStatus};
 use alloc::{collections::VecDeque, sync::Arc};

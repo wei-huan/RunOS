@@ -14,6 +14,6 @@ _start:
 boot_stack:
     .globl boot_stack
     # 16K 启动栈大小 * CPU_NUMS
-    .space 4096 * 4 * 1
+    .space 4096 * 4 * 2
 boot_stack_top:
     .globl boot_stack_top

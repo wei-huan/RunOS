@@ -500,20 +500,18 @@ extern crate user;
 
 use alloc::string::String;
 use alloc::vec::Vec;
-use user::{exec, fork, wait, waitpid, yield_};
+use user::{exec, fork, waitpid};
 
 #[derive(Debug)]
-struct ProcessArguments {
-    input: String,
-    output: String,
-    args_copy: Vec<String>,
-    args_addr: Vec<*const u8>,
+struct Command {
+    copy: Vec<String>,
+    addr: Vec<*const u8>,
 }
 
-impl ProcessArguments {
+impl Command {
     pub fn new(command: &str) -> Self {
         let args: Vec<_> = command.split(' ').collect();
-        let mut args_copy: Vec<String> = args
+        let copy: Vec<String> = args
             .iter()
             .filter(|&arg| !arg.is_empty())
             .map(|&arg| {
@@ -523,38 +521,9 @@ impl ProcessArguments {
                 string
             })
             .collect();
-
-        // redirect input
-        let mut input = String::new();
-        if let Some((idx, _)) = args_copy
-            .iter()
-            .enumerate()
-            .find(|(_, arg)| arg.as_str() == "<\0")
-        {
-            input = args_copy[idx + 1].clone();
-            args_copy.drain(idx..=idx + 1);
-        }
-
-        // redirect output
-        let mut output = String::new();
-        if let Some((idx, _)) = args_copy
-            .iter()
-            .enumerate()
-            .find(|(_, arg)| arg.as_str() == ">\0")
-        {
-            output = args_copy[idx + 1].clone();
-            args_copy.drain(idx..=idx + 1);
-        }
-
-        let mut args_addr: Vec<*const u8> = args_copy.iter().map(|arg| arg.as_ptr()).collect();
-        args_addr.push(core::ptr::null::<u8>());
-
-        Self {
-            input,
-            output,
-            args_copy,
-            args_addr,
-        }
+        let mut addr: Vec<*const u8> = copy.iter().map(|arg| arg.as_ptr()).collect();
+        addr.push(core::ptr::null::<u8>());
+        Self { copy, addr }
     }
 }
 
@@ -627,35 +596,25 @@ static BUSYBOX_LUA_TESTS: [&str; 63] = [
 
 pub fn busybox_lua_tests() -> isize {
     for line in BUSYBOX_LUA_TESTS {
-        println!("testcase {} success", line);
-        // let splited: Vec<_> = line.split('|').collect();
-        // let process_arguments_list: Vec<_> = splited
-        //     .iter()
-        //     .map(|&cmd| ProcessArguments::new(cmd))
-        //     .collect();
-        // for (_, process_argument) in process_arguments_list.iter().enumerate() {
-        //     let pid = fork();
-        //     if pid == 0 {
-        //         let args_copy = &process_argument.args_copy;
-        //         let args_addr = &process_argument.args_addr;
-        //         // execute new application
-        //         if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
-        //             println!("Error when executing!");
-        //             return -4;
-        //         }
-        //         unreachable!();
-        //     } else {
-        //         let mut exit_code: i32 = 0;
-        //         let exit_pid = waitpid(pid as usize, &mut exit_code);
-        //         assert_eq!(pid, exit_pid);
-        //         println!("testcase {} success", line);
-        //     }
-        // }
+        let process_args = Command::new(line);
+        let pid = fork();
+        if pid == 0 {
+            if exec(process_args.copy[0].as_str(), process_args.addr.as_slice()) == -1 {
+                println!("Error when executing!");
+                return -1;
+            }
+        } else {
+            let mut exit_code: i32 = 0;
+            waitpid(pid as usize, &mut exit_code);
+            if exit_code == 0 {
+                println!("testcase {} success", line);
+            }
+        }
     }
     0
 }
 
-static LMBENCH_TESTS: [&str; 25] = [
+static LMBENCH_TESTS: [&str; 27] = [
     "busybox echo latency measurements",
     "lmbench_all lat_syscall -P 1 null", // sys_pselect6 loop, no copy on write just ok
     "lmbench_all lat_syscall -P 1 read", // ok, no copy on write just ok
@@ -666,13 +625,13 @@ static LMBENCH_TESTS: [&str; 25] = [
     "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
     "lmbench_all lat_sig -P 1 install",   // loop, no copy on write just ok
     "lmbench_all lat_sig -P 1 catch",     // need to implement signals, now ok
-    // "lmbench_all lat_sig -P 1 prot lat_sig", //~ need to implement signals, now ok, what the fuck, now ok, k210 error, now ok but no output
+    "lmbench_all lat_sig -P 1 prot lat_sig", //~ need to implement signals, now ok, what the fuck, now ok, k210 error, now ok but no output
     "lmbench_all lat_pipe -P 1", // Stuck in sys_wait4, no copy on write shit no pages, mmap exec stuck in wait4 may need implement signal, now ok
     "lmbench_all lat_proc -P 1 fork", // loop, no copy on write shit no pages, share ronly sect ok
     "lmbench_all lat_proc -P 1 exec", // loop, no copy on write shit no pages, share ronly and mmap exec sect ok
     "lmbench_all lat_proc -P 1 shell", //~ too many busybox error, no copy on write shit no pages, share ronly and mmap half ok(have warn error StorePageFault, SIGSEGV=11), too much time
-    // "busybox ash lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=1m fsync=1 print=3",
-    // "lmbench_all lat_pagefault -P 1 /var/tmp/XXX", // ~ after create large file XXX now ok, what the fuck, no output
+    // "busybox ash lmbench_all lmdd label=\"File /var/tmp/XXX write bandwidth:\" of=/var/tmp/XXX move=1m fsync=1 print=3", // error ,but create XXX in init_rootfs, no need any more
+    "lmbench_all lat_pagefault -P 1 /var/tmp/XXX", // ~ after create large file XXX now ok, what the fuck, sometimes no output
     "lmbench_all lat_mmap -P 1 512k /var/tmp/XXX", // after create large file XXX now ok
     "busybox echo file system latency",
     "lmbench_all lat_fs /var/tmp", // need many stack size, 40 pages ok
@@ -683,42 +642,22 @@ static LMBENCH_TESTS: [&str; 25] = [
     "lmbench_all bw_mmap_rd -P 1 512k mmap_only /var/tmp/XXX", // after create large file XXX now ok
     "lmbench_all bw_mmap_rd -P 1 512k open2close /var/tmp/XXX", // after create large file XXX now ok
     "busybox echo context switch overhead",
-    "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96", // need pages, killed, not ok, now okk
+    "lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96", // need pages, killed, not ok, now okk, what the fuck, sometimes crash
 ];
 
 pub fn lmbench_tests() -> isize {
     for line in LMBENCH_TESTS {
         println!("{}", line);
-        if line.contains("shell") {
-            println!("Process fork+/bin/sh -c: 2424155.0000 microseconds");
-        } else if line.contains("lat_ctx") {
-            println!("lmbench_all lat_ctx -P 1 -s 32 2 4 8 16 24 32 64 96\n");
-            println!(
-                "\"size=32k ovr=1728.33\n2 66.04\n4 68.9\n8 71.04\n16 75.27\n24 93.04\n32 107.52"
-            )
-        } else {
-            let splited: Vec<_> = line.split('|').collect();
-            let process_arguments_list: Vec<_> = splited
-                .iter()
-                .map(|&cmd| ProcessArguments::new(cmd))
-                .collect();
-            for (_, process_argument) in process_arguments_list.iter().enumerate() {
-                let pid = fork();
-                if pid == 0 {
-                    let args_copy = &process_argument.args_copy;
-                    let args_addr = &process_argument.args_addr;
-                    // execute new application
-                    if exec(args_copy[0].as_str(), args_addr.as_slice()) == -1 {
-                        println!("Error when executing!");
-                        return -4;
-                    }
-                    unreachable!();
-                } else {
-                    let mut exit_code: i32 = 0;
-                    let exit_pid = waitpid(pid as usize, &mut exit_code);
-                    assert_eq!(pid, exit_pid);
-                }
+        let process_args = Command::new(line);
+        let pid = fork();
+        if pid == 0 {
+            if exec(process_args.copy[0].as_str(), process_args.addr.as_slice()) == -1 {
+                println!("Error when executing!");
+                return -1;
             }
+        } else {
+            let mut exit_code: i32 = 0;
+            waitpid(pid as usize, &mut exit_code);
         }
     }
     0
@@ -728,7 +667,6 @@ pub fn lmbench_tests() -> isize {
 pub fn main() -> i32 {
     println!("Rust user shell");
     busybox_lua_tests();
-    println!("testcase busybox sort test.txt | ./busybox uniq success");
     lmbench_tests();
     println!("!TEST FINISH!");
     0

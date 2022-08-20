@@ -8,8 +8,6 @@ mod recycle_allocator;
 mod signal;
 mod task;
 
-use core::mem::size_of;
-
 pub use action::*;
 pub use aux::*;
 pub use context::TaskContext;
@@ -20,7 +18,6 @@ pub use task::{ClearChildTid, TaskControlBlock, TaskControlBlockInner, TaskStatu
 
 use crate::config::SIGRETURN_TRAMPOLINE;
 use crate::cpu::{current_task, take_current_task};
-use crate::mm::{translated_byte_buffer, UserBuffer};
 use crate::scheduler::{remove_from_pid2task, save_current_and_back_to_schedule, INITPROC};
 use alloc::sync::Arc;
 
@@ -30,7 +27,7 @@ pub fn suspend_current_and_run_next() {
     // ---- access current TCB exclusively
     let mut task_inner = task.acquire_inner_lock();
     if task_inner.killed {
-        log::debug!("task{} killed from suspend", task.getpid());
+        log::trace!("task{} killed from suspend", task.getpid());
         drop(task_inner);
         drop(task);
         exit_current_and_run_next(-(SIGKILL as i32));
@@ -54,14 +51,12 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     remove_from_pid2task(task.getpid());
     // **** access current TCB exclusively
     let mut task_inner = task.acquire_inner_lock();
-    // Change status to Ready
-    task_inner.task_status = TaskStatus::Zombie;
     // Record exit code
     task_inner.exit_code = exit_code;
     // do not move to its parent but under initproc
     // ++++++ access initproc TCB exclusively
-    // pid 0 for initproc , pid 1 for user_shell
-    if task.pid.0 >= 2 {
+    // pid 0 for initproc
+    if task.getpid() >= 1 {
         let mut initproc_inner = INITPROC.acquire_inner_lock();
         for child in task_inner.children.iter() {
             child.acquire_inner_lock().parent = Some(Arc::downgrade(&INITPROC));
@@ -72,22 +67,27 @@ pub fn exit_current_and_run_next(exit_code: i32) -> ! {
     task_inner.children.clear();
     // drop inner
     task_inner.addrspace.recycle_data_pages();
+    // Change status to Zombie
+    task_inner.task_status = TaskStatus::Zombie;
     drop(task_inner);
-    // **** release current TCB
-    // drop task manually to maintain rc correctly
     drop(task);
+    // **** release current TCB
     // jump to schedule cycle
     // we do not have to save task context
     let mut _unused = TaskContext::zero_init();
     save_current_and_back_to_schedule(&mut _unused as *mut _);
-    panic!("never reach here in exit_current_and_run_next!")
+    panic!("never reach here in exit_current_and_run_next")
 }
 
 pub fn check_signals_error_of_current() -> Option<(i32, &'static str)> {
     let task = current_task().unwrap();
     let task_inner = task.acquire_inner_lock();
     if let Some(err) = task_inner.signals.check_error() {
-        if task_inner.signal_actions.get(&((err.0 * -1) as u32)).is_some() {
+        if task_inner
+            .signal_actions
+            .get(&((err.0 * -1) as u32))
+            .is_some()
+        {
             None
         } else {
             Some(err)
@@ -133,23 +133,17 @@ fn call_user_signal_handler(sig: usize) {
     // handle flag
     task_inner.handling_sig = sig as i32;
     task_inner.signals.clear_sig(sig);
-
     // backup trapframe
     let mut trap_ctx = task_inner.get_trap_cx();
     task_inner.trap_ctx_backup = Some(*trap_ctx);
-
     // modify trapframe
+    // pc
     trap_ctx.sepc = handler;
-    extern "C" {
-        fn __sigreturn();
-        fn __uservec();
-    }
-    //put ra
+    // ra
     trap_ctx.x[1] = SIGRETURN_TRAMPOLINE;
     log::debug!("sig{} handler ra: {:#X?}", sig, trap_ctx.x[1]);
-    // put args (a0)
+    // args a0
     trap_ctx.x[10] = sig;
-    // log::debug!("sig{} handler address {:#X?}", sig, handler);
 }
 
 fn check_pending_signals() {
@@ -193,7 +187,7 @@ pub fn handle_signals() {
     let task = current_task().unwrap();
     let task_inner = task.acquire_inner_lock();
     if task_inner.handling_sig != -1 {
-        log::debug!(
+        log::trace!(
             "already handling signal: {} return",
             task_inner.handling_sig
         );
