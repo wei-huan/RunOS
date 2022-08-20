@@ -676,7 +676,7 @@ pub fn busybox_lua_tests() -> isize {
     0
 }
 
-static LMBENCH_TESTS: [&str; 26] = [
+static LMBENCH_TESTS: [&str; 27] = [
     "busybox echo latency measurements",
     "lmbench_all lat_syscall -P 1 null", // sys_pselect6 loop, no copy on write just ok
     "lmbench_all lat_syscall -P 1 read", // ok, no copy on write just ok
@@ -687,7 +687,7 @@ static LMBENCH_TESTS: [&str; 26] = [
     "lmbench_all lat_select -n 100 -P 1 file", // sys_pselect6 loop, no copy on write just ok
     "lmbench_all lat_sig -P 1 install",   // loop, no copy on write just ok
     "lmbench_all lat_sig -P 1 catch",     // need to implement signals, now ok
-    // "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals, now ok, what the fuck, now ok, k210 error
+    "lmbench_all lat_sig -P 1 prot lat_sig", // need to implement signals, now ok, what the fuck, now ok, k210 error
     "lmbench_all lat_pipe -P 1", // Stuck in sys_wait4, no copy on write shit no pages, mmap exec stuck in wait4 may need implement signal, now ok
     "lmbench_all lat_proc -P 1 fork", // loop, no copy on write shit no pages, share ronly sect ok
     "lmbench_all lat_proc -P 1 exec", // loop, no copy on write shit no pages, share ronly and mmap exec sect ok
@@ -743,17 +743,5 @@ pub fn main() -> i32 {
     println!("testcase busybox sort test.txt | ./busybox uniq success");
     lmbench_tests();
     println!("!TEST FINISH!");
-    // loop {
-    //     let mut exit_code: i32 = 0;
-    //     let pid = wait(&mut exit_code);
-    //     if pid == -1 {
-    //         yield_();
-    //         continue;
-    //     }
-    //     println!(
-    //         "[initproc] Released a zombie process, pid={}, exit_code={}",
-    //         pid, exit_code,
-    //     );
-    // }
     0
 }

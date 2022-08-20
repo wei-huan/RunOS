@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Aug 19 14:41:14 2022
+# Make data base, printed on Sat Aug 20 11:08:31 2022
 
 # Variables
 
@@ -47,7 +47,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
 # environment
 _ = /usr/bin/make
 # environment
-JOURNAL_STREAM = 8:77808
+JOURNAL_STREAM = 8:51080
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # makefile (from 'Makefile', line 1)
@@ -69,7 +69,7 @@ DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus
 # makefile (from 'Makefile', line 7)
 OSCOMP_DIR := /home/weihuan/WorkSpace/OS/MyOS/oscomp
 # environment
-MANAGERPID = 15452
+MANAGERPID = 2665
 # environment
 CLUTTER_IM_MODULE = fcitx
 # environment
@@ -87,7 +87,7 @@ PATH = /home/weihuan/bin:/usr/local/cuda-11.3/bin:/home/weihuan/Tools/riscv64-un
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/15685,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/15685
+SESSION_MANAGER = local/weihuan-Lenovo-Legion-R9000P2021H:@/tmp/.ICE-unix/2900,unix/weihuan-Lenovo-Legion-R9000P2021H:/tmp/.ICE-unix/2900
 # makefile (from 'Makefile', line 6)
 USER_TAR_DIR := /home/weihuan/WorkSpace/OS/MyOS/user/target/riscv64gc-unknown-none-elf/release
 # environment
@@ -97,7 +97,7 @@ XDG_MENU_PREFIX = gnome-
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 23fa98a3af26476fa3935487dbba59aa
+INVOCATION_ID = d5a1125f9b7a4a31873f21f3d1fe6dcb
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # makefile (from 'Makefile', line 3)
@@ -109,7 +109,7 @@ XDG_SESSION_DESKTOP = ubuntu
 # environment
 SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
-GIO_LAUNCHED_DESKTOP_FILE_PID = 17335
+GIO_LAUNCHED_DESKTOP_FILE_PID = 4694
 # automatic
 %F = $(notdir $%)
 # environment
@@ -129,7 +129,7 @@ MODE := release
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 15642
+SSH_AGENT_PID = 2859
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -265,7 +265,7 @@ GIO_LAUNCHED_DESKTOP_FILE = /usr/share/applications/code.desktop
 # environment
 CONDA_PREFIX = /home/weihuan/anaconda3
 # environment
-VSCODE_PID = 17335
+VSCODE_PID = 4694
 # environment
 _CE_CONDA = 
 # environment
@@ -278,7 +278,6 @@ LANG = C
 # No pattern-specific variable values.
 
 # Directories
- 
 
 # . (device 66310, inode 23088373): 25 files, no impossibilities.
 
@@ -290,6 +289,7 @@ LANG = C
 
 # Files
 
+ 
 user:
 #  Phony target (prerequisite of .PHONY).
 #  Implicit rule search has not been done.
@@ -445,6 +445,6 @@ disasm:
 # strcache performance: lookups = 68 / hit rate = 41%
 # hash-table stats:
 # Load=40/8192=0%, Rehash=0, Collisions=1/68=1%
-# Finished Make data base on Fri Aug 19 14:41:14 2022
+# Finished Make data base on Sat Aug 20 11:08:31 2022
 
  
