@@ -5,7 +5,7 @@ use super::{
 };
 use crate::config::{
     DLL_LOADER_BASE, MEMORY_END, PAGE_SIZE, SIGRETURN_TRAMPOLINE, TRAMPOLINE, TRAP_CONTEXT_BASE,
-    USER_STACK_BASE, USER_STACK_SIZE,
+    USER_STACK_BASE,
 };
 use crate::platform::MMIO;
 use crate::task::{
@@ -126,7 +126,7 @@ impl AddrSpace {
             self.mmap_sections.remove(idx);
         }
     }
-    fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
+    pub fn push_section(&mut self, mut section: Section, data: Option<&[u8]>) {
         log::trace!(
             "section range start: {:#?}, end: {:#?}",
             section.vpn_range.get_start(),
@@ -539,24 +539,21 @@ impl AddrSpace {
         let mut heap_start: usize = heap_start_virt.into();
         heap_start += PAGE_SIZE;
 
-        // map user stack with U flags
-        // user stack is set just below the trap_cx
+        // // map user stack with U flags
         let user_stack_high = USER_STACK_BASE;
-        let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
-        // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
-        // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
-
-        // map user_stack
-        user_space.push_section(
-            Section::new(
-                ".ustack".to_string(),
-                user_stack_bottom.into(),
-                user_stack_high.into(),
-                MapType::Framed,
-                MapPermission::R | MapPermission::W | MapPermission::U,
-            ),
-            None,
-        );
+        // let user_stack_bottom = user_stack_high - USER_STACK_SIZE;
+        // // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
+        // // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
+        // user_space.push_section(
+        //     Section::new(
+        //         ".ustack".to_string(),
+        //         user_stack_bottom.into(),
+        //         user_stack_high.into(),
+        //         MapType::Framed,
+        //         MapPermission::R | MapPermission::W | MapPermission::U,
+        //     ),
+        //     None,
+        // );
 
         // map TrapContext
         user_space.push_section(
@@ -570,8 +567,8 @@ impl AddrSpace {
             None,
         );
         let entry;
+        // 静态链接程序
         if at_base == 0 {
-            // 静态链接程序
             entry = elf.header.pt2.entry_point() as usize;
         } else {
             entry = at_base;

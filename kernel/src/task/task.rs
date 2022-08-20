@@ -1,12 +1,12 @@
 // use super::signal::SignalFlags;
 use super::context::TaskContext;
 use super::kernel_stack::{kstack_alloc, KernelStack};
-use crate::config::{MMAP_BASE, TRAP_CONTEXT_BASE};
+use crate::config::{MMAP_BASE, TRAP_CONTEXT_BASE, USER_LIGHT_STACK_SIZE, USER_STACK_SIZE};
 use crate::fs::{File, FileClass, Stdin, Stdout};
 use crate::hart_id;
 use crate::mm::{
     kernel_token, translated_byte_buffer, translated_refmut, AddrSpace, MMapFlags, MapPermission,
-    PhysPageNum, UserBuffer, VirtAddr, KERNEL_SPACE,
+    MapType, PhysPageNum, Section, UserBuffer, VirtAddr, KERNEL_SPACE,
 };
 use crate::syscall::{EBADF, ENOENT, EPERM};
 use crate::task::{
@@ -15,7 +15,7 @@ use crate::task::{
 use crate::timer::ITimerVal;
 use crate::trap::{user_trap_handler, TrapContext};
 use alloc::collections::BTreeMap;
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::sync::{Arc, Weak};
 use alloc::vec;
 use alloc::vec::Vec;
@@ -108,8 +108,23 @@ impl TaskControlBlock {
     // only for initproc
     pub fn new(elf_data: &[u8]) -> Self {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, heap_start, ustack_base, entry_point, _) =
+        let (mut addrspace, heap_start, ustack_base, entry_point, _) =
             AddrSpace::create_user_space(elf_data);
+        // map user stack with U flags
+        let user_stack_high = ustack_base;
+        let user_stack_bottom = user_stack_high - USER_LIGHT_STACK_SIZE;
+        // println!("user_stack_bottom: 0x{:X}", usize::from(user_stack_bottom));
+        // println!("user_stack_high: 0x{:X}", usize::from(user_stack_high));
+        addrspace.push_section(
+            Section::new(
+                ".ustack".to_string(),
+                user_stack_bottom.into(),
+                user_stack_high.into(),
+                MapType::Framed,
+                MapPermission::R | MapPermission::W | MapPermission::U,
+            ),
+            None,
+        );
         let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
             .unwrap()
@@ -166,17 +181,29 @@ impl TaskControlBlock {
         );
         task
     }
-    pub fn exec(self: &Arc<Self>, elf_data: &[u8], args: Vec<String>) {
+    pub fn exec(self: &Arc<Self>, elf_data: &[u8], args: Vec<String>, stack_size: usize) {
         // memory_set with elf program headers/trampoline/trap context/user stack
-        let (addrspace, heap_start, mut user_sp, entry_point, mut auxv) =
+        let (mut addrspace, heap_start, mut user_sp, entry_point, mut auxv) =
             AddrSpace::create_user_space(elf_data);
-
+        // map user stack with U flags
+        let user_stack_high = user_sp;
+        let user_stack_bottom = user_stack_high - stack_size;
+        addrspace.push_section(
+            Section::new(
+                ".ustack".to_string(),
+                user_stack_bottom.into(),
+                user_stack_high.into(),
+                MapType::Framed,
+                MapPermission::R | MapPermission::W | MapPermission::U,
+            ),
+            None,
+        );
         let token = addrspace.token();
         let trap_cx_ppn = addrspace
             .translate(VirtAddr::from(TRAP_CONTEXT_BASE).into())
             .unwrap()
             .ppn();
-            
+
         // **** access current TCB exclusively
         let mut inner = self.acquire_inner_lock();
         // substitute addrspace

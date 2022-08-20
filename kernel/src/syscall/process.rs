@@ -1,4 +1,6 @@
-use crate::config::{page_aligned_up, MMAP_BASE};
+use crate::config::{
+    page_aligned_up, MMAP_BASE, USER_LIGHT_STACK_SIZE, USER_STACK_BASE, USER_STACK_SIZE,
+};
 use crate::cpu::{current_task, current_user_token};
 use crate::fs::{open, OpenFlags};
 use crate::mm::{
@@ -256,11 +258,16 @@ pub fn sys_exec(path: *const u8, mut args: *const usize) -> isize {
     }
     let task = current_task().unwrap();
     let current_path = task.acquire_inner_lock().current_path.clone();
+    let stack_size = if path.contains("lmbench") {
+        USER_STACK_SIZE
+    } else {
+        USER_LIGHT_STACK_SIZE
+    };
     if let Some(app_inode) = open(current_path.as_str(), path.as_str(), OpenFlags::RDONLY) {
         app_inode.mmap_to_kernel();
         let all_data =
             unsafe { core::slice::from_raw_parts_mut(MMAP_BASE as *mut u8, app_inode.get_size()) };
-        task.exec(all_data, args_vec);
+        task.exec(all_data, args_vec, stack_size);
         KERNEL_SPACE
             .lock()
             .remove_mmap_area_with_start_vpn(VirtAddr::from(MMAP_BASE).floor());
