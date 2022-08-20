@@ -44,7 +44,7 @@ K210-SERIALPORT	= /dev/ttyUSB0
 K210-BURNER	= ../tools/kflash.py
 
 # CPUS
-CPUS ?= 2
+CPUS ?= 1
 
 # Binutils
 OBJDUMP := rust-objdump --arch-name=riscv64
