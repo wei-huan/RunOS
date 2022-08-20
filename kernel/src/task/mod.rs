@@ -149,27 +149,6 @@ fn call_user_signal_handler(sig: usize) {
     log::debug!("sig{} handler ra: {:#X?}", sig, trap_ctx.x[1]);
     // put args (a0)
     trap_ctx.x[10] = sig;
-    if task_inner.signal_actions[&(sig as u32)]
-        .sa_flags
-        .contains(SAFlags::SA_SIGINFO)
-    {
-        let token = task_inner.get_user_token();
-        trap_ctx.x[2] -= size_of::<UContext>(); // sp -= sizeof(ucontext)
-        trap_ctx.x[12] = trap_ctx.x[2]; // a2  = sp
-        log::debug!(
-            "sighandler prepare: sp = {:#x?}, a2 = {:#x?}",
-            trap_ctx.x[2],
-            trap_ctx.x[12]
-        );
-        let mut userbuf = UserBuffer::new(translated_byte_buffer(
-            token,
-            trap_ctx.x[2] as *const u8,
-            size_of::<UContext>(),
-        ));
-        let mut ucontext = UContext::new();
-        *ucontext.mc_pc() = trap_ctx.sepc;
-        userbuf.write(ucontext.as_bytes()); // copy ucontext to userspace
-    }
     // log::debug!("sig{} handler address {:#X?}", sig, handler);
 }
 
